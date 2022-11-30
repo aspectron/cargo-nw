@@ -1,0 +1,6 @@
+[package]
+name = "test"
+title = "Test"
+version = "0.1.0"
+resources = "./resources/"
+
