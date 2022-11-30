@@ -4,3 +4,6 @@ title = "Test"
 version = "0.1.0"
 resources = "./resources/"
 
+[nwjs]
+version = "0.70.1"
+ffmpeg = true

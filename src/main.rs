@@ -8,6 +8,12 @@ use duct::cmd;
 mod error;
 mod result;
 mod manifest;
+mod darwin;
+mod dmg;
+mod build;
+mod utils;
+mod platform;
+
 // mod repository;
 // mod build;
 // mod run;
@@ -77,7 +83,8 @@ pub async fn async_main() -> Result<()> {
     Ok(())
 }
 
-#[async_std::main]
+// #[async_std::main]
+#[tokio::main]
 async fn main() -> Result<()> {
     match async_main().await {
         Err(e) => println!("{}", e),
@@ -85,3 +92,4 @@ async fn main() -> Result<()> {
     };
     Ok(())
 }
+

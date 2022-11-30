@@ -11,7 +11,8 @@ pub struct Manifest {
     // pub repository: Vec<Repository>,
     // pub build: Option<Vec<Build>>,
     // pub run: Option<Run>,
-    pub package : NwjsPackage
+    pub package : Package,
+    pub nwjs : Nwjs,
 }
 
 impl Manifest {
@@ -64,10 +65,17 @@ impl Manifest {
 
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct NwjsPackage {
+pub struct Package {
     pub name: String,
     pub title: String,
     pub version: String,
     pub resources: String,
     // port: Option<u64>,
 }
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Nwjs {
+    pub version: String,
+    pub ffmpeg: Option<bool>,
+}
+
