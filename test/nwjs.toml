@@ -5,6 +5,10 @@ version = "0.1.0"
 # root = ".."
 resources = "resources"
 
+# [resources]
+# path = "resources"
+# icons = "sips"
+
 [nwjs]
 version = "0.70.1"
 ffmpeg = true

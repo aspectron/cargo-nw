@@ -25,6 +25,7 @@ pub struct Context {
     
     pub home_folder : PathBuf,
     // pub deps_dir : PathBuf,
+    pub cargo_target_folder : PathBuf,
     pub nwjs_root_folder : PathBuf,
     pub app_root_folder : PathBuf,
     pub setup_resources_folder : PathBuf,
@@ -59,6 +60,7 @@ impl Context {
             manifest,
             platform,
             home_folder,
+            cargo_target_folder,
             nwjs_root_folder,
             app_root_folder,
             setup_resources_folder,
