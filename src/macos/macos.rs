@@ -1,7 +1,17 @@
 use async_std::path::Path;
 use async_std::path::PathBuf;
+use async_std::fs;
+use fs_extra::dir;
+use serde::Serialize;
 // use duct::cmd;
 use crate::prelude::*;
+
+
+#[derive(Debug, Clone, Serialize)]
+pub struct PackageJson {
+    name : String,
+    main : String,
+}
 
 pub struct MacOS {
 
@@ -25,17 +35,71 @@ impl MacOS {
             // app_root_folder: PathBuf::from("/Applications"),
         }
     }
+
+    async fn copy_app_data(&self, ctx: &Context) -> Result<()> {
+
+        let mut options = dir::CopyOptions::new();
+        options.content_only = true;
+        // options.skip_exist = true;
+        
+        println!("[macos] copying application data");
+        dir::copy(
+            &ctx.app_root_folder, 
+            &self.app_nw_folder, 
+            &options
+        )?;
+
+
+        Ok(())
+    }
+
+    async fn create_package_json(&self, ctx: &Context) -> Result<()> {
+/*
+{
+    "name": "helloworld",
+    "main": "index.js"
+}
+*/
+        println!("[macos] creating package.json");
+
+        let package_json = PackageJson {
+            name : ctx.manifest.application.title.clone(),
+            main : "index.js".to_string(),
+        };
+
+        let json = serde_json::to_string(&package_json).unwrap();
+
+        fs::write(&self.app_nw_folder.join("package.json"), json).await?;
+
+
+        Ok(())
+    }
 }
 
 #[async_trait]
 impl Installer for MacOS {
-    async fn create(&self, _ctx : &Context, installer_type: InstallerType) -> Result<()> {
-
-
+    async fn create(&self, ctx : &Context, installer_type: InstallerType) -> Result<()> {
+        // println!("[macos] creating {:?} installer",installer_type);
+        
+        self.copy_app_data(ctx).await?;
+        self.create_package_json(ctx).await?;
+        
         println!("[macos] creating {:?} installer",installer_type);
+        // Ok(())
 
 
-        Ok(())
+        match installer_type {
+            InstallerType::Archive => {
+                Ok(())
+            },
+            InstallerType::DMG => {
+
+                Ok(())
+            },
+            _ => {
+                Err(format!("Unsupported installer type: {:?}", installer_type).into())
+            }
+        }
     }
 }
 

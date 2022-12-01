@@ -37,9 +37,7 @@ impl Build {
 
         self.ctx.ensure_folders().await?;
 
-        let mut options = dir::CopyOptions::new(); //Initialize default values for CopyOptions
-        // options.mirror_copy = true; // To mirror copy the whole structure of the source directory
-        // options.copy_inside = true;
+        let mut options = dir::CopyOptions::new();
         options.content_only = true;
         options.skip_exist = true;
         

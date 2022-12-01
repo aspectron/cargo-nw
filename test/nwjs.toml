@@ -2,6 +2,7 @@
 name = "example"
 title = "NWJS Example"
 version = "0.1.0"
+# root = ".."
 resources = "./resources/"
 
 [nwjs]
