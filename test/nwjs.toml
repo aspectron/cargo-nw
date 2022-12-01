@@ -3,7 +3,7 @@ name = "example"
 title = "NWJS Example"
 version = "0.1.0"
 # root = ".."
-resources = "./resources/"
+resources = "resources"
 
 [nwjs]
 version = "0.70.1"

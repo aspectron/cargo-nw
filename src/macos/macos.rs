@@ -17,8 +17,8 @@ pub struct MacOS {
 
     // pub dmg_app_name : String,
     // pub app_root_folder : PathBuf,
-    pub contents_folder : PathBuf,
-    pub resources_folder : PathBuf,
+    pub app_contents_folder : PathBuf,
+    pub app_resources_folder : PathBuf,
     pub app_nw_folder : PathBuf,
 
 }
@@ -29,8 +29,8 @@ impl MacOS {
         // let app_root_folder : PathBuf = Path::new(&ctx.cargo_target_folder).join(&ctx.manifest.package.title).join("nw.app");
         
         MacOS {
-            contents_folder: Path::new(&ctx.nwjs_root_folder).join("Contents"),
-            resources_folder: Path::new(&ctx.nwjs_root_folder).join("Contents").join("Resources"),
+            app_contents_folder: Path::new(&ctx.nwjs_root_folder).join("Contents"),
+            app_resources_folder: Path::new(&ctx.nwjs_root_folder).join("Contents").join("Resources"),
             app_nw_folder: Path::new(&ctx.nwjs_root_folder).join("Contents").join("Resources").join("app.nw"),
             // app_root_folder: PathBuf::from("/Applications"),
         }
@@ -54,12 +54,6 @@ impl MacOS {
     }
 
     async fn create_package_json(&self, ctx: &Context) -> Result<()> {
-/*
-{
-    "name": "helloworld",
-    "main": "index.js"
-}
-*/
         println!("[macos] creating package.json");
 
         let package_json = PackageJson {
@@ -68,8 +62,21 @@ impl MacOS {
         };
 
         let json = serde_json::to_string(&package_json).unwrap();
-
         fs::write(&self.app_nw_folder.join("package.json"), json).await?;
+        Ok(())
+    }
+
+    
+
+    async fn generate_icons(&self, ctx: &Context) -> Result<()> {
+
+        let app_icon = ctx.setup_resources_folder.join("app.png");
+        generate_icns(&app_icon, &self.app_resources_folder.join("app.icns")).await?;
+        let document_icon = ctx.setup_resources_folder.join("document.png");
+        generate_icns(&document_icon, &self.app_resources_folder.join("document.icns")).await?;
+
+        // let dmg_background = ctx.app_resources_folder.join("dmg.png");
+
 
 
         Ok(())
@@ -83,7 +90,8 @@ impl Installer for MacOS {
         
         self.copy_app_data(ctx).await?;
         self.create_package_json(ctx).await?;
-        
+        self.generate_icons(ctx).await?;
+
         println!("[macos] creating {:?} installer",installer_type);
         // Ok(())
 
@@ -101,6 +109,11 @@ impl Installer for MacOS {
             }
         }
     }
+}
+
+
+async fn generate_icns(png: &PathBuf, icns: &PathBuf) -> Result<()> {
+    Ok(())
 }
 
 // impl TryInto<MacOS> for Manifest {

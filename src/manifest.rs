@@ -1,5 +1,5 @@
 use std::env::current_dir;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use async_std::fs::*;
 use crate::result::Result;
 // use crate::repository::Repository;
@@ -69,7 +69,7 @@ pub struct Application {
     pub name: String,
     pub title: String,
     pub version: String,
-    pub resources: String,
+    pub resources: Option<String>,
     // port: Option<u64>,
 }
 

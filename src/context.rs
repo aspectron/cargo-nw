@@ -27,6 +27,7 @@ pub struct Context {
     // pub deps_dir : PathBuf,
     pub nwjs_root_folder : PathBuf,
     pub app_root_folder : PathBuf,
+    pub setup_resources_folder : PathBuf,
     // pub app_root_folder : PathBuf,
     // pub target_dir : PathBuf,
     
@@ -47,6 +48,7 @@ impl Context {
         let nwjs_root_folder : PathBuf = Path::new(&cargo_target_folder).join(&manifest.application.title);
         
         let app_root_folder : PathBuf = env::current_dir().unwrap().join("root").into();
+        let setup_resources_folder : PathBuf = env::current_dir().unwrap().join(&manifest.application.resources.as_ref().unwrap_or(&"resources".to_string())).into();
         // let app_root_folder : PathBuf = Path::new(&cargo_target_folder).join(&manifest.package.title).join("nw.app");
 
         let sdk = manifest.nwjs.sdk.unwrap_or(options.sdk);
@@ -59,6 +61,7 @@ impl Context {
             home_folder,
             nwjs_root_folder,
             app_root_folder,
+            setup_resources_folder,
             // app_root_folder,
             sdk,
             deps,
