@@ -1,19 +1,26 @@
-use crate::manifest::*;
-use crate::result::Result;
+// use crate::manifest::*;
+// use crate::result::Result;
 use clap::{Parser,Subcommand};
 #[allow(unused_imports)]
 use duct::cmd;
 // use console::style;
 
-mod error;
-mod result;
-mod manifest;
-mod darwin;
-mod dmg;
-mod build;
-mod utils;
-mod platform;
+pub mod error;
+pub mod result;
+pub mod manifest;
+// pub mod dmg;
+pub mod build;
+pub mod utils;
+pub mod platform;
+pub mod context;
+pub mod deps;
+pub mod prelude;
+pub mod installer;
+pub mod macos;
+pub mod linux;
+pub mod windows;
 
+use prelude::*;
 // mod repository;
 // mod build;
 // mod run;
@@ -47,11 +54,16 @@ struct Args {
 #[derive(Subcommand, Debug)]
 enum Action {
     /// Build NWJS package
-    Build,
+    Build {
+        #[clap(short, long)]
+        sdk : Option<bool>
+    },
     /// Clean cache files
     Clean { 
-        #[clap(short, long)]
-        all : Option<bool>
+        #[clap(long)]
+        deps : bool,
+        #[clap(long)]
+        all : bool,
     },
 }
 
@@ -60,19 +72,45 @@ pub async fn async_main() -> Result<()> {
     
     // let cwd = std::env::current_dir()?;
     let args = Cmd::parse();
+    let platform = Platform::new();
     let manifest = Manifest::load().await?;
     let action = match args { Cmd::Args(args) => args.action };
     match action {
-        Action::Build => {
+        Action::Build {
+            sdk
+        } => {
 
-            println!("build manifest: {:#?}", manifest);
+            let options = Options {
+                sdk : sdk.unwrap_or(false),
+            };
+
+            let ctx = Context::new(platform,manifest,options);
+
+            // println!("build context: {:#?}", ctx);
+
+            let build = Build::new(ctx);
+
+            build.execute().await?;
             // for build in manifest.build.expect("no build directives found").iter() {
             //     build.execute().await?;
             // }
         },
-        Action::Clean { all } => {
-            let all = all.unwrap_or(false);
-            println!("clean all: {:?} manifest: {:#?}", all, manifest);
+        Action::Clean { 
+            all, 
+            deps 
+        } => {
+            let deps = deps || all;
+
+            let ctx = Context::new(platform,manifest,Options::default());
+            // println!("clean context: {:#?}", ctx);
+
+            if deps {
+                ctx.deps.clean().await?;
+            }
+
+            ctx.clean().await?;
+
+            // println!("clean all: {:?} manifest: {:#?}", all, manifest);
             // cmd!("rm","-rf", repository.name()).run()?;
 
                 // let run = manifest.run.expect("no run directive found");

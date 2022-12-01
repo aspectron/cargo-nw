@@ -1,5 +1,56 @@
-use duct::cmd;
+use async_std::path::Path;
+use async_std::path::PathBuf;
+// use duct::cmd;
+use crate::prelude::*;
 
+pub struct MacOS {
+
+    // pub dmg_app_name : String,
+    // pub app_root_folder : PathBuf,
+    pub contents_folder : PathBuf,
+    pub resources_folder : PathBuf,
+    pub app_nw_folder : PathBuf,
+
+}
+
+impl MacOS {
+
+    pub fn new(ctx: &Context) -> MacOS {
+        // let app_root_folder : PathBuf = Path::new(&ctx.cargo_target_folder).join(&ctx.manifest.package.title).join("nw.app");
+        
+        MacOS {
+            contents_folder: Path::new(&ctx.nwjs_root_folder).join("Contents"),
+            resources_folder: Path::new(&ctx.nwjs_root_folder).join("Contents").join("Resources"),
+            app_nw_folder: Path::new(&ctx.nwjs_root_folder).join("Contents").join("Resources").join("app.nw"),
+            // app_root_folder: PathBuf::from("/Applications"),
+        }
+    }
+}
+
+#[async_trait]
+impl Installer for MacOS {
+    async fn create(&self, _ctx : &Context, installer_type: InstallerType) -> Result<()> {
+
+
+        println!("[macos] creating {:?} installer",installer_type);
+
+
+        Ok(())
+    }
+}
+
+// impl TryInto<MacOS> for Manifest {
+//     type Error = Error;
+//     fn try_into(self) -> Result<MacOS> {
+
+//         let macos = MacOS { 
+//             // dmg_app_name: self.package.title
+//             app_root_folder
+//         };
+
+//         Ok(macos)
+//     }
+// }
 
 // this.log("Setting up OSX icns...");
 // let resourceFolder = this.options.resources || 'resources/setup'

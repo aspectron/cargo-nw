@@ -1,6 +1,6 @@
-[package]
-name = "test"
-title = "Test"
+[application]
+name = "example"
+title = "NWJS Example"
 version = "0.1.0"
 resources = "./resources/"
 
