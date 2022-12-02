@@ -46,7 +46,7 @@ impl MacOS {
         options.overwrite = true;
         // options.skip_exist = true;
         
-        println!("[macos] copying application data");
+        log!("Integrating","application data");
         dir::copy(
             &ctx.app_root_folder, 
             &self.app_nw_folder, 
@@ -58,7 +58,7 @@ impl MacOS {
     }
 
     async fn create_package_json(&self, ctx: &Context) -> Result<()> {
-        println!("[macos] creating package.json");
+        log!("MacOS","creating package.json");
 
         let package_json = PackageJson {
             name : ctx.manifest.application.title.clone(),
@@ -74,9 +74,12 @@ impl MacOS {
 
     async fn generate_icons(&self, ctx: &Context) -> Result<()> {
 
+        log!("MacOS","generating application icons");
+        
         let app_icon = ctx.setup_resources_folder.join("app.png");
         // generate_icns_sips(ctx,&app_icon, &self.app_resources_folder.join("app.icns")).await?;
         generate_icns_internal(ctx,&app_icon, &self.app_resources_folder.join("app.icns")).await?;
+        log!("MacOS","generating document icons");
         let document_icon = ctx.setup_resources_folder.join("document.png");
         // generate_icns_sips(ctx,&document_icon, &self.app_resources_folder.join("document.icns")).await?;
         generate_icns_internal(ctx,&document_icon, &self.app_resources_folder.join("document.icns")).await?;
@@ -95,10 +98,10 @@ impl Installer for MacOS {
         // println!("[macos] creating {:?} installer",installer_type);
         
         self.copy_app_data(ctx).await?;
-        self.create_package_json(ctx).await?;
+        // self.create_package_json(ctx).await?;
         self.generate_icons(ctx).await?;
 
-        println!("[macos] creating {:?} installer",installer_type);
+        log!("MacOS","creating {:?} installer",installer_type);
         // Ok(())
 
 
@@ -119,10 +122,48 @@ impl Installer for MacOS {
 
 async fn generate_icns_sips(ctx: &Context, png: &PathBuf, icns: &PathBuf) -> Result<()> {
 
-    // let src = image::open(png)
-    //     .expect(&format!("Unable to open {:?}", png));
+    let iconset_folder = ctx.cargo_target_folder.join("icns.iconset");
+    if !std::path::Path::new(&iconset_folder).exists() {
+        std::fs::create_dir_all(&iconset_folder)?;
+    }
 
-    // // The dimensions method returns the images width and height.
+    let sizes = vec![512,256,128,64,32,16];
+    for size in sizes {
+        let raw = size*2;
+        let name = format!("icon_{}x{}@2.png", size, size);
+        // println!("[icns] {}", name);
+        cmd!("sips","-z",format!("{raw}"),format!("{raw}"),png,"--out",&iconset_folder.join(name))//.run()?;
+        .stdin_null().read()?;
+
+        let name = format!("icon_{}x{}.png", size, size);
+        // println!("[icns] {}", name);
+        cmd!("sips","-z",format!("{size}"),format!("{size}"),png,"--out",&iconset_folder.join(name))//.run()?;
+        .stdin_null().read()?;
+    }
+
+    // println!("[icns] creating icns");
+    cmd!("iconutil","-c","icns","--output",icns,"icns.iconset")
+    .dir(&ctx.cargo_target_folder)
+    .run()?;
+
+    std::fs::remove_dir_all(iconset_folder)?;
+
+    Ok(())
+}
+
+async fn generate_icns_internal(ctx: &Context, png: &PathBuf, icns: &PathBuf) -> Result<()> {
+
+    let mut src = image::open(png)
+        .expect(&format!("Unable to open {:?}", png));
+
+    // The dimensions method returns the images width and height.
+    let dimensions = src.dimensions();
+    if dimensions.0 != 1024 || dimensions.1 != 1024 {
+        println!("");
+        println!("WARNING: {}", png.clone().file_name().unwrap().to_str().unwrap());
+        println!("         ^^^ icon dimensions are {}x{}; must be 1024x1024", dimensions.0,dimensions.1);
+        println!("");
+    }
     // println!("dimensions {:?}", src.dimensions());
 
     // The color method returns the image's `ColorType`.
@@ -135,66 +176,18 @@ async fn generate_icns_sips(ctx: &Context, png: &PathBuf, icns: &PathBuf) -> Res
         std::fs::create_dir_all(&iconset_folder)?;
     }
 
+    let resize_filter_type = FilterType::Lanczos3;
     let sizes = vec![512,256,128,64,32,16];
     for size in sizes {
-        // let dest = src.resize(size*2,size*2,FilterType::Lanczos3);
-        let raw = size*2;
+        let dest = src.resize(size*2,size*2,resize_filter_type);
         let name = format!("icon_{}x{}@2.png", size, size);
-        println!("[icns] {}", name);
-
-        // sips -z 16 16     Icon1024.png --out kdx-icon.iconset/icon_16x16.png
-        cmd!("sips","-z",format!("{raw}"),format!("{raw}"),png,"--out",&iconset_folder.join(name))//.run()?;
-        .stdin_null().read()?;
-
-        let name = format!("icon_{}x{}.png", size, size);
-        
-        // dest.save(iconset_folder.join(name)).unwrap();
-        // let dest = src.resize(size,size,FilterType::Lanczos3);
-        println!("[icns] {}", name);
-        cmd!("sips","-z",format!("{size}"),format!("{size}"),png,"--out",&iconset_folder.join(name))//.run()?;
-        .stdin_null().read()?;
-        // dest.save(iconset_folder.join(name)).unwrap();
-    }
-
-    // iconutil -c icns kdx-icon.iconset
-    println!("[icns] creating icns");
-    cmd!("iconutil","-c","icns","--output",icns,"icns.iconset")
-    .dir(&ctx.cargo_target_folder)
-    .run()?;
-
-    std::fs::remove_dir_all(iconset_folder)?;
-
-    Ok(())
-}
-
-async fn generate_icns_internal(ctx: &Context, png: &PathBuf, icns: &PathBuf) -> Result<()> {
-
-    let src = image::open(png)
-        .expect(&format!("Unable to open {:?}", png));
-
-    // The dimensions method returns the images width and height.
-    println!("dimensions {:?}", src.dimensions());
-
-    // The color method returns the image's `ColorType`.
-    // println!("{:?}", img.color());
-    // Write the contents of this image to the Writer in PNG format.
-    // img.save("test.png").unwrap();
-
-    let iconset_folder = ctx.cargo_target_folder.join("icns.iconset");
-    if !std::path::Path::new(&iconset_folder).exists() {
-        std::fs::create_dir_all(&iconset_folder)?;
-    }
-
-    let sizes = vec![512,256,128,64,32,16];
-    for size in sizes {
-        let dest = src.resize(size*2,size*2,FilterType::Lanczos3);
-        let name = format!("icon_{}x{}@2.png", size, size);
-        println!("[icns] {}", name);
+        // log!("icns","{}", name);
         dest.save(iconset_folder.join(name)).unwrap();
-        let dest = src.resize(size,size,FilterType::Lanczos3);
+        let dest = src.resize(size,size,resize_filter_type);
         let name = format!("icon_{}x{}.png", size, size);
-        println!("[icns] {}", name);
+        // println!("[icns] {}", name);
         dest.save(iconset_folder.join(name)).unwrap();
+        src = dest;
     }
 
     // iconutil -c icns kdx-icon.iconset

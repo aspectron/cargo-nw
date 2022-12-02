@@ -162,7 +162,7 @@ impl Dependencies {
 
     pub async fn ensure(&self) -> Result<()> {
 
-        println!("[dependencies] checking...");
+        // log!("Dependencies","checking");
         let targets = self.get_targets();
         // println!("targets: {:?}", targets);
 
@@ -175,15 +175,20 @@ impl Dependencies {
             .collect::<Vec<&Meta>>();
 
         if !downloads.is_empty() {
+            log!("Dependencies","downloading...");
+            println!("");
+            
             self.download(&downloads).await?;
-
+            println!("");
+            
             for meta in downloads {
+                log!("Dependencies","extracting {}", &meta.file);
                 let file = Path::new(&self.dir).join(&meta.file);
                 // let target_dir = meta.get_extract_path(&self.dir);
                 extract(&file, &meta.target).await?;
             }
         } else {
-            println!("[dependencies] skipping downloads...");
+            log!("Dependencies","ok");
         }
         
         Ok(())
@@ -205,7 +210,7 @@ impl Dependencies {
                 Status::Fail(e) => return Err(Error::String(e.into())),
                 Status::NotStarted => return Err(format!("Unable to start download for: {}",summary.download().url).into()),
                 Status::Skipped(msg) => {
-                    println!("{}",msg);
+                    log!("Dependencies","{}",msg);
                     // return Err(Error::String(e.into()))
                 },
                 Status::Success => { }

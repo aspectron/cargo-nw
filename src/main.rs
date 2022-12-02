@@ -3,7 +3,6 @@
 use clap::{Parser,Subcommand};
 #[allow(unused_imports)]
 use duct::cmd;
-// use console::style;
 
 pub mod error;
 pub mod result;
@@ -19,6 +18,7 @@ pub mod installer;
 pub mod macos;
 pub mod linux;
 pub mod windows;
+pub mod log;
 
 use prelude::*;
 // mod repository;
@@ -86,11 +86,13 @@ pub async fn async_main() -> Result<()> {
 
             let ctx = Context::new(platform,manifest,options);
 
+            println!("");
+
             // println!("build context: {:#?}", ctx);
 
             let build = Build::new(ctx);
 
-            build.execute().await?;
+            build.execute(InstallerType::Archive).await?;
             // for build in manifest.build.expect("no build directives found").iter() {
             //     build.execute().await?;
             // }

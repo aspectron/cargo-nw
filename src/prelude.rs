@@ -9,6 +9,7 @@ pub use crate:: {
     build::*,
     utils::*,
     installer::*,
+    log::*,
 };
 
 pub use async_trait::async_trait;

@@ -1,4 +1,6 @@
 use std::path::Path;
+use console::style;
+use std::time::Instant;
 // use std::path::PathBuf;
 // use trauma::{download::Download, downloader::DownloaderBuilder, Error};
 
@@ -31,7 +33,12 @@ impl Build {
         }
     }
 
-    pub async fn execute(&self) -> Result<()> {
+    pub async fn execute(&self, installer_type: InstallerType) -> Result<()> {
+
+
+        let ts_start = Instant::now();
+        log!("Build","Building {} Version {}",style(&self.ctx.manifest.application.title).cyan(),style(&self.ctx.manifest.application.version).cyan());
+        log!("Build","Installer type: {}",style(format!("{:?}", installer_type)).cyan());
 
         self.ctx.deps.ensure().await?;
 
@@ -43,7 +50,7 @@ impl Build {
         
         // copy source/dir1 to target/dir1
         // let src = self.ctx.deps.nwjs.get_extract_path()
-        println!("[build] copying NWJS binaries");
+        log!("Integrating","NWJS binaries");
         dir::copy(
             Path::new(&self.ctx.deps.nwjs.target).join("nwjs.app"), 
             &self.ctx.nwjs_root_folder, 
@@ -65,7 +72,11 @@ impl Build {
             }
         };
 
-        installer.create(&self.ctx, InstallerType::Archive).await?;
+        installer.create(&self.ctx, installer_type).await?;
+
+        let duration = ts_start.elapsed();
+        let package_name = "<filename>";
+        log!("Finished","package '{}' in {:.2}s", style(package_name).cyan(), duration.as_millis() as f64/1000.0);
 
         Ok(())
     }
