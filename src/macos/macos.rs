@@ -7,6 +7,7 @@ use serde::Serialize;
 use image::GenericImageView;
 use duct::cmd;
 use regex::Regex;
+use chrono::Datelike;
 // use duct::cmd;
 use crate::prelude::*;
 
@@ -122,7 +123,7 @@ impl Installer for MacOS {
         self.copy_nwjs_bundle(ctx).await?;
         
         self.copy_app_data(ctx).await?;
-        rename_app_bundle(&self.app_contents_folder, &ctx.manifest.application.title).await?;
+        rename_app_bundle(&self.app_contents_folder, &ctx.manifest).await?;
         // self._create_package_json(ctx).await?;
         self.generate_icons(ctx).await?;
 
@@ -228,26 +229,77 @@ async fn generate_icns_internal(ctx: &Context, png: &PathBuf, icns: &PathBuf) ->
 }
 
 
-async fn plist_bundle_rename(plist_file: &PathBuf, bundle_name: &str) -> Result<()> {
+async fn plist_bundle_rename(plist_file: &PathBuf, name: &str, version : Option<&str>) -> Result<()> {
+
+    let mut text = fs::read_to_string(plist_file).await?;
 
     let regex = Regex::new(r"<key>CFBundleDisplayName</key>([^<]*)<string>([^<]*)</string>").unwrap();
-    let replace = format!("<key>CFBundleDisplayName</key>$1<string>{bundle_name}</string>");
+    let replace = format!("<key>CFBundleDisplayName</key>$1<string>{name}</string>");
+    text = regex.replace(&text,replace).to_string();
+    
+    if let Some(version) = version {
+        let regex = Regex::new(r"<key>CFBundleShortVersionString</key>([^<]*)<string>([^<]*)</string>").unwrap();
+        let replace = format!("<key>CFBundleShortVersionString</key>$1<string>{version}</string>");
+        text = regex.replace(&text,replace).to_string();
+    }
 
-    let text = fs::read_to_string(plist_file).await?;
-    let replaced = regex.replace(&text,replace);
-    fs::write(plist_file, replaced.to_string()).await?;
+    fs::write(plist_file, text).await?;
 
     Ok(())
 }
 
-async fn rename_app_bundle(app_contents_folder: &PathBuf, app_name: &str) -> Result<()> {
+async fn generate_resource_strings(manifest: &Manifest, app_contents_folder: &PathBuf) -> Result<()> {
+
+
+    let app_title = &manifest.application.title;
+    // let authors = if let Some(authors) = &manifest.application.authors { authors.as_str() } else { "" };
+    let version = &manifest.application.version;
+    let year = format!("{}", chrono::Utc::now().year());
+
+    let copyright = 
+    if let Some(copyright) = &manifest.application.copyright {
+        copyright.to_string()
+    } else if let Some(authors) = &manifest.application.authors {
+        format!("Copyright {year} {authors}")
+    } else {
+        format!("Copyright {year} {app_title} developers")
+    };
+    
+    let resource_text = format!("\
+CFBundleDisplayName = \"{app_title}\";\n\
+CFBundleGetInfoString = \"{app_title} {version}, {copyright}, The Chromium Authors, NW.js contributors, Node.js. All rights reserved.\";\n\
+CFBundleName = \"{app_title}\";\n\
+NSHumanReadableCopyright = \"{copyright}, The Chromium Authors, NW.js contributors, Node.js. All rights reserved.\";\n\
+");
+
+// FIXME setup the contact usage string...
+// NSContactsUsageDescription = \"Details from your contacts can help you fill out forms more quickly in ${app_title}.\";\n\
+
+    let resources_folder = app_contents_folder.join("Resources");
+    let paths = std::fs::read_dir(&resources_folder).expect(&format!("unable to iterate {:?}", &resources_folder));
+    for file in paths {
+        if let Ok(entry) = file {
+            if entry.file_name().into_string().unwrap().ends_with(".lproj") {
+                fs::write(entry.path(), &resource_text).await?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+async fn rename_app_bundle(app_contents_folder: &PathBuf, manifest: &Manifest) -> Result<()> {
 
     // let app_name = app_name.to_lowercase();
     log!("MacOS","renaming application bundle");
 
     let plist_file = app_contents_folder.join("info.plist");
     // println!("plist: {:?}", plist_file);
-    plist_bundle_rename(&plist_file, &app_name).await?;
+    plist_bundle_rename(
+        &plist_file, 
+        &manifest.application.title,
+        Some(&manifest.application.version)
+    ).await?;
 
 /* 
 
@@ -276,7 +328,7 @@ async fn rename_app_bundle(app_contents_folder: &PathBuf, app_name: &str) -> Res
             
         let plist_file = helpers_root.join(&src_app).join("Contents").join("info.plist");
         // println!("plist: {:?}", plist_file);
-        plist_bundle_rename(&plist_file, &app_name).await?;
+        plist_bundle_rename(&plist_file, &app_name, None).await?;
 
         let helper_path = helpers_root.join(&src_app).join("Contents").join("MacOS");
 

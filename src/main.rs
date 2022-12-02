@@ -56,7 +56,14 @@ enum Action {
     /// Build NWJS package
     Build {
         #[clap(short, long)]
-        sdk : Option<bool>
+        sdk : Option<bool>,
+
+        #[clap(short, long)]
+        archive : bool,
+        
+        // #[clap(short, long)]
+        // target : Option<String>,
+
     },
     /// Clean cache files
     Clean { 
@@ -77,8 +84,21 @@ pub async fn async_main() -> Result<()> {
     let action = match args { Cmd::Args(args) => args.action };
     match action {
         Action::Build {
-            sdk
+            sdk,
+            // target,
+            archive,
         } => {
+
+            let installer_type = if archive {
+                InstallerType::Archive
+            } else {
+                match platform {
+                    Platform::Windows => InstallerType::InnoSetup,
+                    // FIXME - allow user to specify package manager
+                    Platform::Linux => InstallerType::Archive,
+                    Platform::MacOS => InstallerType::DMG,
+                }
+            };
 
             let options = Options {
                 sdk : sdk.unwrap_or(false),
@@ -89,10 +109,8 @@ pub async fn async_main() -> Result<()> {
             println!("");
 
             // println!("build context: {:#?}", ctx);
-
             let build = Build::new(ctx);
-
-            build.execute(InstallerType::Archive).await?;
+            build.execute(installer_type).await?;
             // for build in manifest.build.expect("no build directives found").iter() {
             //     build.execute().await?;
             // }

@@ -69,6 +69,8 @@ pub struct Application {
     pub name: String,
     pub title: String,
     pub version: String,
+    pub authors: Option<String>,
+    pub copyright: Option<String>,
     pub resources: Option<String>,
     // port: Option<u64>,
 }
