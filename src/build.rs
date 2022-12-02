@@ -1,4 +1,4 @@
-use std::path::Path;
+// use std::path::Path;
 use console::style;
 use std::time::Instant;
 // use std::path::PathBuf;
@@ -16,7 +16,7 @@ use crate::{windows,linux,macos};
 
 // }
 
-use fs_extra::dir;
+// use fs_extra::dir;
 // use fs_extra::dir::CopyOptions;
 
 // this.NWJS_SUFFIX = { windows : 'win', darwin : 'osx', linux : 'linux' }[PLATFORM];
@@ -40,22 +40,12 @@ impl Build {
         log!("Build","Building {} Version {}",style(&self.ctx.manifest.application.title).cyan(),style(&self.ctx.manifest.application.version).cyan());
         log!("Build","Installer type: {}",style(format!("{:?}", installer_type)).cyan());
 
+        self.ctx.clean().await?;
+        
         self.ctx.deps.ensure().await?;
-
+        
         self.ctx.ensure_folders().await?;
 
-        let mut options = dir::CopyOptions::new();
-        options.content_only = true;
-        options.skip_exist = true;
-        
-        // copy source/dir1 to target/dir1
-        // let src = self.ctx.deps.nwjs.get_extract_path()
-        log!("Integrating","NWJS binaries");
-        dir::copy(
-            Path::new(&self.ctx.deps.nwjs.target).join("nwjs.app"), 
-            &self.ctx.nwjs_root_folder, 
-            &options
-        )?;
 
         let installer: Box<dyn Installer> = match &self.ctx.platform {
             Platform::Windows => {

@@ -1,6 +1,6 @@
 use cfg_if::cfg_if;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Platform {
     Windows,
     Linux,

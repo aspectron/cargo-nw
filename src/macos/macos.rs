@@ -6,6 +6,7 @@ use image::imageops::FilterType;
 use serde::Serialize;
 use image::GenericImageView;
 use duct::cmd;
+use regex::Regex;
 // use duct::cmd;
 use crate::prelude::*;
 
@@ -20,6 +21,7 @@ pub struct MacOS {
 
     // pub dmg_app_name : String,
     // pub app_root_folder : PathBuf,
+    pub nwjs_root_folder : PathBuf,
     pub app_contents_folder : PathBuf,
     pub app_resources_folder : PathBuf,
     pub app_nw_folder : PathBuf,
@@ -30,13 +32,31 @@ impl MacOS {
 
     pub fn new(ctx: &Context) -> MacOS {
         // let app_root_folder : PathBuf = Path::new(&ctx.cargo_target_folder).join(&ctx.manifest.package.title).join("nw.app");
-        
+
+        let nwjs_root_folder = ctx.build_folder.join(format!("{}.app", &ctx.manifest.application.title));
         MacOS {
-            app_contents_folder: Path::new(&ctx.nwjs_root_folder).join("Contents"),
-            app_resources_folder: Path::new(&ctx.nwjs_root_folder).join("Contents").join("Resources"),
-            app_nw_folder: Path::new(&ctx.nwjs_root_folder).join("Contents").join("Resources").join("app.nw"),
+            // app_root_folder : 
+            app_contents_folder: nwjs_root_folder.join("Contents"),
+            app_resources_folder: nwjs_root_folder.join("Contents").join("Resources"),
+            app_nw_folder: nwjs_root_folder.join("Contents").join("Resources").join("app.nw"),
+            nwjs_root_folder,
             // app_root_folder: PathBuf::from("/Applications"),
         }
+    }
+
+    async fn copy_nwjs_bundle(&self, ctx: &Context) -> Result<()>{
+        let mut options = dir::CopyOptions::new();
+        options.content_only = true;
+        options.skip_exist = true;
+        
+        log!("Integrating","NWJS binaries");
+        dir::copy(
+            Path::new(&ctx.deps.nwjs.target).join("nwjs.app"), 
+            &self.nwjs_root_folder, 
+            &options
+        )?;
+
+        Ok(())
     }
 
     async fn copy_app_data(&self, ctx: &Context) -> Result<()> {
@@ -57,7 +77,7 @@ impl MacOS {
         Ok(())
     }
 
-    async fn create_package_json(&self, ctx: &Context) -> Result<()> {
+    async fn _create_package_json(&self, ctx: &Context) -> Result<()> {
         log!("MacOS","creating package.json");
 
         let package_json = PackageJson {
@@ -90,16 +110,23 @@ impl MacOS {
 
         Ok(())
     }
+
+
 }
 
 #[async_trait]
 impl Installer for MacOS {
     async fn create(&self, ctx : &Context, installer_type: InstallerType) -> Result<()> {
         // println!("[macos] creating {:?} installer",installer_type);
+
+        self.copy_nwjs_bundle(ctx).await?;
         
         self.copy_app_data(ctx).await?;
-        // self.create_package_json(ctx).await?;
+        rename_app_bundle(&self.app_contents_folder, &ctx.manifest.application.title).await?;
+        // self._create_package_json(ctx).await?;
         self.generate_icons(ctx).await?;
+
+        // self.rename_plist(ctx).await?;
 
         log!("MacOS","creating {:?} installer",installer_type);
         // Ok(())
@@ -120,7 +147,7 @@ impl Installer for MacOS {
     }
 }
 
-async fn generate_icns_sips(ctx: &Context, png: &PathBuf, icns: &PathBuf) -> Result<()> {
+async fn _generate_icns_sips(ctx: &Context, png: &PathBuf, icns: &PathBuf) -> Result<()> {
 
     let iconset_folder = ctx.cargo_target_folder.join("icns.iconset");
     if !std::path::Path::new(&iconset_folder).exists() {
@@ -200,73 +227,66 @@ async fn generate_icns_internal(ctx: &Context, png: &PathBuf, icns: &PathBuf) ->
     Ok(())
 }
 
-// impl TryInto<MacOS> for Manifest {
-//     type Error = Error;
-//     fn try_into(self) -> Result<MacOS> {
 
-//         let macos = MacOS { 
-//             // dmg_app_name: self.package.title
-//             app_root_folder
-//         };
+async fn plist_bundle_rename(plist_file: &PathBuf, bundle_name: &str) -> Result<()> {
 
-//         Ok(macos)
-//     }
-// }
+    let regex = Regex::new(r"<key>CFBundleDisplayName</key>([^<]*)<string>([^<]*)</string>").unwrap();
+    let replace = format!("<key>CFBundleDisplayName</key>$1<string>{bundle_name}</string>");
 
-// this.log("Setting up OSX icns...");
-// let resourceFolder = this.options.resources || 'resources/setup'
-// await this.copy(path.join(this.appFolder, resourceFolder, this.name+"-icon.icns"),path.join(NWJS_APP_RESOURCES,"app.icns"));
-// await this.copy(path.join(this.appFolder, resourceFolder, this.name+"-icon.icns"),path.join(NWJS_APP_RESOURCES,"document.icns"));
+    let text = fs::read_to_string(plist_file).await?;
+    let replaced = regex.replace(&text,replace);
+    fs::write(plist_file, replaced.to_string()).await?;
 
-// if(this.options.DMG){
-//     this.log("Setting up background...");
-//     fse.ensureDirSync(path.join(this.APP_DIR, '.background'));
-//     await this.copy(path.join(this.appFolder, resourceFolder , this.name+"-dmg.png"),path.join(this.APP_DIR,'.background/'+this.name+'-dmg.png'));
+    Ok(())
+}
 
-//     this.log("Symlink for /Applications...");
-//     fse.ensureSymlinkSync("/Applications", path.join(this.APP_DIR, "/Applications"), 'dir');
-// }
+async fn rename_app_bundle(app_contents_folder: &PathBuf, app_name: &str) -> Result<()> {
 
+    // let app_name = app_name.to_lowercase();
+    log!("MacOS","renaming application bundle");
 
-// app_nwjs_renaming(){
-//     return new Promise(async (resolve, reject) => {
-//         let appname = this.DMG_APP_NAME.toLowerCase();
-//         let plistFilePath = path.join(this.NWJS_APP_CONTENTS, 'info.plist');
-//         let infoPlistContents = fse.readFileSync(plistFilePath)+"";
-//         if(infoPlistContents){
-//             infoPlistContents = infoPlistContents.replace(
-//                 /<key>CFBundleDisplayName<\/key>([^<]*)<string>nwjs<\/string>/,
-//                 `<key>CFBundleDisplayName</key>$1<string>${appname}</string>`
-//             )
-//             fse.writeFileSync(plistFilePath, infoPlistContents);
-//         }
+    let plist_file = app_contents_folder.join("info.plist");
+    // println!("plist: {:?}", plist_file);
+    plist_bundle_rename(&plist_file, &app_name).await?;
 
-//         let helpersPath = path.join(this.NWJS_APP_CONTENTS, "Frameworks", "nwjs Framework.framework", "Versions", "Current", "Helpers")
-//         let helpers = ["Helper", "Helper (GPU)", "Helper (Plugin)", "Helper (Renderer)"];
+/* 
 
-//         while(helpers.length) {
-//             let helper = helpers.shift();
-//             let src = `nwjs ${helper}`;
-//             let dest = `${appname} ${helper}`;
-//             let srcApp = `${src}.app`;
-//             let destApp = `${dest}.app`;
-//             let plistFilePath = path.join(helpersPath, srcApp, 'Contents', 'info.plist');
-//             let infoPlistContents = fse.readFileSync(plistFilePath)+"";
-//             if(infoPlistContents){
-//                 infoPlistContents = infoPlistContents.replace(
-//                     /<key>CFBundleDisplayName<\/key>([^<]*)<string>([^<]*)<\/string>/,
-//                     `<key>CFBundleDisplayName</key>$1<string>${dest}</string>`
-//                 )
-//                 fse.writeFileSync(plistFilePath, infoPlistContents);
-//             }
-//             let helperPath = path.join(helpersPath, srcApp, 'Contents', 'MacOS');
-//             await this.spawn('mv', [src, dest], { cwd : helperPath, stdio: 'inherit' });
-//             await this.spawn('mv', [srcApp, destApp], { cwd : helpersPath, stdio: 'inherit' });
-//         }
+    log!("MacOS","renaming framework helpers");
 
-//         resolve();
-//     });
-// }
+    let frameworks_folder = app_contents_folder
+        .join("Frameworks")
+        .join("nwjs Framework.framework")
+        .join("Versions");
+    let framework_version = fs::read_to_string(frameworks_folder.join("Current")).await?;
 
+    let helpers_root = app_contents_folder
+        .join("Frameworks")
+        .join("nwjs Framework.framework")
+        .join("Versions")
+        .join(framework_version)
+        .join("Helpers");
+
+    let helpers = ["Helper", "Helper (GPU)", "Helper (Plugin)", "Helper (Renderer)", "Helper (Alerts)"];
+
+    for helper in helpers {
+        let src = format!("nwjs {helper}");
+        let dest = format!("{app_name} {helper}");
+        let src_app = format!("{src}.app");
+        let dest_app = format!("{dest}.app");
+            
+        let plist_file = helpers_root.join(&src_app).join("Contents").join("info.plist");
+        // println!("plist: {:?}", plist_file);
+        plist_bundle_rename(&plist_file, &app_name).await?;
+
+        let helper_path = helpers_root.join(&src_app).join("Contents").join("MacOS");
+
+        // println!("\nrenaming: {:?} to {:?}", helper_path.join(&src),helper_path.join(&dest));
+        fs::rename(helper_path.join(&src),helper_path.join(&dest)).await?;
+        // println!("\nrenaming: {:?} to {:?}", helpers_root.join(&src_app),helpers_root.join(&dest_app));
+        fs::rename(helpers_root.join(&src_app),helpers_root.join(&dest_app)).await?;
+    }
+*/    
+    Ok(())
+}
 
 

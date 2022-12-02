@@ -188,7 +188,7 @@ impl Dependencies {
                 extract(&file, &meta.target).await?;
             }
         } else {
-            log!("Dependencies","ok");
+            // log!("Dependencies","ok");
         }
         
         Ok(())
