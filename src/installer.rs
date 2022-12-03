@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use async_std::path::PathBuf;
 
 #[derive(Debug, Clone)]
 pub enum InstallerType {
@@ -9,5 +10,5 @@ pub enum InstallerType {
 
 #[async_trait]
 pub trait Installer {
-    async fn create(&self, ctx: &Context, package_type: InstallerType) -> Result<()>;
+    async fn create(&self, package_type: InstallerType) -> Result<Vec<PathBuf>>;
 }

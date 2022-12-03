@@ -1,7 +1,8 @@
 // use std::path::Path;
 use console::style;
+// use std::sync::Arc;
 use std::time::Instant;
-// use std::path::PathBuf;
+// use async_std::path::PathBuf;
 // use trauma::{download::Download, downloader::DownloaderBuilder, Error};
 
 // use crate::platform::*;
@@ -23,11 +24,11 @@ use crate::{windows,linux,macos};
 // 		this.NWJS_ARCHIVE_EXTENSION = { windows : 'zip', darwin : 'zip', 'linux' : 'tar.gz' }[PLATFORM];
 
 pub struct Build {
-    pub ctx : Context
+    pub ctx : Arc<Context>
 }
 
 impl Build {
-    pub fn new(ctx: Context) -> Self {
+    pub fn new(ctx: Arc<Context>) -> Self {
         Build {
             ctx
         }
@@ -49,25 +50,25 @@ impl Build {
 
         let installer: Box<dyn Installer> = match &self.ctx.platform {
             Platform::Windows => {
-                Box::new(windows::Windows::new(&self.ctx))
+                Box::new(windows::Windows::new(self.ctx.clone()))
                 
 
             },
             Platform::Linux => {
-                Box::new(linux::Linux::new(&self.ctx))
+                Box::new(linux::Linux::new(self.ctx.clone()))
 
             },
             Platform::MacOS => {
-                Box::new(macos::MacOS::new(&self.ctx))
+                Box::new(macos::MacOS::new(self.ctx.clone()))
             }
         };
 
-        installer.create(&self.ctx, installer_type).await?;
+        let files = installer.create(installer_type).await?;
 
         let duration = ts_start.elapsed();
-        let package_name = "<filename>";
+        let package_name = files[0].to_str().unwrap();
         log!("Finished","package '{}' in {:.2}s", style(package_name).cyan(), duration.as_millis() as f64/1000.0);
-
+        println!("");
         Ok(())
     }
 

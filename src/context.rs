@@ -21,7 +21,7 @@ pub struct Context {
 
     pub manifest : Manifest,
     pub platform : Platform,
-
+    pub arch : Architecture,
     
     pub home_folder : PathBuf,
     // pub deps_dir : PathBuf,
@@ -41,6 +41,7 @@ pub struct Context {
 impl Context {
     pub fn new(
         platform: Platform, 
+        arch : Architecture,
         manifest: Manifest,
         options: Options,
     ) -> Context {
@@ -70,6 +71,7 @@ impl Context {
         Context {
             manifest,
             platform,
+            arch,
             home_folder,
             cargo_target_folder,
             build_folder,
@@ -86,9 +88,17 @@ impl Context {
     }
 
     pub async fn ensure_folders(&self) -> Result<()> {
-        if !std::path::Path::new(&self.build_folder).exists() {
-            std::fs::create_dir_all(&self.build_folder)?;
+        let folders = [&self.build_folder, &self.output_folder];
+        for folder in folders {
+            if !std::path::Path::new(folder).exists() {
+                std::fs::create_dir_all(folder)?;
+            }
         }
+        // if !std::path::Path::new(&self.build_folder).exists() {
+        // }
+        // if !std::path::Path::new(&self.build_folder).exists() {
+        //     std::fs::create_dir_all(&self.build_folder)?;
+        // }
         Ok(())
     }
 

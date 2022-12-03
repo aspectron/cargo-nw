@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 // use crate::manifest::*;
 // use crate::result::Result;
 use clap::{Parser,Subcommand};
@@ -79,7 +81,8 @@ pub async fn async_main() -> Result<()> {
     
     // let cwd = std::env::current_dir()?;
     let args = Cmd::parse();
-    let platform = Platform::new();
+    let platform = Platform::default();
+    let arch = Architecture::default();
     let manifest = Manifest::load().await?;
     let action = match args { Cmd::Args(args) => args.action };
     match action {
@@ -104,7 +107,7 @@ pub async fn async_main() -> Result<()> {
                 sdk : sdk.unwrap_or(false),
             };
 
-            let ctx = Context::new(platform,manifest,options);
+            let ctx = Arc::new(Context::new(platform,arch,manifest,options));
 
             println!("");
 
@@ -121,7 +124,7 @@ pub async fn async_main() -> Result<()> {
         } => {
             let deps = deps || all;
 
-            let ctx = Context::new(platform,manifest,Options::default());
+            let ctx = Context::new(platform,arch,manifest,Options::default());
             // println!("clean context: {:#?}", ctx);
 
             if deps {
@@ -145,7 +148,7 @@ pub async fn async_main() -> Result<()> {
 #[tokio::main]
 async fn main() -> Result<()> {
     match async_main().await {
-        Err(e) => println!("{}", e),
+        Err(e) => println!("\n{}", e),
         Ok(_) => { }
     };
     Ok(())
