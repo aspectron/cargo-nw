@@ -1,5 +1,5 @@
 [application]
-name = "example"
+name = "nwjs-example"
 title = "NWJS Example"
 version = "0.1.0"
 # root = ".."

@@ -1,8 +1,6 @@
 use cfg_if::cfg_if;
 use async_std::path::Path;
 use async_std::path::PathBuf;
-// use async_std::path::Path;
-// use async_std::path::PathBuf;
 use async_std::fs;
 use async_std::task::sleep;
 use fs_extra::dir;
@@ -13,9 +11,7 @@ use duct::cmd;
 use regex::Regex;
 use chrono::Datelike;
 use console::style;
-// use duct::cmd;
 use crate::prelude::*;
-
 
 #[derive(Debug, Clone, Serialize)]
 pub struct PackageJson {
@@ -24,9 +20,6 @@ pub struct PackageJson {
 }
 
 pub struct MacOS {
-
-    // pub dmg_app_name : String,
-    // pub app_root_folder : PathBuf,
     pub nwjs_root_folder : PathBuf,
     pub app_contents_folder : PathBuf,
     pub app_resources_folder : PathBuf,
@@ -38,7 +31,6 @@ pub struct MacOS {
 #[async_trait]
 impl Installer for MacOS {
     async fn create(&self, installer_type: InstallerType) -> Result<Vec<PathBuf>> {
-        // println!("[macos] creating {:?} installer",installer_type);
 
         self.copy_nwjs_bundle().await?;
         self.copy_app_data().await?;
@@ -47,11 +39,7 @@ impl Installer for MacOS {
         // self._create_package_json(ctx).await?;
         self.generate_icons().await?;
 
-        // self.rename_plist(ctx).await?;
-
         log!("MacOS","creating {:?} installer",installer_type);
-        // Ok(())
-
 
         match installer_type {
             InstallerType::Archive => {
@@ -71,18 +59,14 @@ impl Installer for MacOS {
 impl MacOS {
 
     pub fn new(ctx: Arc<Context>) -> MacOS {
-        // let app_root_folder : PathBuf = Path::new(&ctx.cargo_target_folder).join(&ctx.manifest.package.title).join("nw.app");
 
         let nwjs_root_folder = ctx.build_folder.join(format!("{}.app", &ctx.manifest.application.title));
         MacOS {
-            // app_root_folder : 
             app_contents_folder: nwjs_root_folder.join("Contents"),
             app_resources_folder: nwjs_root_folder.join("Contents").join("Resources"),
             app_nw_folder: nwjs_root_folder.join("Contents").join("Resources").join("app.nw"),
             nwjs_root_folder,
-            ctx : ctx.clone(),
-            // ctx : ctx.clone(),
-            // app_root_folder: PathBuf::from("/Applications"),
+            ctx,
         }
     }
 
@@ -106,7 +90,6 @@ impl MacOS {
         let mut options = dir::CopyOptions::new();
         options.content_only = true;
         options.overwrite = true;
-        // options.skip_exist = true;
         
         log!("Integrating","application data");
         dir::copy(
@@ -114,7 +97,6 @@ impl MacOS {
             &self.app_nw_folder, 
             &options
         )?;
-
 
         Ok(())
     }
@@ -132,36 +114,23 @@ impl MacOS {
         Ok(())
     }
 
-    
-
     async fn generate_icons(&self) -> Result<()> {
 
-        log!("MacOS","generating application icons");
+        log!("MacOS","generating icons");
         
         let app_icon = self.ctx.setup_resources_folder.join("app.png");
-        // generate_icns_sips(ctx,&app_icon, &self.app_resources_folder.join("app.icns")).await?;
+        // self._generate_icns_sips(&app_icon, &self.app_resources_folder.join("app.icns")).await?;
         self.generate_icns_internal(&app_icon, &self.app_resources_folder.join("app.icns")).await?;
-        log!("MacOS","generating document icons");
         let document_icon = self.ctx.setup_resources_folder.join("document.png");
-        // generate_icns_sips(ctx,&document_icon, &self.app_resources_folder.join("document.icns")).await?;
+        // self._generate_icns_sips(&document_icon, &self.app_resources_folder.join("document.icns")).await?;
         self.generate_icns_internal(&document_icon, &self.app_resources_folder.join("document.icns")).await?;
-
-        // let dmg_background = ctx.app_resources_folder.join("dmg.png");
-
-
 
         Ok(())
     }
 
+    async fn _generate_icns_sips(&self, png: &PathBuf, icns: &PathBuf) -> Result<()> {
 
-}
-
-
-impl MacOS {
-
-    async fn _generate_icns_sips(ctx: &Context, png: &PathBuf, icns: &PathBuf) -> Result<()> {
-
-        let iconset_folder = ctx.cargo_target_folder.join("icns.iconset");
+        let iconset_folder = self.ctx.cargo_target_folder.join("icns.iconset");
         if !std::path::Path::new(&iconset_folder).exists() {
             std::fs::create_dir_all(&iconset_folder)?;
         }
@@ -170,20 +139,17 @@ impl MacOS {
         for size in sizes {
             let raw = size*2;
             let name = format!("icon_{}x{}@2.png", size, size);
-            // println!("[icns] {}", name);
             cmd!("sips","-z",format!("{raw}"),format!("{raw}"),png,"--out",&iconset_folder.join(name))//.run()?;
-            .stdin_null().read()?;
+                .stdin_null().read()?;
 
             let name = format!("icon_{}x{}.png", size, size);
-            // println!("[icns] {}", name);
             cmd!("sips","-z",format!("{size}"),format!("{size}"),png,"--out",&iconset_folder.join(name))//.run()?;
-            .stdin_null().read()?;
+                .stdin_null().read()?;
         }
 
-        // println!("[icns] creating icns");
         cmd!("iconutil","-c","icns","--output",icns,"icns.iconset")
-        .dir(&ctx.cargo_target_folder)
-        .run()?;
+            .dir(&self.ctx.cargo_target_folder)
+            .run()?;
 
         std::fs::remove_dir_all(iconset_folder)?;
 
@@ -195,7 +161,6 @@ impl MacOS {
         let mut src = image::open(png)
             .expect(&format!("Unable to open {:?}", png));
 
-        // The dimensions method returns the images width and height.
         let dimensions = src.dimensions();
         if dimensions.0 != 1024 || dimensions.1 != 1024 {
             println!("");
@@ -203,12 +168,6 @@ impl MacOS {
             println!("         ^^^ icon dimensions are {}x{}; must be 1024x1024", dimensions.0,dimensions.1);
             println!("");
         }
-        // println!("dimensions {:?}", src.dimensions());
-
-        // The color method returns the image's `ColorType`.
-        // println!("{:?}", img.color());
-        // Write the contents of this image to the Writer in PNG format.
-        // img.save("test.png").unwrap();
 
         let iconset_folder = self.ctx.cargo_target_folder.join("icns.iconset");
         if !std::path::Path::new(&iconset_folder).exists() {
@@ -227,16 +186,13 @@ impl MacOS {
         for size in sizes {
             let dest = src.resize(size*2,size*2,resize_filter_type);
             let name = format!("icon_{}x{}@2.png", size, size);
-            // log!("icns","{}", name);
             dest.save(iconset_folder.join(name)).unwrap();
             let dest = src.resize(size,size,resize_filter_type);
             let name = format!("icon_{}x{}.png", size, size);
-            // println!("[icns] {}", name);
             dest.save(iconset_folder.join(name)).unwrap();
             src = dest;
         }
 
-        // iconutil -c icns kdx-icon.iconset
         cmd!("iconutil","-c","icns","--output",icns,"icns.iconset")
             .dir(&self.ctx.cargo_target_folder)
             .run()?;
@@ -268,9 +224,7 @@ impl MacOS {
 
     async fn generate_resource_strings(&self, app_contents_folder: &PathBuf) -> Result<()> {
 
-
         let app_title = &self.ctx.manifest.application.title;
-        // let authors = if let Some(authors) = &manifest.application.authors { authors.as_str() } else { "" };
         let version = &self.ctx.manifest.application.version;
         let year = format!("{}", chrono::Utc::now().year());
 
@@ -280,7 +234,7 @@ impl MacOS {
         } else if let Some(authors) = &self.ctx.manifest.application.authors {
             format!("Copyright {year} {authors}")
         } else {
-            format!("Copyright {year} {app_title} developers")
+            format!("Copyright {year} {app_title} Developers")
         };
         
         let _resource_text = format!("\
@@ -292,11 +246,11 @@ impl MacOS {
     // CFBundleGetInfoString = \"nwjs 107.0.5304.88, Copyright 2022 The Chromium Authors, NW.js contributors, Node.js. All rights reserved.\";\n\
 
     let resource_text = format!("\
-    CFBundleGetInfoString = \"{app_title} {version} {copyright}, Copyright 2022 The Chromium Authors, NW.js contributors, Node.js. All rights reserved.\";\n\
+    CFBundleGetInfoString = \"{app_title} {version} {copyright}, The Chromium Authors, NW.js contributors, Node.js. All rights reserved.\";\n\
     NSBluetoothAlwaysUsageDescription = \"Once Chromium has access, websites will be able to ask you for access.\";\n\
     NSBluetoothPeripheralUsageDescription = \"Once Chromium has access, websites will be able to ask you for access.\";\n\
     NSCameraUsageDescription = \"Once Chromium has access, websites will be able to ask you for access.\";\n\
-    NSHumanReadableCopyright = \"{copyright}, Copyright 2022 The Chromium Authors, NW.js contributors, Node.js. All rights reserved.\";\n\
+    NSHumanReadableCopyright = \"{app_title} {version} {copyright}, The Chromium Authors, NW.js contributors, Node.js. All rights reserved.\";\n\
     NSLocationUsageDescription = \"Once Chromium has access, websites will be able to ask you for access.\";\n\
     NSMicrophoneUsageDescription = \"Once Chromium has access, websites will be able to ask you for access.\";\n\
     ");
@@ -320,11 +274,9 @@ impl MacOS {
 
     async fn rename_app_bundle(&self, app_contents_folder: &PathBuf) -> Result<()> {
 
-        // let app_name = app_name.to_lowercase();
-        log!("MacOS","renaming application bundle");
+        log!("MacOS","configuring application bundle");
 
         let plist_file = app_contents_folder.join("info.plist");
-        // println!("plist: {:?}", plist_file);
         self.plist_bundle_rename(
             &plist_file, 
             &self.ctx.manifest.application.title,
@@ -403,16 +355,7 @@ impl MacOS {
                     set current view of container window to icon view\n\
                     set toolbar visible of container window to false\n\
                     set statusbar visible of container window to false\n\
-                    #set the size of container window to {{{window_width}, {window_height}}}\n\
-                    #set the bounds of container window to {{100, 100, 500, 500}}\n\
-                    #set the bounds of container window to {{{window_l}, {window_t}, {window_width}, {window_height}}}\n\
                     set the bounds of container window to {{{window_l}, {window_t}, {window_r}, {window_b}}}\n\
-                    #set the bounds of container window to {{{window_t}, {window_l}, {window_r}, {window_b}}}\n\
-                    #set position of container window to {{{window_t}, {window_l}}}\n\
-                    #delay 1\n\
-                    #delay 1\n\
-                    #set position of container window to {{{window_t}, {window_l}}}\n\
-                    #set size of container window to {{{window_width}, {window_height}}}\n\
                     set theViewOptions to the icon view options of container window\n\
                     set arrangement of theViewOptions to not arranged\n\
                     set icon size of theViewOptions to {icon_size}\n\
@@ -420,8 +363,7 @@ impl MacOS {
                     set position of item \"{app_title}.app\" of container window to {{{icon_l}, {icon_t}}}\n\
                     set position of item \"Applications\" of container window to {{{apps_icon_l}, {apps_icon_t}}}\n\
                     update without registering applications\n\
-                    #delay 5\n\
-                    delay 10\n\
+                    delay 5\n\
                     close\n\
                 end tell\n\
             end tell\n\
@@ -429,23 +371,15 @@ impl MacOS {
 
         // make new alias file at container window to POSIX file "/Applications" with properties {name:"Applications"}
 
-        // this.log("Applying AppleScript configuration...".green);
-
         let osa_script_file = self.ctx.build_folder.join("osa");
         fs::write(&osa_script_file, script).await?;
-
-        // fs.writeFileSync(path.join(this.DEPS,'osa'), script);
-
-        //   this.spawn('osascript',"osa".split(" "), { cwd : this.DEPS, stdio : 'inherit' })
 
         cmd!(
             "osascript",
             osa_script_file.to_str().unwrap()
         ).stdout_null().run()?;
 
-        // TODO - cleanup script
-        // std::fs::remove_file(osa_script_file)?;
-    // panic!("aborting...");
+        std::fs::remove_file(osa_script_file)?;
 
         Ok(())
     }
@@ -458,7 +392,6 @@ impl MacOS {
         let to = background_folder.join(format!("{}.png", self.ctx.manifest.application.name));
         fs::copy(from,to).await?;
 
-        // let applications_symlink = Path::new(mountpoint)
         std::os::unix::fs::symlink("/Applications",mountpoint.join("Applications"))?;
 
         Ok(())
@@ -531,11 +464,11 @@ impl MacOS {
             build_dmg_file,
         ).stdout_null().run()?;
 
-        log!("DMG","configuring");
+        log!("DMG","configuring DMG window");
         self.copy_dmg_files(&mountpoint).await?;
         self.osa_script().await?;
+        log!("DMG","configuring DMG icon");
         self.configure_dmg_icon(&mountpoint).await?;
-    // cmd!("").read()?;
 
         log!("DMG","sync");
         cmd!("sync").stdout_null().run()?;
@@ -563,7 +496,6 @@ impl MacOS {
         log!("DMG","resulting DMG size: {:.2}Mb", dmg_size/1024.0/1024.0);
 
         Ok(output_dmg_file.clone())
-
     }
 
 }
