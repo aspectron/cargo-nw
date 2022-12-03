@@ -2,7 +2,6 @@ use cfg_if::cfg_if;
 use async_std::path::Path;
 use async_std::path::PathBuf;
 use async_std::fs;
-use async_std::task::sleep;
 use fs_extra::dir;
 use image::imageops::FilterType;
 use serde::Serialize;
@@ -10,8 +9,8 @@ use image::GenericImageView;
 use duct::cmd;
 use regex::Regex;
 use chrono::Datelike;
-use console::style;
 use crate::prelude::*;
+use super::dmg::DMG;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct PackageJson {
@@ -46,7 +45,21 @@ impl Installer for MacOS {
                 Ok(vec![])
             },
             InstallerType::DMG => {
-                let dmg_file = self.create_dmg().await?;
+
+                let dmg = DMG::new(
+                    &self.ctx.manifest.application.name,
+                    &self.ctx.manifest.application.title,
+                    &self.ctx.manifest.application.version,
+                    &self.ctx.platform.to_string(),
+                    &self.ctx.arch.to_string(),
+                    &self.nwjs_root_folder,
+                    &self.app_resources_folder.join("app.icns"),
+                    &self.ctx.setup_resources_folder.join("background.png"),
+                    &self.ctx.build_folder,
+                    &self.ctx.output_folder
+                );
+
+                let dmg_file = dmg.create().await?;// self.create_dmg().await?;
                 Ok(vec![dmg_file.into()])
             },
             _ => {
@@ -321,181 +334,6 @@ impl MacOS {
         }
     */    
         Ok(())
-    }
-
-
-    async fn osa_script(&self) -> Result<()> {
-
-        // let caption_bar_height = 48;
-        let caption_bar_height = 59;
-        let window_width = 485;
-        let window_height = 330+caption_bar_height;//+400;
-        let window_l = 200;
-        let window_t = 200;
-        let window_r = window_l + window_width;
-        let window_b = window_t + window_height;
-        let icon_size = 72;
-        let icon_t = 158; // Math.round(150 - iconSize / 2);
-        let icon_l = 100;
-
-        let apps_icon_t = icon_t;
-        let apps_icon_l = window_width - 100;
-
-        let app_name = &self.ctx.manifest.application.name;
-        let app_title = &self.ctx.manifest.application.title;
-
-        // set the bounds of container window to {{{window_t}, {window_l}, {window_r}, {window_b}}}\n\
-        
-        let script = 
-        format!("\
-            tell application \"Finder\"\n\
-                tell disk \"{app_title}\"\n\
-                    open\n\
-                    delay 1\n\
-                    set current view of container window to icon view\n\
-                    set toolbar visible of container window to false\n\
-                    set statusbar visible of container window to false\n\
-                    set the bounds of container window to {{{window_l}, {window_t}, {window_r}, {window_b}}}\n\
-                    set theViewOptions to the icon view options of container window\n\
-                    set arrangement of theViewOptions to not arranged\n\
-                    set icon size of theViewOptions to {icon_size}\n\
-                    set background picture of theViewOptions to file \".background:{app_name}.png\"\n\
-                    set position of item \"{app_title}.app\" of container window to {{{icon_l}, {icon_t}}}\n\
-                    set position of item \"Applications\" of container window to {{{apps_icon_l}, {apps_icon_t}}}\n\
-                    update without registering applications\n\
-                    delay 5\n\
-                    close\n\
-                end tell\n\
-            end tell\n\
-        ");
-
-        // make new alias file at container window to POSIX file "/Applications" with properties {name:"Applications"}
-
-        let osa_script_file = self.ctx.build_folder.join("osa");
-        fs::write(&osa_script_file, script).await?;
-
-        cmd!(
-            "osascript",
-            osa_script_file.to_str().unwrap()
-        ).stdout_null().run()?;
-
-        std::fs::remove_file(osa_script_file)?;
-
-        Ok(())
-    }
-
-    async fn copy_dmg_files(&self, mountpoint: &PathBuf) -> Result<()> {
-        let background_folder = mountpoint.join(".background");
-        std::fs::create_dir_all(&background_folder)?;
-
-        let from = self.ctx.setup_resources_folder.join("background.png");
-        let to = background_folder.join(format!("{}.png", self.ctx.manifest.application.name));
-        fs::copy(from,to).await?;
-
-        std::os::unix::fs::symlink("/Applications",mountpoint.join("Applications"))?;
-
-        Ok(())
-    }
-
-    async fn configure_dmg_icon(&self, mountpoint: &PathBuf) -> Result<()> {
-        let icns = self.app_resources_folder.join("app.icns");
-        let volume_icns = mountpoint.join(".VolumeIcon.icns");
-        println!("volume_icns: {}", volume_icns.to_str().unwrap());
-        std::fs::copy(icns,&volume_icns)?;
-        cmd!("setfile","-c","icnC", volume_icns).stdout_null().run()?;
-        cmd!("setfile","-a","C", mountpoint).stdout_null().run()?;
-        Ok(())
-    }
-
-    async fn create_dmg(
-        &self,
-    ) -> Result<PathBuf> {
-
-        let filename = 
-        format!("{}-{}-{}-{}",
-            self.ctx.manifest.application.name,
-            self.ctx.manifest.application.version,
-            self.ctx.platform,
-            self.ctx.arch,
-        );
-        let build_dmg_file = &self.ctx.build_folder.join(format!("{filename}.build.dmg"));
-        let output_dmg_file = &self.ctx.output_folder.join(format!("{filename}.dmg"));
-
-        let volume_name = &self.ctx.manifest.application.title;
-        let mountpoint = PathBuf::from(format!("/Volumes/{volume_name}"));
-
-        if std::path::Path::new(&mountpoint).exists() {
-            log!("DMG","{}",style("detaching existing DMG image").yellow());
-            cmd!(
-                "hdiutil",
-                "detach",&mountpoint
-            ).stdout_null().run()?;
-        }
-
-        if std::path::Path::new(build_dmg_file).exists() {
-            std::fs::remove_file(build_dmg_file)?;
-        }
-
-        if std::path::Path::new(output_dmg_file).exists() {
-            std::fs::remove_file(output_dmg_file)?;
-        }
-
-        log!("DMG","creating (UDRW HFS+)");
-        cmd!(
-            "hdiutil",
-            "create",
-            "-volname", volume_name,
-            "-srcfolder", &self.nwjs_root_folder,
-            "-ov",
-            "-fs","HFS+",
-            "-format","UDRW",
-            build_dmg_file
-        ).stdout_null().run()?;
-
-        // println!("vvv: {:?}", vvv);
-
-        log!("DMG","attaching");
-        cmd!(
-            "hdiutil", 
-            "attach",
-            "-readwrite",
-            "-noverify",
-            "-noautoopen",
-            build_dmg_file,
-        ).stdout_null().run()?;
-
-        log!("DMG","configuring DMG window");
-        self.copy_dmg_files(&mountpoint).await?;
-        self.osa_script().await?;
-        log!("DMG","configuring DMG icon");
-        self.configure_dmg_icon(&mountpoint).await?;
-
-        log!("DMG","sync");
-        cmd!("sync").stdout_null().run()?;
-        sleep(std::time::Duration::from_millis(1000)).await;
-        cmd!("sync").stdout_null().run()?;
-
-        log!("DMG","detaching");
-        cmd!(
-            "hdiutil",
-            "detach",&mountpoint
-        ).stdout_null().run()?;
-
-        log!("DMG","compressing (UDZO)");
-        cmd!(
-            "hdiutil",
-            "convert",
-            "-format", "UDZO",
-            "-imagekey",
-            "zlib-level=9",
-            "-o",output_dmg_file, 
-            build_dmg_file
-        ).stdout_null().run()?;
-
-        let dmg_size = std::fs::metadata(output_dmg_file)?.len() as f64;
-        log!("DMG","resulting DMG size: {:.2}Mb", dmg_size/1024.0/1024.0);
-
-        Ok(output_dmg_file.clone())
     }
 
 }

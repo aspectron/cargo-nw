@@ -13,7 +13,7 @@ resources = "resources"
 version = "0.70.1"
 ffmpeg = true
 
-[dmg]
-window = ["0,0,300,300"]
-icon = ["0,0"]
-applications = ["0,0"]
+# [dmg]
+# window = ["0,0,300,300"]
+# icon = ["0,0"]
+# applications = ["0,0"]
