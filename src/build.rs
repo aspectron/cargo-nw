@@ -47,23 +47,29 @@ impl Build {
         
         self.ctx.ensure_folders().await?;
 
+        // let installer = match installer_type
 
         let installer: Box<dyn Installer> = match &self.ctx.platform {
             Platform::Windows => {
                 Box::new(windows::Windows::new(self.ctx.clone()))
                 
-
+                
             },
             Platform::Linux => {
                 Box::new(linux::Linux::new(self.ctx.clone()))
-
+                
             },
             Platform::MacOS => {
-                Box::new(macos::MacOS::new(self.ctx.clone()))
+                Box::new(windows::Windows::new(self.ctx.clone()))
+                // Box::new(macos::MacOS::new(self.ctx.clone()))
             }
         };
 
         let files = installer.create(installer_type).await?;
+
+        if files.is_empty() {
+            panic!("Build produced no output");
+        }
 
         let duration = ts_start.elapsed();
         let package_name = files[0].to_str().unwrap();

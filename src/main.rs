@@ -97,9 +97,10 @@ pub async fn async_main() -> Result<()> {
             } else {
                 match platform {
                     Platform::Windows => InstallerType::InnoSetup,
+                    Platform::MacOS => InstallerType::InnoSetup,
                     // FIXME - allow user to specify package manager
                     Platform::Linux => InstallerType::Archive,
-                    Platform::MacOS => InstallerType::DMG,
+                    // Platform::MacOS => InstallerType::DMG,
                 }
             };
 

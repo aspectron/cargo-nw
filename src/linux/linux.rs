@@ -2,13 +2,13 @@ use async_std::path::PathBuf;
 use crate::prelude::*;
 
 pub struct Linux {
-    ctx : Arc<Context>,
+    _ctx : Arc<Context>,
 }
 
 impl Linux {
-    pub fn new(ctx: Arc<Context>) -> Linux {
+    pub fn new(_ctx: Arc<Context>) -> Linux {
         Linux {
-            ctx
+            _ctx
         }
     }
 }
