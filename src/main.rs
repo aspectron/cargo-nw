@@ -21,6 +21,7 @@ pub mod macos;
 pub mod linux;
 pub mod windows;
 pub mod log;
+pub mod init;
 
 use prelude::*;
 // mod repository;
@@ -189,6 +190,11 @@ pub async fn async_main() -> Result<()> {
         },
         Action::Init { js } => {
             println!("TODO - init template project...");
+
+            let project = init::Project::try_new()?;
+
+            project.generate()?;
+
         }
     }
 
