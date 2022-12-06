@@ -80,6 +80,12 @@ enum Action {
         #[clap(long)]
         all : bool,
     },
+
+    Init {
+        #[clap(long)]
+        js : bool,
+        
+    }
 }
 
 
@@ -181,6 +187,9 @@ pub async fn async_main() -> Result<()> {
                 // let run = manifest.run.expect("no run directive found");
                 // run.execute().await?;
         },
+        Action::Init { js } => {
+            println!("TODO - init template project...");
+        }
     }
 
     Ok(())
