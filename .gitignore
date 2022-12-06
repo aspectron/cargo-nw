@@ -2,3 +2,4 @@
 /target
 /Cargo.lock
 /test/target
+/src/windows/resources

@@ -1,7 +1,8 @@
 use std::env::current_dir;
-use serde::Deserialize;
+// use serde::Deserialize;
 use async_std::fs::*;
-use crate::result::Result;
+// use crate::result::Result;
+use crate::prelude::*;
 // use crate::repository::Repository;
 // use crate::build::Build;
 // use crate::run::Run;
@@ -16,6 +17,9 @@ pub struct Manifest {
     pub windows : Option<Windows>,
     pub firewall : Option<Firewall>,
     pub languages : Option<Languages>,
+
+    pub build : Option<Vec<Build>>,
+    pub deploy : Option<Vec<Deploy>>,
 }
 
 impl Manifest {
@@ -107,5 +111,30 @@ pub struct Firewall {
 #[derive(Debug, Clone, Deserialize)]
 pub struct Languages {
     pub languages: Option<Vec<String>>,
+}
+
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Build {
+    pub cmd: String,
+    pub folder: String
+}
+
+impl Build {
+    pub async fn execute(&self) -> Result<&Self> {
+        let cwd = std::env::current_dir()?;
+
+        let argv : Vec<String> = self.cmd.split(" ").map(|s|s.to_string()).collect();
+        let program = argv.first().expect("missing program in build config");
+        let args = argv[1..].to_vec();
+        cmd(program,args).dir(cwd.join(&self.folder)).run()?;
+
+        Ok(self)
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Deploy {
+    pub cmd: String,
 }
 

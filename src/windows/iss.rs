@@ -240,8 +240,6 @@ impl ISS {
             "in+out"
         );
 
-        // ^ TODO FW RULES FROM TOML
-
         if self.run_after_setup.unwrap_or(false) {
             let run = iss.run();
             run.exec(
@@ -255,10 +253,15 @@ impl ISS {
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         let iss_text = iss.to_string();
-
         let iss_file = self.build_folder.join(format!("{}.iss",self.app_name));
         std::fs::write(&iss_file, &iss_text)?;
 
+        log!("InnoSetup","building...");
+        cmd!(INNO_SETUP_COMPIL32, "/cc", iss_file).stdin_null().run()?;
+        let setup_size = std::fs::metadata(&self.output_file)?.len() as f64;
+        log!("InnoSetup","resulting setup size: {:.2}Mb", setup_size/1024.0/1024.0);
+        // let code = await this.utils.spawn(,['/cc', path.join(this.TEMP,this.ident+'-impl.iss')], { cwd : this.ROOT, stdio : 'inherit' });
+			
         Ok(())
     }
 

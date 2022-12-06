@@ -23,16 +23,27 @@ use crate::{windows,linux,macos};
 // this.NWJS_SUFFIX = { windows : 'win', darwin : 'osx', linux : 'linux' }[PLATFORM];
 // 		this.NWJS_ARCHIVE_EXTENSION = { windows : 'zip', darwin : 'zip', 'linux' : 'tar.gz' }[PLATFORM];
 
-pub struct Build {
+pub struct Builder {
     pub ctx : Arc<Context>
 }
 
-impl Build {
+impl Builder {
     pub fn new(ctx: Arc<Context>) -> Self {
-        Build {
+        Builder {
             ctx
         }
     }
+
+    // pub async fn execute(&self) -> Result<&Self> {
+    //     let cwd = std::env::current_dir()?;
+
+    //     let argv : Vec<String> = self.cmd.split(" ").map(|s|s.to_string()).collect();
+    //     let program = argv.first().expect("missing program in build config");
+    //     let args = argv[1..].to_vec();
+    //     cmd(program,args).dir(cwd.join(&self.folder)).run()?;
+
+    //     Ok(self)
+    // }
 
     pub async fn execute(&self, installer_type: InstallerType) -> Result<()> {
 

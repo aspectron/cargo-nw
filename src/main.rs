@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, str::FromStr};
 
 // use crate::manifest::*;
 // use crate::result::Result;
@@ -10,7 +10,7 @@ pub mod error;
 pub mod result;
 pub mod manifest;
 // pub mod dmg;
-pub mod build;
+pub mod builder;
 pub mod utils;
 pub mod platform;
 pub mod context;
@@ -63,6 +63,12 @@ enum Action {
         #[clap(short, long)]
         archive : bool,
         
+
+        #[clap(short, long)]
+        target : Option<Vec<Target>>,
+        
+        #[clap(subcommand)]
+        default: Option<Target>
         // #[clap(short, long)]
         // target : Option<String>,
 
@@ -77,19 +83,49 @@ enum Action {
 }
 
 
+// #[derive(Debug, clap::Args)]
+#[derive(Debug, Subcommand)]
+enum Target {
+    DMG,
+    Archive,
+    // DMG_Archive,
+    // #[clap(subcommand)]
+    // dmg : bool,
+    // action : Action,
+    // #[clap(short, long)]
+    // verbose : Option<bool>,
+}
+
+impl FromStr for Target {
+    type Err = Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err>
+    {
+        match s {
+            "dmg" => Ok(Target::DMG),
+            "archive" => Ok(Target::Archive),
+            // "dmg+archive" => Ok(Target::DMG_Archive),
+            _ => Err(format!("Unsupported target: {}", s).into()),
+        }
+    }
+}
+
 pub async fn async_main() -> Result<()> {
     
     // let cwd = std::env::current_dir()?;
     let args = Cmd::parse();
+    let action = match args { Cmd::Args(args) => args.action };
+    println!("action: {:?}", action);
+
     let platform = Platform::default();
     let arch = Architecture::default();
     let manifest = Manifest::load().await?;
-    let action = match args { Cmd::Args(args) => args.action };
     match action {
         Action::Build {
             sdk,
             // target,
             archive,
+            target,
+            default
         } => {
 
             let installer_type = if archive {
@@ -113,7 +149,7 @@ pub async fn async_main() -> Result<()> {
             println!("");
 
             // println!("build context: {:#?}", ctx);
-            let build = Build::new(ctx);
+            let build = Builder::new(ctx);
             build.execute(installer_type).await?;
             // for build in manifest.build.expect("no build directives found").iter() {
             //     build.execute().await?;

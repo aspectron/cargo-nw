@@ -6,7 +6,7 @@ pub use crate:: {
     context::*,
     platform::*,
     deps::*,
-    build::*,
+    builder::*,
     utils::*,
     installer::*,
     log::*,
@@ -14,5 +14,8 @@ pub use crate:: {
 
 pub use async_trait::async_trait;
 pub use std::sync::Arc;
+pub use duct::cmd;
+pub use serde::Deserialize;
+pub use crate::result::Result;
 
 
