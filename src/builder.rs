@@ -45,12 +45,12 @@ impl Builder {
     //     Ok(self)
     // }
 
-    pub async fn execute(&self, installer_type: InstallerType) -> Result<()> {
+    pub async fn execute(&self, targets: TargetSet) -> Result<()> {
 
 
         let ts_start = Instant::now();
         log!("Build","Building {} Version {}",style(&self.ctx.manifest.application.title).cyan(),style(&self.ctx.manifest.application.version).cyan());
-        log!("Build","Installer type: {}",style(format!("{:?}", installer_type)).cyan());
+        log!("Build","Installer type: {}",style(format!("{:?}", targets)).cyan());
 
         self.ctx.clean().await?;
         
@@ -76,15 +76,17 @@ impl Builder {
             }
         };
 
-        let files = installer.create(installer_type).await?;
+        let files = installer.create(targets).await?;
 
         if files.is_empty() {
             panic!("Build produced no output");
         }
 
         let duration = ts_start.elapsed();
-        let package_name = files[0].to_str().unwrap();
-        log!("Finished","package '{}' in {:.2}s", style(package_name).cyan(), duration.as_millis() as f64/1000.0);
+        // let package_name = files[0].to_str().unwrap();
+        // log!("Finished","{} package{} in {:.2}s", style(package_name).cyan(), duration.as_millis() as f64/1000.0);
+        // let suffix = files.len()
+        log!("Finished","build completed in{:.2}s", duration.as_millis() as f64/1000.0);
         println!("");
         Ok(())
     }

@@ -60,8 +60,8 @@ enum Action {
         #[clap(short, long)]
         sdk : Option<bool>,
 
-        #[clap(short, long)]
-        archive : bool,
+        // #[clap(short, long)]
+        // archive : bool,
         
 
         #[clap(short, long)]
@@ -83,18 +83,12 @@ enum Action {
 }
 
 
-// #[derive(Debug, clap::Args)]
-#[derive(Debug, Subcommand)]
-enum Target {
-    DMG,
-    Archive,
-    // DMG_Archive,
-    // #[clap(subcommand)]
-    // dmg : bool,
-    // action : Action,
-    // #[clap(short, long)]
-    // verbose : Option<bool>,
-}
+// cfg_if! {
+//     if #[cfg(target_os = "windows")] {
+
+//     } else if #[cfg(target_os = "macos")] {
+//     }
+// }
 
 impl FromStr for Target {
     type Err = Error;
@@ -102,8 +96,10 @@ impl FromStr for Target {
     {
         match s {
             "dmg" => Ok(Target::DMG),
+            #[cfg(target_os = "macos")]
             "archive" => Ok(Target::Archive),
-            // "dmg+archive" => Ok(Target::DMG_Archive),
+            #[cfg(target_os = "windows")]
+            "innosetup" => Ok(Target::InnoSetup),
             _ => Err(format!("Unsupported target: {}", s).into()),
         }
     }
@@ -123,22 +119,31 @@ pub async fn async_main() -> Result<()> {
         Action::Build {
             sdk,
             // target,
-            archive,
+            // archive,
             target,
             default
         } => {
 
-            let installer_type = if archive {
-                InstallerType::Archive
-            } else {
-                match platform {
-                    Platform::Windows => InstallerType::InnoSetup,
-                    Platform::MacOS => InstallerType::InnoSetup,
-                    // FIXME - allow user to specify package manager
-                    Platform::Linux => InstallerType::Archive,
-                    // Platform::MacOS => InstallerType::DMG,
-                }
-            };
+            // let installer_type = if archive {
+            //     Target::Archive
+            // } else {
+            //     match platform {
+            //         Platform::Windows => Target::InnoSetup,
+            //         Platform::MacOS => Target::InnoSetup,
+            //         // FIXME - allow user to specify package manager
+            //         Platform::Linux => Target::Archive,
+            //         // Platform::MacOS => InstallerType::DMG,
+            //     }
+            // };
+
+            let mut targets = TargetSet::new();
+            if let Some(target) = target {
+                targets.extend(target);
+            }
+
+            if let Some(default) = default {
+                targets.insert(default);
+            }
 
             let options = Options {
                 sdk : sdk.unwrap_or(false),
@@ -150,7 +155,7 @@ pub async fn async_main() -> Result<()> {
 
             // println!("build context: {:#?}", ctx);
             let build = Builder::new(ctx);
-            build.execute(installer_type).await?;
+            build.execute(targets).await?;
             // for build in manifest.build.expect("no build directives found").iter() {
             //     build.execute().await?;
             // }

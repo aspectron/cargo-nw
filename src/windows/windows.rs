@@ -21,34 +21,31 @@ impl Windows {
 
 #[async_trait]
 impl Installer for Windows {
-    async fn create(&self, installer_type: InstallerType) -> Result<Vec<PathBuf>> {
-        log!("Windows","creating {:?} installer",installer_type);
-
-        match installer_type {
-            InstallerType::Archive => {
-                Ok(vec![])
-            },
-            InstallerType::InnoSetup => {
-
-
-                let setup_script = ISS::new(
-                    self.ctx.clone()
-                    // &self.ctx.manifest.application.name,
-                    // &self.ctx.manifest.application.title,
-                    // &self.ctx.manifest.application.version,
-                    // &self.ctx.platform.to_string(),
-                    // &self.ctx.arch.to_string(),
-                    // self.nwjs_root_folder.clone(),
-                    // self.ctx.build_folder.clone(),
-                    // self.ctx.output_folder.clone(),
-                );
-
-                setup_script.create().await?;
-                Ok(vec![])
-            },
-            _ => {
-                Err(format!("Unsupported installer type: {:?}", installer_type).into())
-            }
+    async fn create(&self, targets: TargetSet) -> Result<Vec<PathBuf>> {
+        
+        if targets.contains(&Target::Archive) {
+            log!("Windows","creating archive");
+            
         }
+
+        if targets.contains(&Target::InnoSetup) {
+
+            let setup_script = ISS::new(
+                self.ctx.clone()
+                // &self.ctx.manifest.application.name,
+                // &self.ctx.manifest.application.title,
+                // &self.ctx.manifest.application.version,
+                // &self.ctx.platform.to_string(),
+                // &self.ctx.arch.to_string(),
+                // self.nwjs_root_folder.clone(),
+                // self.ctx.build_folder.clone(),
+                // self.ctx.output_folder.clone(),
+            );
+
+            setup_script.create().await?;
+        }
+
+        // ^ TODO - list all files...
+        Ok(vec![])
     }
 }

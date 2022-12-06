@@ -15,9 +15,9 @@ impl Linux {
 
 #[async_trait]
 impl Installer for Linux {
-    async fn create(&self, installer_type: InstallerType) -> Result<Vec<PathBuf>> {
+    async fn create(&self, targets: TargetSet) -> Result<Vec<PathBuf>> {
 
-        println!("[linux] creating {:?} installer",installer_type);
+        println!("[linux] creating {:?} installer", targets);
 
 
         Ok(vec![])

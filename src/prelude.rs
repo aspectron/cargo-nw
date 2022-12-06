@@ -12,6 +12,7 @@ pub use crate:: {
     log::*,
 };
 
+pub use cfg_if::cfg_if;
 pub use async_trait::async_trait;
 pub use std::sync::Arc;
 pub use duct::cmd;

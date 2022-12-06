@@ -29,7 +29,7 @@ pub struct MacOS {
 
 #[async_trait]
 impl Installer for MacOS {
-    async fn create(&self, installer_type: InstallerType) -> Result<Vec<PathBuf>> {
+    async fn create(&self, targets: TargetSet) -> Result<Vec<PathBuf>> {
 
         self.copy_nwjs_bundle().await?;
         self.copy_app_data().await?;
@@ -38,34 +38,35 @@ impl Installer for MacOS {
         // self._create_package_json(ctx).await?;
         self.generate_icons().await?;
 
-        log!("MacOS","creating {:?} installer",installer_type);
+        // log!("MacOS","creating {:?} installer",installer_type);
 
-        match installer_type {
-            InstallerType::Archive => {
-                Ok(vec![])
-            },
-            InstallerType::DMG => {
-
-                let dmg = DMG::new(
-                    &self.ctx.manifest.application.name,
-                    &self.ctx.manifest.application.title,
-                    &self.ctx.manifest.application.version,
-                    &self.ctx.platform.to_string(),
-                    &self.ctx.arch.to_string(),
-                    &self.nwjs_root_folder,
-                    &self.app_resources_folder.join("app.icns"),
-                    &self.ctx.setup_resources_folder.join("background.png"),
-                    &self.ctx.build_folder,
-                    &self.ctx.output_folder
-                );
-
-                let dmg_file = dmg.create().await?;// self.create_dmg().await?;
-                Ok(vec![dmg_file.into()])
-            },
-            _ => {
-                Err(format!("Unsupported installer type: {:?}", installer_type).into())
-            }
+        let mut files = Vec::new();
+        if targets.contains(&Target::Archive) {
+            log!("MacOS","creating archive");
+            
         }
+        
+        if targets.contains(&Target::DMG) {
+            log!("MacOS","creating DMG build");
+
+            let dmg = DMG::new(
+                &self.ctx.manifest.application.name,
+                &self.ctx.manifest.application.title,
+                &self.ctx.manifest.application.version,
+                &self.ctx.platform.to_string(),
+                &self.ctx.arch.to_string(),
+                &self.nwjs_root_folder,
+                &self.app_resources_folder.join("app.icns"),
+                &self.ctx.setup_resources_folder.join("background.png"),
+                &self.ctx.build_folder,
+                &self.ctx.output_folder
+            );
+
+            let dmg_file = dmg.create().await?;// self.create_dmg().await?;
+            files.push(dmg_file.into());
+        }
+
+        Ok(files)
     }
 }
 
