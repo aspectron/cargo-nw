@@ -11,7 +11,7 @@ use std::time::Instant;
 // use crate::context::*;
 
 use crate::prelude::*;
-use crate::{windows,linux,macos};
+// use crate::{windows,linux,macos};
 // pub struct NwjsFiles {
 //     ffmpeg : String,
 
@@ -48,6 +48,10 @@ impl Builder {
     pub async fn execute(&self, targets: TargetSet) -> Result<()> {
 
 
+        println!("{:#?}", self.ctx.manifest);
+
+        return Ok(());
+
         let ts_start = Instant::now();
         log!("Build","Building {} Version {}",style(&self.ctx.manifest.application.title).cyan(),style(&self.ctx.manifest.application.version).cyan());
         log!("Build","Installer type: {}",style(format!("{:?}", targets)).cyan());
@@ -60,21 +64,25 @@ impl Builder {
 
         // let installer = match installer_type
 
-        let installer: Box<dyn Installer> = match &self.ctx.platform {
-            Platform::Windows => {
-                Box::new(windows::Windows::new(self.ctx.clone()))
-                
-                
-            },
-            Platform::Linux => {
-                Box::new(linux::Linux::new(self.ctx.clone()))
-                
-            },
-            Platform::MacOS => {
-                Box::new(windows::Windows::new(self.ctx.clone()))
-                // Box::new(macos::MacOS::new(self.ctx.clone()))
+        cfg_if! {
+            if #[cfg(target_os = "windows")] {
+                let installer = Box::new(crate::windows::Windows::new(self.ctx.clone()));
+            } else if #[cfg(target_os = "macos")] {
+                let installer = Box::new(crate::macos::MacOS::new(self.ctx.clone()));
+                // Box::new(windows::Windows::new(self.ctx.clone()))
+            } else if #[cfg(target_os = "linux")] {
+                let installer = Box::new(crate::linux::Linux::new(self.ctx.clone()));
             }
-        };
+        }
+
+        // let installer: Box<dyn Installer> = match &self.ctx.platform {
+        //     Platform::Windows => {
+        //     },
+        //     Platform::Linux => {
+        //     },
+        //     Platform::MacOS => {
+        //     }
+        // };
 
         let files = installer.create(targets).await?;
 

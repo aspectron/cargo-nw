@@ -76,8 +76,11 @@ pub struct Application {
     pub name: String,
     pub title: String,
     pub version: String,
+    pub description: String,
+    pub organization: String,
     pub authors: Option<String>,
     pub copyright: Option<String>,
+    pub trademarks: Option<String>,
     pub resources: Option<String>,
     pub url: Option<String>,
     // port: Option<u64>,
@@ -90,7 +93,7 @@ pub struct NWJS {
     pub sdk: Option<bool>,
 }
 
-
+#[allow(non_snake_case)]
 #[derive(Debug, Clone, Deserialize)]
 pub struct Windows {
     pub uuid: String,
@@ -98,8 +101,36 @@ pub struct Windows {
     pub executable: Option<String>,
     pub run_on_startup: Option<String>,
     pub run_after_setup: Option<bool>,
+    pub setup_icon: Option<String>,
+
+    pub resources : Option<Vec<WindowsResourceString>>
+    // ~
+
+    // pub ProductName: Option<String>,
+    // pub ProductVersion: Option<String>,
+    // pub FileVersion: Option<String>,
+    // pub FileDescription: Option<String>,
+    // pub CompanyName: Option<String>,
+    // pub LegalCopyright: Option<String>,
+    // pub LegalTrademarks: Option<String>,
+    // pub InternalName: Option<String>,
+    // pub OriginalFilename: Option<String>,
+    // pub PrivateBuild: Option<String>,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub enum WindowsResourceString {
+    ProductName(String),
+    ProductVersion(String),
+    FileVersion(String),
+    FileDescription(String),
+    CompanyName(String),
+    LegalCopyright(String),
+    LegalTrademarks(String),
+    InternalName(String),
+    Custom { name : String, value : String },
+
+}
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Firewall {

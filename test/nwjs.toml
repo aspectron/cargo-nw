@@ -4,7 +4,8 @@ title = "NWJS Example"
 version = "0.1.0"
 # root = ".."
 resources = "resources"
-
+description = "Example project demonstrating cargo-nw functionality"
+organization = "ASPECTRON Inc"
 # [resources]
 # path = "resources"
 # icons = "sips"
@@ -23,6 +24,23 @@ uuid = "95BA9908-FF97-4281-8DCA-7461BC9EE058"
 group = "NWJS"
 run_on_startup = "everyone"
 run_after_setup = true
+
+resources = [
+    { CompanyName = "Hello" },
+    { Custom = { name = "ABC", value = "DEF" }},
+    { Custom = { name = "ABC", value = "DEF" }}
+]
+# resources
+# CompanyName
+# FileDescription
+# FileVersion
+# InternalName
+# LegalCopyright
+# LegalTrademarks
+# OriginalFilename
+# PrivateBuild
+# ProductName
+# ProductVersion
 
 [languages]
 languages = ["english","french"]

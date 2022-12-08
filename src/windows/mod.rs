@@ -1,4 +1,4 @@
 mod windows;
-pub use windows::*;
+pub use self::windows::*;
 mod innosetup;
 mod iss;

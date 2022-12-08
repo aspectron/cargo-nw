@@ -24,12 +24,13 @@ pub struct Context {
     pub arch : Architecture,
     
     pub home_folder : PathBuf,
-    // pub deps_dir : PathBuf,
+    /// Cargo `target` folder
     pub cargo_target_folder : PathBuf,
+    /// Source application folder
     pub app_root_folder : PathBuf,
+    /// Folder that contains setup resources
     pub setup_resources_folder : PathBuf,
-    // pub app_root_folder : PathBuf,
-    // pub build_cache_folder : PathBuf,
+    pub build_cache_folder : PathBuf,
     pub build_folder : PathBuf,
     pub output_folder : PathBuf,
     
@@ -57,7 +58,7 @@ impl Context {
         // };
 
         let build_folder : PathBuf = Path::new(&cargo_nwjs_target_folder).join("build");//.join(application_folder_name);
-        // let build_cache_folder : PathBuf = Path::new(&cargo_nwjs_target_folder).join("cache").join(&manifest.application.title);
+        let build_cache_folder : PathBuf = Path::new(&cargo_nwjs_target_folder).join("cache").join(&manifest.application.title);
         
         let app_root_folder : PathBuf = env::current_dir().unwrap().join("root").into();
         let setup_resources_folder : PathBuf = env::current_dir().unwrap().join(&manifest.application.resources.as_ref().unwrap_or(&"resources".to_string())).into();
@@ -78,7 +79,7 @@ impl Context {
             app_root_folder,
             setup_resources_folder,
 
-            // build_cache_folder,
+            build_cache_folder,
             output_folder,
 
             // app_root_folder,

@@ -22,6 +22,7 @@ pub struct ISS {
     app_exe_file: String,
     run_on_startup: Option<String>,
     run_after_setup: Option<bool>,
+    setup_icon_file: PathBuf,
     // // setup_icon : PathBuf,
     // // background_image : PathBuf,
     build_folder : PathBuf,
@@ -35,6 +36,7 @@ pub struct ISS {
 impl ISS {
     pub fn new(
         ctx: Arc<Context>,
+        setup_icon_file : PathBuf,
     ) -> ISS {
 
         let windows = ctx.manifest.windows.as_ref().expect("nwjs.toml missing [windows] section");
@@ -89,20 +91,16 @@ impl ISS {
             iss_filename,
             output_file,
             app_exe_file,
+            setup_icon_file,
             run_on_startup,
             run_after_setup,
         }
     }
 
-    pub async fn create(&self) -> Result<()> {
-
-        // self.check_innosetup_compiler()?;
-
+    pub async fn create(&self) -> Result<PathBuf> {
+        self.check_innosetup_compiler()?;
         self.generate_iss().await?;
-
-
-        Ok(())
-
+        Ok(self.output_file.clone())
     }
 
     pub fn check_innosetup_compiler(&self) -> Result<()> {
@@ -146,7 +144,8 @@ impl ISS {
                 ("UsePreviousAppDir","no"),
                 ("OutputBaseFilename",&self.iss_filename),
                 ("OutputDir",quote!(self.ctx.output_folder.to_str().unwrap())),
-                ("SetupIconFile",quote!(self.ctx.setup_resources_folder.join(format!("{}.ico",self.app_name)).to_str().unwrap())),
+                ("SetupIconFile",quote!(self.setup_icon_file.clone().into_os_string().into_string()?)),
+                // ("SetupIconFile",quote!(self.ctx.setup_resources_folder.join(format!("{}.ico",self.app_name)).to_str().unwrap())),
                 ("Compression","lzma/normal"),
                 ("SolidCompression","yes"),
                 // ;PrivilegesRequired=admin

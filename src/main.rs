@@ -17,11 +17,15 @@ pub mod context;
 pub mod deps;
 pub mod prelude;
 pub mod installer;
-pub mod macos;
-pub mod linux;
-pub mod windows;
 pub mod log;
 pub mod init;
+
+// #[cfg(target_os = "macos")]
+pub mod macos;
+// #[cfg(target_os = "linux")]
+pub mod linux;
+// #[cfg(target_os = "windows")]
+pub mod windows;
 
 use prelude::*;
 // mod repository;
