@@ -3,3 +3,4 @@
 /Cargo.lock
 /test/target
 /src/windows/templates
+/test-init

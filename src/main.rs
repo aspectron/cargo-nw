@@ -141,9 +141,6 @@ pub async fn async_main() -> Result<()> {
     let arch = Architecture::default();
     
     
-    let nw_toml = Manifest::locate(location).await?;
-    let manifest = Manifest::load(&nw_toml).await?;
-    let project_root = nw_toml.parent().unwrap(); //get_parent_folder_name(&nw_toml);
     match action {
         Action::Build {
             sdk,
@@ -153,7 +150,10 @@ pub async fn async_main() -> Result<()> {
             default
         } => {
 
-            // let installer_type = if archive {
+            // let nw_toml = Manifest::locate(location).await?;
+            // let manifest = Manifest::load(&nw_toml).await?;
+            // let project_root = nw_toml.parent().unwrap(); //get_parent_folder_name(&nw_toml);
+                    // let installer_type = if archive {
             //     Target::Archive
             // } else {
             //     match platform {
@@ -178,7 +178,14 @@ pub async fn async_main() -> Result<()> {
                 sdk : sdk.unwrap_or(false),
             };
 
-            let ctx = Arc::new(Context::create(platform,arch,manifest,project_root,options).await?);
+            let ctx = Arc::new(Context::create(
+                location,
+                platform,
+                arch,
+                // manifest,
+                // project_root,
+                options
+            ).await?);
 
             println!("... executing ...");
 
@@ -195,7 +202,15 @@ pub async fn async_main() -> Result<()> {
         } => {
             let deps = deps || all;
 
-            let ctx = Context::create(platform,arch,manifest,project_root,Options::default()).await?;
+            // let ctx = Context::create(platform,arch,manifest,project_root,Options::default()).await?;
+            let ctx = Arc::new(Context::create(
+                location,
+                platform,
+                arch,
+                // manifest,
+                // project_root,
+                Options::default()
+            ).await?);
             // println!("clean context: {:#?}", ctx);
 
             if deps {
@@ -221,9 +236,9 @@ pub async fn async_main() -> Result<()> {
                 folder.file_name().unwrap().to_str().unwrap().to_string()
             };
             // let name = name.as_ref().unwrap_or(folder.file_name().expect("").to_str().expect());
-            let project = init::Project::try_new(name, folder)?;
+            let mut project = init::Project::try_new(name, folder)?;
 
-            project.generate()?;
+            project.generate().await?;
 
         }
     }

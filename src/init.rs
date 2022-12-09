@@ -3,6 +3,8 @@ use async_std::path::PathBuf;
 use serde::Serialize;
 use async_std::fs;
 use convert_case::{Case, Casing};
+use question::{Answer, Question};
+use console::style;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct PackageJson {
@@ -92,14 +94,15 @@ const LIB_RS: &str = r###"
 
 #[derive(Debug)]
 pub struct Project {
-    name : String,
-    title : String,
-    folder : PathBuf,
+    pub name : String,
+    pub title : String,
+    pub folder : PathBuf,
 }
 
 impl Project {
     pub fn try_new(name: String, folder: PathBuf) -> Result<Project> {
 
+        let name = name.to_case(Case::Kebab);
         let title = name.from_case(Case::Lower).to_case(Case::Title);
 
         let nw_toml = folder.join("nw.toml");
@@ -116,12 +119,77 @@ impl Project {
         Ok(project)
     }
 
-    pub fn generate(&self) -> Result<()> {
+    pub async fn generate(&mut self) -> Result<()> {
+
+        // println!("TODO - init template project...");
+
+        let name = Question::new(&format!("Project name [default:'{}']:",style(&self.name).yellow())).ask();
+
+        if let Some(Answer::RESPONSE(name)) = name {
+
+            if !name.is_empty() {
+                // name.chars().all(char::is_alphanumeric)
+                // name.chars().all(char::is_alphanumeric)
+
+                if name.contains(" ") {
+                    println!("{}",style("\nError: project name can not contain spaces\n").red());
+                    std::process::exit(1);
+                }
+
+                // let name = name.to_lowercase().to_case(Case::Kebab);
+                let name = name.to_case(Case::Kebab);
+
+                if name != self.name {
+                    // self.title = name.from_case(Case::Kebab).to_case(Case::Camel);
+                    self.title = name.from_case(Case::Kebab).to_case(Case::Title);
+                }
+
+                self.name = name;
+            }
+        }
+        let title = Question::new(&format!("Project title [default:'{}']:",style(&self.title).yellow())).ask();
+
+        if let Some(Answer::RESPONSE(title)) = title {
+            if !title.is_empty() {
+                self.title = title;
+            }
+        }
+
+        println!("");
+        log!("Init","creating project...");
+        println!("");
+        // println!("name:{:?} title:{:?}",self.name,self.title);
 
         println!("{:?}", self);
 
-        println!("TODO - init template project...");
+        let package = PackageJson {
+            name : self.title.clone(),
+            main : "index.js".to_string()
+        };
+        let package_json = serde_json::to_string(&package).unwrap();
 
+        let files = [
+            ("nw.toml",NW_TOML),
+            ("package.json",&package_json),
+            ("index.js", INDEX_JS),
+            ("Cargo.toml", CARGO_TOML),
+            ("libr.rs", CARGO_TOML),
+            // ("",),
+            // ("",),
+            // ("",),
+            // ("",),
+            // ("",),
+
+        ];
+
+        for (filename, content) in files.iter() {
+            fs::write(filename,content).await?;
+        }
+
+        // let answer = Question::new("Continue?")
+        // .default(Answer::YES)
+        // .show_defaults()
+        // .confirm();
 
         // ^ TODO - create files
 

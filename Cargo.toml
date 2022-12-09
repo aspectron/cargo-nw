@@ -40,6 +40,7 @@ globmatch = "0.2.1"
 path-dedot = "3.0.18"
 sha2 = "0.10.6"
 serde_yaml = "0.9.14"
+question = "0.2.2"
 manual-serializer = { path="../manual-serializer" }
 
 

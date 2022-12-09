@@ -41,14 +41,20 @@ pub struct Context {
 
 impl Context {
     pub async fn create(
+        location : Option<String>,
         platform: Platform, 
         arch : Architecture,
-        manifest: Manifest,
-        project_root: &Path,
+        // manifest: Manifest,
+        // project_root: &Path,
         options: Options,
     ) -> Result<Context> {
         let home_folder: PathBuf = home::home_dir().unwrap().into();
         let cwd = current_dir().await;
+
+        let nw_toml = Manifest::locate(location).await?;
+        let manifest = Manifest::load(&nw_toml).await?;
+        let project_root = nw_toml.parent().unwrap();
+
         let cargo_toml_folder = search_upwards(&cwd,"Cargo.toml").await
             .map(|location|location.parent().unwrap().to_path_buf())
             .unwrap_or(cwd.clone());
