@@ -1,5 +1,5 @@
 use std::ffi::OsString;
-
+use globset::Error as GlobError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -19,7 +19,10 @@ pub enum Error {
     #[cfg(target_os = "windows")]
     #[error("Error: {0}")]
     #[cfg(target_os = "windows")]
-    WinRes(#[from] winres_edit::Error)
+    WinRes(#[from] winres_edit::Error),
+    
+    #[error("Error: {0}")]
+    GlobError(#[from] GlobError)
     
 }
 

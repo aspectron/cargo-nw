@@ -104,7 +104,8 @@ pub struct Application {
     pub resources: Option<String>,
     pub url: Option<String>,
     pub root: Option<String>,
-    // port: Option<u64>,
+    pub include: Option<Vec<String>>,
+    pub exclude: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

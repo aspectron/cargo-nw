@@ -1,9 +1,11 @@
 use flate2::read::GzDecoder;
 use tar::Archive;
-use std::fs;
-use std::io;
-// use async_std::path::Path;
+use async_std::fs;
+use std::collections::HashSet;
 use async_std::path::PathBuf;
+use async_std::path::Path;
+use globset::{Glob,GlobSet,GlobSetBuilder};
+use globmatch;
 
 use crate::prelude::*;
 
@@ -25,7 +27,7 @@ pub async fn extract(file: &PathBuf, dir: &PathBuf) -> Result<()> {
     if file_str.ends_with(".tar.gz") || file_str.ends_with(".tgz") {
         extract_tar_gz(file,dir)?;
     } else if file_str.ends_with(".zip") {
-        extract_zip(file,dir)?;
+        extract_zip(file,dir).await?;
     } else {
         return Err(format!("extract(): unsupported file type: {}", file_str).into());
     }
@@ -43,14 +45,14 @@ fn extract_tar_gz(file: &PathBuf, dir: &PathBuf) -> Result<()> {
     Ok(())
 }
 
-fn extract_zip(file: &PathBuf, dir: &PathBuf) -> Result<()> {
+async fn extract_zip(file: &PathBuf, dir: &PathBuf) -> Result<()> {
     // let args: Vec<_> = std::env::args().collect();
     // if args.len() < 2 {
     //     println!("Usage: {} <filename>", args[0]);
     //     return 1;
     // }
     // let fname = std::path::Path::new(&*args[1]);
-    let file_reader = fs::File::open(&file).unwrap();
+    let file_reader = std::fs::File::open(&file).unwrap();
     let mut archive = zip::ZipArchive::new(file_reader).unwrap();
 
     for i in 0..archive.len() {
@@ -69,7 +71,7 @@ fn extract_zip(file: &PathBuf, dir: &PathBuf) -> Result<()> {
 
         if (*file.name()).ends_with('/') {
             // println!("File {} extracted to \"{}\"", i, outpath.display());
-            fs::create_dir_all(&outpath).unwrap();
+            std::fs::create_dir_all(&outpath).unwrap();
         } else {
             // println!(
             //     "File {} extracted to \"{}\" ({} bytes)",
@@ -79,11 +81,11 @@ fn extract_zip(file: &PathBuf, dir: &PathBuf) -> Result<()> {
             // );
             if let Some(p) = outpath.parent() {
                 if !p.exists() {
-                    fs::create_dir_all(p).unwrap();
+                    std::fs::create_dir_all(p).unwrap();
                 }
             }
-            let mut outfile = fs::File::create(&outpath).unwrap();
-            io::copy(&mut file, &mut outfile).unwrap();
+            let mut outfile = std::fs::File::create(&outpath).unwrap();
+            std::io::copy(&mut file, &mut outfile).unwrap();
         }
 
         // Get and Set permissions
@@ -92,13 +94,13 @@ fn extract_zip(file: &PathBuf, dir: &PathBuf) -> Result<()> {
             use std::os::unix::fs::PermissionsExt;
 
             if let Some(mode) = file.unix_mode() {
-                fs::set_permissions(&outpath, fs::Permissions::from_mode(mode)).unwrap();
+                std::fs::set_permissions(&outpath, fs::Permissions::from_mode(mode)).unwrap();
             }
         }
     }
 
     Ok(())
-    // 0
+
 }
 
 pub async fn search_upwards(folder: &PathBuf, filename: &str) -> Option<PathBuf> {
@@ -126,10 +128,175 @@ pub async fn current_dir() -> PathBuf {
     std::env::current_dir().unwrap().into()
 }
 
+pub async fn copy_folder_with_glob_walk(case_sensitive : bool, src_folder: &Path, dest_folder: &Path, include_patterns: &[&str], exclude_patterns: &[&str]) -> Result<()> {
 
-// pub fn get_parent_folder_name(path: &PathBuf) -> Option<PathBuf> {
-//     path.parent()
-//         .and_then(|parent| parent.file_name())
-//         // .and_then(|file_name| file_name.to_str())
-//         // .map(|file_name| file_name.to_string())
-// }
+    let mut include = include_patterns.to_vec();
+    if include.is_empty() {
+        include.push("**");
+    }
+
+    let mut exclude_globs = globset::GlobSetBuilder::new();
+    for pattern in exclude_patterns {
+        exclude_globs.add(Glob::new(pattern)?);
+    }
+    let exclude_globs = exclude_globs.build()?;
+
+    let mut folders = HashSet::new();
+    let mut files = HashSet::new();
+    for pattern in include {
+        let builder = globmatch::Builder::new( pattern)
+            .case_sensitive(case_sensitive)
+            .build(src_folder)?;
+
+        for path in builder.into_iter().flatten() {
+            let relative = path.strip_prefix(src_folder).unwrap().to_path_buf();
+
+            if is_hidden(&relative) {
+                continue;
+            }
+
+            if !exclude_globs.is_empty() && exclude_globs.is_match(&relative) {
+                continue;
+            }
+
+            if path.is_dir() {
+                folders.insert(relative);
+            } else {
+                files.insert(relative);
+            }
+        }
+    }
+
+    for folder in folders {
+        std::fs::create_dir_all(dest_folder.join(folder))?; 
+    }
+
+    for file in files {
+        std::fs::copy(src_folder.join(&file),dest_folder.join(&file))?;
+    }
+
+    Ok(())
+}
+
+pub async fn copy_folder_with_glob_filters(
+    // case_sensitive : bool, 
+    src_folder: &Path, 
+    dest_folder: &Path, 
+    include_patterns: &[&str], 
+    exclude_patterns: &[&str],
+) -> Result<()> {
+
+    let ctx = GlobCtx::try_new(src_folder, include_patterns, exclude_patterns)?;
+    if ctx.include(src_folder) {
+        copy_folder_recurse(src_folder, dest_folder, &ctx)?;
+    }
+
+    Ok(())
+}
+
+pub struct GlobCtx {
+    root : PathBuf,
+    include : GlobSet,
+    exclude : GlobSet,
+}
+
+impl GlobCtx {
+    pub fn try_new(
+        base : &Path, 
+        include_patterns: &[&str], 
+        exclude_patterns: &[&str]
+    ) -> Result<GlobCtx> {
+
+        let mut include_globs = GlobSetBuilder::new();
+        let mut exclude_globs = GlobSetBuilder::new();
+
+        if include_patterns.is_empty() {
+            include_globs.add(Glob::new("**/*")?);
+        } else {
+            for pattern in include_patterns.iter() {
+                include_globs.add(Glob::new(pattern)?);
+            }
+        }
+    
+        for pattern in exclude_patterns.iter() {
+            exclude_globs.add(Glob::new(pattern)?);
+        }
+    
+        let include = include_globs.build()?;
+        let exclude = exclude_globs.build()?;
+        let root = base.to_path_buf();
+        let ctx = GlobCtx {
+            root : root.to_path_buf(),
+            include,
+            exclude
+        };
+
+        Ok(ctx)
+    }
+
+    pub fn include(&self, path : &Path)
+    -> bool 
+    // where P : AsRef<std::path::Path>
+    {
+        if is_hidden(path) {
+            return false;
+        }
+
+        let path = path.strip_prefix(&self.root).unwrap();
+
+        if !self.include.is_empty() &&  !self.include.is_match(path) {
+            return false;
+        }
+
+        if !self.exclude.is_empty() && self.exclude.is_match(path) {
+            return false;
+        }
+
+        true
+    }
+}
+
+pub fn is_hidden<P>(path: P) -> bool
+where
+    P: AsRef<std::path::Path>,
+{
+    let is_hidden = path
+        .as_ref()
+        .file_name()
+        .unwrap_or_else(|| path.as_ref().as_os_str())
+        .to_str()
+        .map(|s| s.starts_with('.'))
+        .unwrap_or(false);
+    is_hidden
+}
+
+
+pub fn copy_folder_recurse(src_folder: &Path, dest_folder: &Path, ctx : &GlobCtx) -> Result<()> {
+    std::fs::create_dir_all(dest_folder)?; 
+
+    let entries = std::fs::read_dir(src_folder)?;
+    for entry in entries {
+        let entry = entry?;
+        let path = entry.path();
+
+        if path.is_file() {
+            let src = src_folder.join(&path);
+            if ctx.include(&src) {
+                let dest = dest_folder.join(path.file_name().unwrap());
+                std::fs::copy(src, dest)?;
+            }
+        }
+
+        else if path.is_dir() {
+            let dir_name = path.file_name().unwrap();
+            let src_path = src_folder.join(dir_name);
+            let dest_path = dest_folder.join(dir_name);
+
+            if ctx.include(&src_path) {
+                copy_folder_recurse(&src_path, &dest_path, &ctx)?;
+            }
+        }
+    }
+
+    Ok(())
+}

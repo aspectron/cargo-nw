@@ -48,7 +48,9 @@ impl Context {
     ) -> Result<Context> {
         let home_folder: PathBuf = home::home_dir().unwrap().into();
         let cwd = current_dir().await;
-        let cargo_toml_folder = search_upwards(&cwd,"Cargo.toml").await.unwrap_or(cwd.clone());
+        let cargo_toml_folder = search_upwards(&cwd,"Cargo.toml").await
+            .map(|location|location.parent().unwrap().to_path_buf())
+            .unwrap_or(cwd.clone());
         let cargo_target_folder = cargo_toml_folder.join("target");
         let cargo_nw_target_folder = cargo_target_folder.join("nw");
         let build_folder = Path::new(&cargo_nw_target_folder).join("build");//.join(application_folder_name);
