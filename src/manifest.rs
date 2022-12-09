@@ -1,6 +1,6 @@
-use std::env::current_dir;
 // use serde::Deserialize;
 use async_std::fs::*;
+use async_std::path::PathBuf;
 // use crate::result::Result;
 use crate::prelude::*;
 // use crate::repository::Repository;
@@ -37,11 +37,31 @@ impl Manifest {
     //     self.package.name.clone()
     // }
 
-
-    pub async fn load() -> Result<Manifest> {
-        let cwd = current_dir().unwrap();
+    pub async fn locate(location: Option<String>) -> Result<PathBuf> {
+        let cwd = current_dir().await;
+        if let Some(location) = location {
+            let location = cwd.join(location).join("nw.toml");
+            if location.exists().await {
+                Ok(location)
+            } else {
+                Err(format!("Unable to locate 'nw.toml' in '{}'", location.display()).into())
+            }
+        } else {
+            let location = cwd.join("nw.toml");
+            if location.exists().await {
+                Ok(location)
+            } else {
+                let location = search_upwards(&cwd.clone(), "nw.toml").await;
+                location.ok_or(format!("Unable to locate 'nw.toml' in '{}'", cwd.display()).into())
+            }
+        }
+    }
     
-        let nwjs_toml = read_to_string(cwd.clone().join("nwjs.toml")).await?;
+    pub async fn load(nwjs_toml : &PathBuf) -> Result<Manifest> {
+        // let cwd = current_dir().unwrap();
+    
+        // let nwjs_toml = read_to_string(cwd.clone().join("nwjs.toml")).await?;
+        let nwjs_toml = read_to_string(nwjs_toml).await?;
         // println!("toml: {:#?}", toml);
         let manifest: Manifest = match toml::from_str(&nwjs_toml) {
             Ok(manifest) => manifest,
@@ -83,6 +103,7 @@ pub struct Application {
     pub trademarks: Option<String>,
     pub resources: Option<String>,
     pub url: Option<String>,
+    pub root: Option<String>,
     // port: Option<u64>,
 }
 

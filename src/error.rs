@@ -16,9 +16,9 @@ pub enum Error {
     #[error("Error: {0}")]
     FsExtra(#[from] fs_extra::error::Error),
     
-    // #[cfg(target_os = "windows")]
+    #[cfg(target_os = "windows")]
     #[error("Error: {0}")]
-    // #[cfg(target_os = "windows")]
+    #[cfg(target_os = "windows")]
     WinRes(#[from] winres_edit::Error)
     
 }

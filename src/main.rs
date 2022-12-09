@@ -1,5 +1,6 @@
-use std::{sync::Arc, str::FromStr};
+use std::{sync::Arc, str::FromStr, env};
 
+use async_std::path::PathBuf;
 // use crate::manifest::*;
 // use crate::result::Result;
 use clap::{Parser,Subcommand};
@@ -20,11 +21,11 @@ pub mod installer;
 pub mod log;
 pub mod init;
 
-// #[cfg(target_os = "macos")]
+#[cfg(target_os = "macos")]
 pub mod macos;
-// #[cfg(target_os = "linux")]
+#[cfg(target_os = "linux")]
 pub mod linux;
-// #[cfg(target_os = "windows")]
+#[cfg(target_os = "windows")]
 pub mod windows;
 
 use prelude::*;
@@ -52,6 +53,11 @@ enum Cmd {
 
 #[derive(Debug, clap::Args)]
 struct Args {
+
+    /// Location of nw.toml file
+    #[clap(name = "location")]//, help = "location of nw.toml file")]
+    location: Option<String>,
+
     #[clap(subcommand)]
     action : Action,
     // #[clap(short, long)]
@@ -87,6 +93,10 @@ enum Action {
     },
 
     Init {
+
+        #[clap(name = "name", help = "the name of the project")]
+        name: Option<String>,
+
         #[clap(long)]
         js : bool,
         
@@ -116,16 +126,23 @@ impl FromStr for Target {
     }
 }
 
+
 pub async fn async_main() -> Result<()> {
     
     // let cwd = std::env::current_dir()?;
     let args = Cmd::parse();
-    let action = match args { Cmd::Args(args) => args.action };
-    println!("action: {:?}", action);
+    let Cmd::Args(Args { action, location }) = args;
+    // let action = match args { Cmd::Args(args) => args.action };
+    // println!("action: {:?}", action);
 
+    
     let platform = Platform::default();
     let arch = Architecture::default();
-    let manifest = Manifest::load().await?;
+    
+    
+    let nw_toml = Manifest::locate(location).await?;
+    let manifest = Manifest::load(&nw_toml).await?;
+    let project_root = nw_toml.parent().unwrap(); //get_parent_folder_name(&nw_toml);
     match action {
         Action::Build {
             sdk,
@@ -160,16 +177,16 @@ pub async fn async_main() -> Result<()> {
                 sdk : sdk.unwrap_or(false),
             };
 
-            let ctx = Arc::new(Context::new(platform,arch,manifest,options));
+            let ctx = Arc::new(Context::create(platform,arch,manifest,project_root,options).await?);
 
             println!("");
 
-            // println!("build context: {:#?}", ctx);
+            println!("build context: {:#?}", ctx);
+
+            return Ok(());
+
             let build = Builder::new(ctx);
             build.execute(targets).await?;
-            // for build in manifest.build.expect("no build directives found").iter() {
-            //     build.execute().await?;
-            // }
         },
         Action::Clean { 
             all, 
@@ -177,7 +194,7 @@ pub async fn async_main() -> Result<()> {
         } => {
             let deps = deps || all;
 
-            let ctx = Context::new(platform,arch,manifest,Options::default());
+            let ctx = Context::create(platform,arch,manifest,project_root,Options::default()).await?;
             // println!("clean context: {:#?}", ctx);
 
             if deps {
@@ -192,10 +209,18 @@ pub async fn async_main() -> Result<()> {
                 // let run = manifest.run.expect("no run directive found");
                 // run.execute().await?;
         },
-        Action::Init { js } => {
-            println!("TODO - init template project...");
-
-            let project = init::Project::try_new()?;
+        Action::Init {
+            name,
+            js
+        } => {
+            let folder : PathBuf = env::current_dir().unwrap().into();
+            let name = if let Some(name) = name {
+                name
+            } else {
+                folder.file_name().unwrap().to_str().unwrap().to_string()
+            };
+            // let name = name.as_ref().unwrap_or(folder.file_name().expect("").to_str().expect());
+            let project = init::Project::try_new(name, folder)?;
 
             project.generate()?;
 

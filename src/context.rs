@@ -1,6 +1,5 @@
 use async_std::path::Path;
 use async_std::path::PathBuf;
-use std::env;
 use crate::prelude::*;
 
 #[derive(Debug)]
@@ -40,36 +39,38 @@ pub struct Context {
 
 
 impl Context {
-    pub fn new(
+    pub async fn create(
         platform: Platform, 
         arch : Architecture,
         manifest: Manifest,
+        project_root: &Path,
         options: Options,
-    ) -> Context {
+    ) -> Result<Context> {
         let home_folder: PathBuf = home::home_dir().unwrap().into();
-        // let deps_dir: PathBuf = Path::new(&home_dir).join(".nwjs");
-        let cargo_target_folder : PathBuf = env::current_dir().unwrap().join("target").into();
-        let cargo_nwjs_target_folder : PathBuf = cargo_target_folder.join("nwjs");
+        let cwd = current_dir().await;
+        let cargo_toml_folder = search_upwards(&cwd,"Cargo.toml").await.unwrap_or(cwd.clone());
+        let cargo_target_folder = cargo_toml_folder.join("target");
+        let cargo_nw_target_folder = cargo_target_folder.join("nw");
+        let build_folder = Path::new(&cargo_nw_target_folder).join("build");//.join(application_folder_name);
+        let build_cache_folder = Path::new(&cargo_nw_target_folder).join("cache").join(&manifest.application.title);
 
-        // let application_folder_name = if platform == Platform::MacOS {
-        //     format!("{}.app", &manifest.application.title)
+        let project_root = project_root.to_path_buf();
+        let app_root_folder = manifest.application.root.as_ref()
+            .map(|root|project_root.to_path_buf().join(root))
+            .unwrap_or(project_root);
+
+        // let app_root_folder = if let Some(root) = manifest.application.root {
+        //     project_root.to_path_buf();
         // } else {
-        //     manifest.application.title.clone()
+        //     project_root.to_path_buf();
         // };
 
-        let build_folder : PathBuf = Path::new(&cargo_nwjs_target_folder).join("build");//.join(application_folder_name);
-        let build_cache_folder : PathBuf = Path::new(&cargo_nwjs_target_folder).join("cache").join(&manifest.application.title);
-        
-        let app_root_folder : PathBuf = env::current_dir().unwrap().join("root").into();
-        let setup_resources_folder : PathBuf = env::current_dir().unwrap().join(&manifest.application.resources.as_ref().unwrap_or(&"resources".to_string())).into();
-        // let app_root_folder : PathBuf = Path::new(&cargo_target_folder).join(&manifest.package.title).join("nw.app");
-        let output_folder : PathBuf = Path::new(&cargo_nwjs_target_folder).join("output");//.join(&manifest.application.title);
-
+        let setup_resources_folder = cwd.join(&manifest.application.resources.as_ref().unwrap_or(&"resources".to_string())).into();
+        let output_folder = Path::new(&cargo_nw_target_folder).join("setup");//.join(&manifest.application.title);
         let sdk = manifest.nwjs.sdk.unwrap_or(options.sdk);
-
         let deps = Dependencies::new(&platform,&manifest,sdk);
 
-        Context {
+        let ctx = Context {
             manifest,
             platform,
             arch,
@@ -85,7 +86,9 @@ impl Context {
             // app_root_folder,
             sdk,
             deps,
-        }
+        };
+
+        Ok(ctx)
     }
 
     pub async fn ensure_folders(&self) -> Result<()> {

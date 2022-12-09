@@ -100,3 +100,36 @@ fn extract_zip(file: &PathBuf, dir: &PathBuf) -> Result<()> {
     Ok(())
     // 0
 }
+
+pub async fn search_upwards(folder: &PathBuf, filename: &str) -> Option<PathBuf> {
+    let mut folder = folder.clone();
+    // let mut cur_dir = env::current_dir().unwrap();
+
+    loop {
+        // Check if the file exists in the current directory
+        let file_path = folder.join(filename);
+        if file_path.is_file().await {
+            return Some(file_path);
+        }
+
+        // Move up to the parent directory
+        if let Some(parent) = folder.parent() {
+            folder = parent.to_path_buf();
+        } else {
+            // We've reached the root directory without finding the file, so return None
+            return None;
+        }
+    }
+}
+
+pub async fn current_dir() -> PathBuf {
+    std::env::current_dir().unwrap().into()
+}
+
+
+// pub fn get_parent_folder_name(path: &PathBuf) -> Option<PathBuf> {
+//     path.parent()
+//         .and_then(|parent| parent.file_name())
+//         // .and_then(|file_name| file_name.to_str())
+//         // .map(|file_name| file_name.to_string())
+// }

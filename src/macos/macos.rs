@@ -12,11 +12,6 @@ use chrono::Datelike;
 use crate::prelude::*;
 use super::dmg::DMG;
 
-#[derive(Debug, Clone, Serialize)]
-pub struct PackageJson {
-    name : String,
-    main : String,
-}
 
 pub struct MacOS {
     pub nwjs_root_folder : PathBuf,
@@ -112,19 +107,6 @@ impl MacOS {
             &options
         )?;
 
-        Ok(())
-    }
-
-    async fn _create_package_json(&self, ctx: &Context) -> Result<()> {
-        log!("MacOS","creating package.json");
-
-        let package_json = PackageJson {
-            name : ctx.manifest.application.title.clone(),
-            main : "index.js".to_string(),
-        };
-
-        let json = serde_json::to_string(&package_json).unwrap();
-        fs::write(&self.app_nw_folder.join("package.json"), json).await?;
         Ok(())
     }
 

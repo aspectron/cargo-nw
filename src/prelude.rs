@@ -10,6 +10,7 @@ pub use crate:: {
     utils::*,
     installer::*,
     log::*,
+    utils::*,
 };
 
 pub use cfg_if::cfg_if;
