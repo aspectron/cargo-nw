@@ -11,6 +11,7 @@ pub use crate:: {
     installer::*,
     log::*,
     utils::*,
+    signatures::*,
 };
 
 pub use cfg_if::cfg_if;

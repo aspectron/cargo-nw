@@ -10,7 +10,6 @@ use super::iss::ISS;
 use winres_edit::*;
 use chrono::Datelike;
 
-
 pub struct Windows {
     ctx : Arc<Context>,
     nwjs_root_folder: PathBuf,
@@ -219,6 +218,22 @@ impl Windows {
 
         let strings = self.get_resource_strings();
 
+        let mut version = self.ctx.manifest.application.version
+            .trim()
+            .split(".")
+            .map(|s|s.parse::<u16>().unwrap())
+            .collect::<Vec<u16>>();
+
+        if version.len() > 4 {
+            return Err(format!("invalid version format '{}' ... must be '1.2.3' or '1.2.3.4'", self.ctx.manifest.application.version).into());
+        }
+        if version.len() < 4 {
+            version.resize(4,0);
+        }
+        let version: [u16;4] = version.clone().try_into().map_err(|_| format!("Unable to parse version '{:?}'",version))?;
+
+        // ~~~
+
         let app_icon_png = self.ctx.setup_resources_folder.join("app.png");
         let mut app_icon_image = image::open(&app_icon_png)
             .expect(&format!("Unable to open {:?}", app_icon_png));
@@ -246,8 +261,8 @@ impl Windows {
             .update()?;
     
         resources.get_version_info()?.expect("Unable to get version info")
-            .set_file_version(&[1,2,3,4])
-            .set_product_version(&[5,6,7,8])
+            .set_file_version(&version)
+            .set_product_version(&version)
             .insert_strings(
                 &strings.iter()
                 .map(|v|(v.0.as_str(),v.1.as_str()))
