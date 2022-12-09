@@ -1,6 +1,7 @@
 use async_std::path::Path;
 use async_std::path::PathBuf;
 use crate::prelude::*;
+use path_dedot::*;
 
 #[derive(Debug)]
 pub struct Options {
@@ -60,13 +61,8 @@ impl Context {
         let app_root_folder = manifest.application.root.as_ref()
             .map(|root|project_root.to_path_buf().join(root))
             .unwrap_or(project_root);
-
-        // let app_root_folder = if let Some(root) = manifest.application.root {
-        //     project_root.to_path_buf();
-        // } else {
-        //     project_root.to_path_buf();
-        // };
-
+        let app_root_folder = std::path::PathBuf::from(&app_root_folder).parse_dot()?.to_path_buf().into();
+        
         let setup_resources_folder = cwd.join(&manifest.application.resources.as_ref().unwrap_or(&"resources".to_string())).into();
         let output_folder = Path::new(&cargo_nw_target_folder).join("setup");//.join(&manifest.application.title);
         let sdk = manifest.nwjs.sdk.unwrap_or(options.sdk);

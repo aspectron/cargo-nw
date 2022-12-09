@@ -2,13 +2,16 @@
 name = "nwjs-example"
 title = "NWJS Example"
 version = "0.1.0"
-# root = ".."
+root = ".."
 resources = "resources"
 description = "Example project demonstrating cargo-nw functionality"
 organization = "ASPECTRON Inc"
 # [resources]
 # path = "resources"
 # icons = "sips"
+
+include = ["root/*.html","root/*.js"]
+exclude = ["*.html"]
 
 [nwjs]
 version = "0.70.1"
