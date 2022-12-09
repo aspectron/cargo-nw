@@ -26,7 +26,7 @@ pub mod signatures;
 pub mod macos;
 // #[cfg(target_os = "linux")]
 pub mod linux;
-// #[cfg(target_os = "windows")]
+#[cfg(target_os = "windows")]
 pub mod windows;
 
 use prelude::*;
@@ -180,11 +180,11 @@ pub async fn async_main() -> Result<()> {
 
             let ctx = Arc::new(Context::create(platform,arch,manifest,project_root,options).await?);
 
-            println!("");
+            println!("... executing ...");
 
-            println!("build context: {:#?}", ctx);
+            // println!("build context: {:#?}", ctx);
 
-            return Ok(());
+            // return Ok(());
 
             let build = Builder::new(ctx);
             build.execute(targets).await?;

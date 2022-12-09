@@ -13,6 +13,12 @@ organization = "ASPECTRON Inc"
 include = ["root/*.html","root/*.js"]
 exclude = ["*.html"]
 
+run = [
+    { build = { cmd = "123", folder = "456" } },
+    { build = { cmd = "456", folder = "789" } },
+    { deploy = { cmd = "ABC", folder = "XYZ" } },
+]
+
 [nwjs]
 version = "0.70.1"
 ffmpeg = true

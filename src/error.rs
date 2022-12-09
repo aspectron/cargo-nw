@@ -22,16 +22,19 @@ pub enum Error {
     #[error("Error: {0}")]
     FsExtra(#[from] fs_extra::error::Error),
     
-    // #[cfg(target_os = "windows")]
+    #[cfg(target_os = "windows")]
     #[error("Error: {0}")]
-    // #[cfg(target_os = "windows")]
+    #[cfg(target_os = "windows")]
     WinRes(#[from] winres_edit::Error),
     
     #[error("Error: {0}")]
     GlobError(#[from] GlobError),
     
     #[error("Error: {0}")]
-    TryFromSliceError(#[from] TryFromSliceError),
+    SerdeYamlError(#[from] serde_yaml::Error),
+    
+    // #[error("Error: {0}")]
+    // TryFromSliceError(#[from] TryFromSliceError),
 }
 
 impl From<&str> for Error {

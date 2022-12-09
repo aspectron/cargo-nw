@@ -1,3 +1,3 @@
 mod linux;
 pub use linux::*;
-mod snap;
+pub mod snap;

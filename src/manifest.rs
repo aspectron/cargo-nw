@@ -1,41 +1,20 @@
-// use serde::Deserialize;
 use async_std::fs::*;
 use async_std::path::PathBuf;
-// use crate::result::Result;
 use crate::prelude::*;
-// use crate::repository::Repository;
-// use crate::build::Build;
-// use crate::run::Run;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Manifest {
-    // pub repository: Vec<Repository>,
-    // pub build: Option<Vec<Build>>,
-    // pub run: Option<Run>,
     pub application : Application,
     pub nwjs : NWJS,
     pub windows : Option<Windows>,
     pub firewall : Option<Firewall>,
     pub languages : Option<Languages>,
 
-    pub build : Option<Vec<Build>>,
-    pub deploy : Option<Vec<Deploy>>,
+    // pub build : Option<Vec<Build>>,
+    // pub deploy : Option<Vec<Deploy>>,
 }
 
 impl Manifest {
-    // pub fn application_name(&self) -> String {
-    //     match &self.emanate.name {
-    //         Some(name) => name.clone(),
-    //         None => {
-    //             println!("WARNING: manifest is missing [emanate].name section");
-    //             self.package.name.clone()
-    //         }
-    //     }
-    // }
-
-    // pub fn application_ident(&self) -> String {
-    //     self.package.name.clone()
-    // }
 
     pub async fn locate(location: Option<String>) -> Result<PathBuf> {
         let cwd = current_dir().await;
@@ -58,11 +37,7 @@ impl Manifest {
     }
     
     pub async fn load(nwjs_toml : &PathBuf) -> Result<Manifest> {
-        // let cwd = current_dir().unwrap();
-    
-        // let nwjs_toml = read_to_string(cwd.clone().join("nwjs.toml")).await?;
         let nwjs_toml = read_to_string(nwjs_toml).await?;
-        // println!("toml: {:#?}", toml);
         let manifest: Manifest = match toml::from_str(&nwjs_toml) {
             Ok(manifest) => manifest,
             Err(err) => {
@@ -74,31 +49,26 @@ impl Manifest {
     }
 }
 
-// #[derive(Debug, Clone, Deserialize)]
-// pub struct PackageConfig {
-//     pub name: String,
-//     pub version: String,
-//     pub authors: Vec<String>,
-//     pub description: Option<String>,
-//     // port: Option<u64>,
-// }
+#[derive(Debug, Clone, Deserialize)]
+// #[allow(non_camel_case_types)]
+pub enum Execute {
+    #[serde(rename = "build")]
+    Build { cmd : String, folder : Option<String> },
+    #[serde(rename = "deploy")]
+    Deploy { cmd : String, folder : Option<String> },
 
-
-
-// #[derive(Debug, Clone, Deserialize)]
-// pub struct ProjectConfig {
-// }
-
+}
 
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Application {
     pub name: String,
-    pub title: String,
     pub version: String,
+    pub title: String,
+    pub summary: Option<String>,
     pub description: String,
-    pub organization: String,
     pub authors: Option<String>,
+    pub organization: String,
     pub copyright: Option<String>,
     pub trademarks: Option<String>,
     pub resources: Option<String>,
@@ -106,6 +76,7 @@ pub struct Application {
     pub root: Option<String>,
     pub include: Option<Vec<String>>,
     pub exclude: Option<Vec<String>>,
+    pub execute: Option<Vec<Execute>>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -124,20 +95,7 @@ pub struct Windows {
     pub run_on_startup: Option<String>,
     pub run_after_setup: Option<bool>,
     pub setup_icon: Option<String>,
-
     pub resources : Option<Vec<WindowsResourceString>>
-    // ~
-
-    // pub ProductName: Option<String>,
-    // pub ProductVersion: Option<String>,
-    // pub FileVersion: Option<String>,
-    // pub FileDescription: Option<String>,
-    // pub CompanyName: Option<String>,
-    // pub LegalCopyright: Option<String>,
-    // pub LegalTrademarks: Option<String>,
-    // pub InternalName: Option<String>,
-    // pub OriginalFilename: Option<String>,
-    // pub PrivateBuild: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

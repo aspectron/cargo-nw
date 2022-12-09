@@ -1,3 +1,4 @@
+use async_std::path::Path;
 use console::style;
 use std::time::Instant;
 use crate::prelude::*;
@@ -19,6 +20,9 @@ impl Builder {
 
         println!("{:#?}", self.ctx.manifest);
 
+        let snap = crate::linux::snap::Snap::new(&self.ctx);
+        snap.store(Path::new("snap.yaml"))?;
+
         return Ok(());
 
         let ts_start = Instant::now();
@@ -29,16 +33,23 @@ impl Builder {
         self.ctx.deps.ensure().await?;
         self.ctx.ensure_folders().await?;
 
-        if let Some(builds) = self.ctx.manifest.build {
-            for Build { cmd, folder } in builds {
-                let folder = if let Some(folder) = folder {
-                    self.ctx.app_root_folder.join(folder)
-                } else {
-                    self.ctx.app_root_folder
-                };
-                if let Err(e) = spawn(&cmd,&folder).await {
-                    println!("Error executing build setup: {}", cmd);
-                    println!("{}", e);
+        // if let Some(builds) = self.ctx.manifest.build {
+        //     for Build { cmd, folder } in builds {
+        //         let folder = if let Some(folder) = folder {
+        //             self.ctx.app_root_folder.join(folder)
+        //         } else {
+        //             self.ctx.app_root_folder
+        //         };
+        //         if let Err(e) = spawn(&cmd,&folder).await {
+        //             println!("Error executing build setup: {}", cmd);
+        //             println!("{}", e);
+        //         }
+        //     }
+        // }
+        if let Some(actions) = self.ctx.manifest.application.execute {
+            for action in actions {
+                if let Execute::Build { cmd, folder } = action {
+                    self.run(&cmd,&folder).await?;
                 }
             }
         }
@@ -72,21 +83,43 @@ impl Builder {
         log!("Finished","build completed in{:.2}s", duration.as_millis() as f64/1000.0);
         println!("");
 
-        if let Some(deploys) = self.ctx.manifest.deploy {
-            for Deploy { cmd, folder } in deploys {
-                let folder = if let Some(folder) = folder {
-                    self.ctx.app_root_folder.join(folder)
-                } else {
-                    self.ctx.app_root_folder
-                };
-                if let Err(e) = spawn(&cmd,&folder).await {
-                    println!("Error executing build setup: {}", cmd);
-                    println!("{}", e);
+        if let Some(actions) = self.ctx.manifest.application.execute {
+            for action in actions {
+                if let Execute::Deploy { cmd, folder } = action {
+                    self.run(&cmd,&folder).await?;
                 }
             }
         }
+        // if let Some(deploys) = self.ctx.manifest.deploy {
+        //     for Deploy { cmd, folder } in deploys {
+        //         let folder = if let Some(folder) = folder {
+        //             self.ctx.app_root_folder.join(folder)
+        //         } else {
+        //             self.ctx.app_root_folder
+        //         };
+        //         if let Err(e) = spawn(&cmd,&folder).await {
+        //             println!("Error executing build setup: {}", cmd);
+        //             println!("{}", e);
+        //         }
+        //     }
+        // }
 
 
+
+        Ok(())
+    }
+
+    pub async fn run(&self, cmd : &str, folder : &Option<String>) -> Result<()> {
+
+        let folder = if let Some(folder) = folder {
+            self.ctx.app_root_folder.join(folder)
+        } else {
+            self.ctx.app_root_folder.clone()
+        };
+        if let Err(e) = spawn(&cmd,&folder).await {
+            println!("Error executing run action: {}", cmd);
+            println!("{}", e);
+        }
 
         Ok(())
     }

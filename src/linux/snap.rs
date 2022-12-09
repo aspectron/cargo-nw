@@ -1,7 +1,9 @@
+use crate::prelude::*;
+use async_std::path::Path;
 use serde::{Serialize,Deserialize};
 
 #[derive(Serialize, Deserialize)]
-struct Snap {
+pub struct Snap {
     name: String,
     version: String,
     summary: String,
@@ -13,44 +15,51 @@ struct Snap {
 }
 
 #[derive(Serialize, Deserialize)]
-struct Confinement {
+pub struct Confinement {
     value: String,
 }
 
 #[derive(Serialize, Deserialize)]
-struct App {
+pub struct App {
     name: String,
     command: String,
     plugs: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize)]
-struct Plug {
+pub struct Plug {
     name: String,
     interface: String,
     attrs: Vec<Attr>,
 }
 
 #[derive(Serialize, Deserialize)]
-struct Attr {
+pub struct Attr {
     key: String,
     value: String,
 }
 
-pub fn create_snap_data(ctx: &Context) -> Snap {
-    let mut snap = Snap {
-        name: ctx.manifest.application.title, 
-        version: ctx.manifest.application.version,
-        summary: ctx.manifest.application.description,
-        description: String::new(),
-        confinement: Confinement {
-            value: String::new(),
-        },
-        architectures: Vec::new(),
-        apps: Vec::new(),
-        plugs: Vec::new(),
-    };
+impl Snap {
+    pub fn new(ctx: &Context) -> Snap {
+        let snap = Snap {
+            name: ctx.manifest.application.title.clone(), 
+            version: ctx.manifest.application.version.clone(),
+            summary: ctx.manifest.application.description.clone(),
+            description: String::new(),
+            confinement: Confinement {
+                value: String::new(),
+            },
+            architectures: Vec::new(),
+            apps: Vec::new(),
+            plugs: Vec::new(),
+        };
+        
+        snap
+    }
 
-    snap
-
+    pub fn store(&self, file : &Path) -> Result<()> {
+        let yaml = serde_yaml::to_string(self)?;
+println!("YAML:{}",yaml);
+        Ok(())
+    }
 }
