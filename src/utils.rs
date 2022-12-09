@@ -301,13 +301,23 @@ pub fn copy_folder_recurse(src_folder: &Path, dest_folder: &Path, ctx : &GlobCtx
     Ok(())
 }
 
+pub async fn execute(ctx : &Context, cmd : &str, folder : &Option<String>) -> Result<()> {
 
-pub async fn spawn(cmd: &str, folder: &Path) -> Result<()> {
-    // let cwd = std::env::current_dir()?;
+    let folder = if let Some(folder) = folder {
+        ctx.app_root_folder.join(folder)
+    } else {
+        ctx.app_root_folder.clone()
+    };
+
     let argv : Vec<String> = cmd.split(" ").map(|s|s.to_string()).collect();
     let program = argv.first().expect("missing program in build config");
     let args = argv[1..].to_vec();
-    duct::cmd(program,args).dir(folder).run()?;
 
-    Ok(())
+    if let Err(e) = duct::cmd(program,args).dir(&folder).run() {
+        println!("Error while executing: '{}'", cmd);
+        Err(e.into())
+    } else {
+        Ok(())
+    }
 }
+

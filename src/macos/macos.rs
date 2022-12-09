@@ -33,6 +33,18 @@ impl Installer for MacOS {
         // self._create_package_json(ctx).await?;
         self.generate_icons().await?;
 
+
+        if let Some(actions) = &self.ctx.manifest.application.execute {
+            log!("Build","Executing build actions");
+            for action in actions {
+                if let Execute::Pack { cmd, folder } = action {
+                    execute(&self.ctx,&cmd,&folder).await?;
+                }
+            }
+        }
+
+
+
         // log!("MacOS","creating {:?} installer",installer_type);
 
         let mut files = Vec::new();

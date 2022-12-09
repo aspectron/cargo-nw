@@ -33,23 +33,11 @@ impl Builder {
         self.ctx.deps.ensure().await?;
         self.ctx.ensure_folders().await?;
 
-        // if let Some(builds) = self.ctx.manifest.build {
-        //     for Build { cmd, folder } in builds {
-        //         let folder = if let Some(folder) = folder {
-        //             self.ctx.app_root_folder.join(folder)
-        //         } else {
-        //             self.ctx.app_root_folder
-        //         };
-        //         if let Err(e) = spawn(&cmd,&folder).await {
-        //             println!("Error executing build setup: {}", cmd);
-        //             println!("{}", e);
-        //         }
-        //     }
-        // }
-        if let Some(actions) = self.ctx.manifest.application.execute {
+        if let Some(actions) = &self.ctx.manifest.application.execute {
+            log!("Build","Executing build actions");
             for action in actions {
                 if let Execute::Build { cmd, folder } = action {
-                    self.run(&cmd,&folder).await?;
+                    execute(&self.ctx,&cmd,&folder).await?;
                 }
             }
         }
@@ -80,47 +68,21 @@ impl Builder {
         // let package_name = files[0].to_str().unwrap();
         // log!("Finished","{} package{} in {:.2}s", style(package_name).cyan(), duration.as_millis() as f64/1000.0);
         // let suffix = files.len()
-        log!("Finished","build completed in{:.2}s", duration.as_millis() as f64/1000.0);
-        println!("");
+        let packages = if files.len() > 1 { "packages" } else { "package" };
+        log!("Finished","build of ({} {}) completed in{:.2}s", files.len(), packages, duration.as_millis() as f64/1000.0);
 
-        if let Some(actions) = self.ctx.manifest.application.execute {
+        if let Some(actions) = &self.ctx.manifest.application.execute {
+            log!("Build","Executing deploy actions");
             for action in actions {
                 if let Execute::Deploy { cmd, folder } = action {
-                    self.run(&cmd,&folder).await?;
+                    execute(&self.ctx,&cmd,&folder).await?;
                 }
             }
         }
-        // if let Some(deploys) = self.ctx.manifest.deploy {
-        //     for Deploy { cmd, folder } in deploys {
-        //         let folder = if let Some(folder) = folder {
-        //             self.ctx.app_root_folder.join(folder)
-        //         } else {
-        //             self.ctx.app_root_folder
-        //         };
-        //         if let Err(e) = spawn(&cmd,&folder).await {
-        //             println!("Error executing build setup: {}", cmd);
-        //             println!("{}", e);
-        //         }
-        //     }
-        // }
 
-
+        println!("");
 
         Ok(())
     }
 
-    pub async fn run(&self, cmd : &str, folder : &Option<String>) -> Result<()> {
-
-        let folder = if let Some(folder) = folder {
-            self.ctx.app_root_folder.join(folder)
-        } else {
-            self.ctx.app_root_folder.clone()
-        };
-        if let Err(e) = spawn(&cmd,&folder).await {
-            println!("Error executing run action: {}", cmd);
-            println!("{}", e);
-        }
-
-        Ok(())
-    }
 }

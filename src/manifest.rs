@@ -54,6 +54,8 @@ impl Manifest {
 pub enum Execute {
     #[serde(rename = "build")]
     Build { cmd : String, folder : Option<String> },
+    #[serde(rename = "build")]
+    Pack { cmd : String, folder : Option<String> },
     #[serde(rename = "deploy")]
     Deploy { cmd : String, folder : Option<String> },
 
