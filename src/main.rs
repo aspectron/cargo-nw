@@ -77,9 +77,9 @@ enum Action {
         /// Target platform architecture (x64,ia32,aarch64)
         #[clap(short, long)]
         arch : Option<Architecture>,
-        // /// Use custom manifest file
-        // #[clap(short, long)]
-        // manifest: Option<String>,
+        /// Output folder
+        #[clap(short, long)]
+        output : Option<String>,
         /// Package target (for multi-target output)
         #[clap(short, long)]
         target : Option<Vec<Target>>,
@@ -113,8 +113,9 @@ enum Action {
         force : bool,
     },
     Publish {
-        // #[clap(name = "manifest")]
-        // location: Option<String>,
+        /// Output folder
+        #[clap(short, long)]
+        output : Option<String>,
     },
     #[cfg(feature = "test")]
     Test {
@@ -136,6 +137,7 @@ pub async fn async_main() -> Result<()> {
             sdk,
             target,
             default,
+            output,
         } => {
 
             let mut targets = TargetSet::new();
@@ -158,6 +160,7 @@ pub async fn async_main() -> Result<()> {
             let arch = arch.unwrap_or_default();
             let ctx = Arc::new(Context::create(
                 location,
+                output,
                 platform,
                 arch,
                 options
@@ -178,6 +181,7 @@ pub async fn async_main() -> Result<()> {
 
             let ctx = Arc::new(Context::create(
                 location,
+                None,
                 platform,
                 Architecture::default(),
                 Options::default()
@@ -213,12 +217,13 @@ pub async fn async_main() -> Result<()> {
 
         },
         Action::Publish {
-            // location
+            output
         } => {
 
             let arch = Architecture::default();
             let ctx = Arc::new(Context::create(
                 location,
+                output,
                 platform,
                 arch,
                 Options::default()
@@ -242,12 +247,12 @@ pub async fn async_main() -> Result<()> {
         },
         #[cfg(feature = "test")]
         Action::Test {
-            // manifest
         } => {
 
             let arch = Architecture::default();
             let ctx = Arc::new(Context::create(
                 location,
+                None,
                 platform,
                 arch,
                 Options::default()

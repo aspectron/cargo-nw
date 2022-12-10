@@ -53,7 +53,7 @@ pub struct Context {
 impl Context {
     pub async fn create(
         location : Option<String>,
-        // manifest : Option<String>,
+        output : Option<String>,
         platform: Platform, 
         arch : Architecture,
         options: Options,
@@ -80,7 +80,16 @@ impl Context {
         let cargo_nw_target_folder = cargo_target_folder.join("nw");
         let build_folder = Path::new(&cargo_nw_target_folder).join("build").join(&app_snake_name);
         let cache_folder = Path::new(&cargo_nw_target_folder).join("cache").join(&app_snake_name);
-        let output_folder = Path::new(&cargo_nw_target_folder).join("setup");
+        let output_folder = if let Some(output) = output {
+            let output = Path::new(&output);
+            if output.is_absolute() {
+                output.to_owned()
+            } else {
+                project_root.join(output)
+            }
+        } else {
+            Path::new(&cargo_nw_target_folder).join("setup")
+        };
 
         let project_root_folder = project_root.to_path_buf();
         let app_root_folder = manifest.package.root.as_ref()
