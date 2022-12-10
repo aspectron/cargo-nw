@@ -58,13 +58,13 @@ impl Installer for Windows {
         self.copy_app_data().await?;
         self.update_resources().await?;
 
-        let mut list = Vec::new();
+        let mut files = Vec::new();
 
-        if targets.contains(&Target::Archive) {
+        if targets.contains(&Target::Archive)  || self.ctx.manifest.package.archive.unwrap_or(false) {
             log!("Windows","creating archive");
             
-            let filename = Path::new("").to_path_buf();
-            list.push(filename);
+            let filename = Path::new(&format!("{}.zip",self.ctx.app_snake_name)).to_path_buf();
+            files.push(filename);
         }
 
         if targets.contains(&Target::InnoSetup) {
@@ -77,10 +77,10 @@ impl Installer for Windows {
             );
 
             let filename = setup_script.create().await?;
-            list.push(filename);
+            files.push(filename);
         }
 
-        Ok(list)
+        Ok(files)
     }
 }
 
@@ -103,16 +103,23 @@ impl Windows {
 
     async fn copy_app_data(&self) -> Result<()> {
 
-        let mut options = dir::CopyOptions::new();
-        options.content_only = true;
-        options.overwrite = true;
+        copy_folder_with_glob_filters(
+            &self.ctx.app_root_folder,
+            &self.nwjs_root_folder,
+            self.ctx.manifest.package.include.clone(),
+            self.ctx.manifest.package.exclude.clone()
+        ).await?;
+
+        // let mut options = dir::CopyOptions::new();
+        // options.content_only = true;
+        // options.overwrite = true;
         
-        log!("Integrating","application data");
-        dir::copy(
-            &self.ctx.app_root_folder, 
-            &self.nwjs_root_folder, 
-            &options
-        )?;
+        // log!("Integrating","application data");
+        // dir::copy(
+        //     &self.ctx.app_root_folder, 
+        //     &self.nwjs_root_folder, 
+        //     &options
+        // )?;
 
         Ok(())
     }
@@ -239,7 +246,7 @@ impl Windows {
         // ~~~
 
         // let app_icon_png = self.ctx.setup_resources_folder.join("app.png");
-        let app_icon_png = find_file(self.ctx.setup_resources_folder, &["windows-application.png","application.png"]);
+        let app_icon_png = find_file(&self.ctx.setup_resources_folder, &["windows-application.png","application.png"]).await?;
         let mut app_icon_image = image::open(&app_icon_png)
             .expect(&format!("Unable to open {:?}", app_icon_png));
 

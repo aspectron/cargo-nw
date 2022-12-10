@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use async_std::path::{Path, PathBuf};
+use async_std::path::PathBuf;
 
 use crate::prelude::*;
 

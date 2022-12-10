@@ -11,6 +11,10 @@ description = """
 Cargo subcommand for building NWJS application packages
 """
 
+[features]
+multiplatform = []
+# default = ["multiplatform"]
+
 [dependencies]
 clap = { version = "3.2.17", features = ["derive"] }
 duct = "0.13.5"
@@ -44,8 +48,7 @@ question = "0.2.2"
 uuid = { version = "1.2.2", features = ["v4"] }
 manual-serializer = { path="../manual-serializer" }
 
-
-[target.'cfg(target_os = "windows")'.dependencies]
+# [target.'cfg(target_os = "windows")'.dependencies]
 winres-edit = { path="../winres-edit" }
 
 [target.'cfg(target_os = "windows")'.dependencies.windows]

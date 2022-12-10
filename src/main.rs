@@ -1,16 +1,10 @@
-use std::{sync::Arc, str::FromStr, env};
-
+use std::{sync::Arc, env};
 use async_std::path::PathBuf;
-// use crate::manifest::*;
-// use crate::result::Result;
 use clap::{Parser,Subcommand};
-#[allow(unused_imports)]
-use duct::cmd;
 
 pub mod error;
 pub mod result;
 pub mod manifest;
-// pub mod dmg;
 pub mod builder;
 pub mod utils;
 pub mod platform;
@@ -23,12 +17,20 @@ pub mod init;
 pub mod signatures;
 pub mod tpl;
 
-// #[cfg(target_os = "macos")]
-pub mod macos;
-// #[cfg(target_os = "linux")]
-pub mod linux;
-#[cfg(target_os = "windows")]
-pub mod windows;
+cfg_if! {
+    if #[cfg(feature = "multiplatform")] {
+        pub mod macos;
+        pub mod linux;
+        pub mod windows;
+    } else {
+        #[cfg(target_os = "macos")]
+        pub mod macos;
+        #[cfg(target_os = "linux")]
+        pub mod linux;
+        #[cfg(target_os = "windows")]
+        pub mod windows;
+    }
+}
 
 use prelude::*;
 // mod repository;
@@ -115,21 +117,6 @@ enum Action {
 //     }
 // }
 
-impl FromStr for Target {
-    type Err = Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err>
-    {
-        match s {
-            "dmg" => Ok(Target::DMG),
-            #[cfg(target_os = "macos")]
-            "archive" => Ok(Target::Archive),
-            #[cfg(target_os = "windows")]
-            "innosetup" => Ok(Target::InnoSetup),
-            _ => Err(format!("Unsupported target: {}", s).into()),
-        }
-    }
-}
-
 
 pub async fn async_main() -> Result<()> {
     
@@ -207,11 +194,6 @@ pub async fn async_main() -> Result<()> {
 
             ctx.clean().await?;
 
-            // println!("clean all: {:?} manifest: {:#?}", all, manifest);
-            // cmd!("rm","-rf", repository.name()).run()?;
-
-                // let run = manifest.run.expect("no run directive found");
-                // run.execute().await?;
         },
         Action::Init {
             name,

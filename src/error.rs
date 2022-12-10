@@ -1,9 +1,13 @@
-use std::{ffi::OsString, array::TryFromSliceError};
+use std::{
+    ffi::OsString,
+    // array::TryFromSliceError
+};
 use globset::Error as GlobError;
 use thiserror::Error;
 
 cfg_if::cfg_if!{
-    if #[cfg(not(target_os = "windows"))] {
+    if #[cfg(not(any(target_os = "windows", feature = "multiplatform")))] {
+        #[allow(dead_code)]
         mod winred_edit { pub type Error = String; }
     }
 }
@@ -25,9 +29,9 @@ pub enum Error {
     #[error("FileSystem error: {0}")]
     FsExtra(#[from] fs_extra::error::Error),
     
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", feature = "multiplatform"))]
     #[error("Windows resource error: {0}")]
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", feature = "multiplatform"))]
     WinRes(#[from] winres_edit::Error),
     
     #[error("Glob error: {0}")]

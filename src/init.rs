@@ -1,5 +1,7 @@
+use std::collections::HashSet;
+
 use crate::prelude::*;
-use async_std::path::PathBuf;
+use async_std::path::{PathBuf, Path};
 use serde::Serialize;
 use async_std::fs;
 use convert_case::{Case, Casing};
@@ -18,9 +20,9 @@ pub struct PackageJson {
 
 const INDEX_JS: &str = r###"
 (async()=>{
-    window.$$SNAKE = await import('../$NAME/$NAME.js');
+    window.$$SNAKE = await import('../wasm/$NAME.js');
     // window.$$SNAKE = $$NAME;
-    const wasm = await window.$$SNAKE.default('/$NAME/$NAME_bg.wasm');
+    const wasm = await window.$$SNAKE.default('/wasm/$NAME_bg.wasm');
     //console.log("wasm", wasm, workflow)
     //$$SNAKE.init_console_panic_hook();
     //$$SNAKE.show_panic_hook_logs();
@@ -32,8 +34,8 @@ const INDEX_JS: &str = r###"
 const INDEX_HTML: &str = r###"
 
 (async()=>{
-    let $$SNAKE = await import('../$NAME/$NAME.js');
-    const wasm = await $$NAME.default('/$NAME/$NAME_bg.wasm'); 
+    let $$SNAKE = await import('../wasm/$NAME.js');
+    const wasm = await $$NAME.default('/wasm/$NAME_bg.wasm'); 
     $$SNAKE.run();
     // console.log("create_context_menu", $$SNAKE.create_context_menu())
 })();
@@ -41,7 +43,7 @@ const INDEX_HTML: &str = r###"
 
 const NW_TOML: &str = r###"
 
-# nw.toml - for additional properties please see https://example.com
+# nw.toml - for additional properties please see https://github.com/aspectron/cargo-nw
 
 [application]
 name = "$NAME"
@@ -52,12 +54,13 @@ description = """
 ...
 """"
 
+[package]
 # root = "root"
 # resources = "resources/setup"
 # organization = "Your Organization Name"
 
 [nwjs]
-version = "0.70.1"
+version = "0.71.0"
 ffmpeg = false
 
 [dmg]
@@ -88,13 +91,51 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+
+# Make sure to update crate versions before production use
+# Use https://crates.io to get the latest versions
+
+wasm_bindgen = "*"
+nw-sys = "*"
 workflow-log = "*"
+workflow-wasm = "*"
 workflow-panic-hook = "*"
 
 "###;
 
 const LIB_RS: &str = r###"
+use wasm_bindgen::prelude::*;
+use workflow_log::log_trace;
+use workflow_wasm::listener::Listener;
+use nw_sys::result::Result;
+use nw_sys::prelude::*;
+use nw_sys::utils;
 
+static mut APP:Option<Arc<ExampleApp>> = None;
+#[derive(Clone)]
+pub struct ExampleApp {
+    // pub win_listeners:Arc<Mutex<Vec<Listener<nw::Window>>>>,
+    // pub menu_listeners:Arc<Mutex<Vec<Listener<JsValue>>>>,
+    // pub listeners:Arc<Mutex<Vec<Listener<web_sys::MouseEvent>>>>
+}
+
+"###;
+
+
+const BUILD_SH: &str = r###"
+if [ "$1" = "--dev" ]; then
+    wasm-pack build --dev --target web --out-name $NAME --out-dir root/wasm
+else
+    wasm-pack build --target web --out-name $NAME --out-dir root/wasm
+fi
+"###;
+
+const BUILD_PS1: &str = r###"
+if ($args.Contains("--dev")) {
+    & "wasm-pack build --dev --target web --out-name $NAME --out-dir root/wasm"
+} else {
+    & "wasm-pack build --target web --out-name $NAME --out-dir root/wasm"
+}
 "###;
 
 
@@ -169,23 +210,46 @@ impl Project {
 
         let package = PackageJson {
             name : self.title.clone(),
-            main : "index.js".to_string()
+            main : "root/index.js".to_string()
         };
         let package_json = serde_json::to_string(&package).unwrap();
 
         let tpl = self.tpl()?;
 
         let files = [
+            ("root/package.json",tpl.transform(&package_json)),
+            ("root/index.js", tpl.transform(INDEX_JS)),
+            ("root/index.html", tpl.transform(INDEX_HTML)),
+            ("src/lib.rs", tpl.transform(LIB_RS)),
             ("nw.toml",tpl.transform(NW_TOML)),
-            ("package.json",tpl.transform(&package_json)),
-            ("index.js", tpl.transform(INDEX_JS)),
             ("Cargo.toml", tpl.transform(CARGO_TOML)),
-            ("lib.rs", tpl.transform(CARGO_TOML)),
+            ("build", tpl.transform(BUILD_SH)),
+            ("build.ps1", tpl.transform(BUILD_PS1)),
         ];
+
+        let folders: HashSet<&Path> = files
+            .iter()
+            .map(|(file,_)|Path::new(file).parent())
+            .flatten()
+            .collect();
+
+        for folder in folders {
+            fs::create_dir_all(folder).await?;
+        }
 
         for (filename, content) in files.iter() {
             fs::write(filename,&content).await?;
         }
+
+        cfg_if! {
+            if #[cfg(not(target_os = "windows"))] {
+                fs::set_permissions(Path::new("build"), std::os::unix::fs::PermissionsExt::from_mode(0o755)).await?;
+            }
+        }
+
+        println!("Please run 'build' script to build the project");
+        println!("");
+        println!("Following this, you can run 'nw .' to start run the application");
 
         Ok(())
     }

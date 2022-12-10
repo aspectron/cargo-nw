@@ -5,13 +5,11 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Deserialize)]
 pub struct Manifest {
     pub application : Application,
+    pub package : Package,
     pub nwjs : NWJS,
     pub windows : Option<Windows>,
     pub firewall : Option<Firewall>,
     pub languages : Option<Languages>,
-
-    // pub build : Option<Vec<Build>>,
-    // pub deploy : Option<Vec<Deploy>>,
 }
 
 impl Manifest {
@@ -73,8 +71,14 @@ pub struct Application {
     pub organization: String,
     pub copyright: Option<String>,
     pub trademarks: Option<String>,
-    pub resources: Option<String>,
     pub url: Option<String>,
+}
+
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Package {
+    pub archive: Option<bool>,
+    pub resources: Option<String>,
     pub root: Option<String>,
     pub include: Option<Vec<String>>,
     pub exclude: Option<Vec<String>>,

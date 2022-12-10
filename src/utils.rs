@@ -128,23 +128,38 @@ pub async fn current_dir() -> PathBuf {
     std::env::current_dir().unwrap().into()
 }
 
-pub async fn copy_folder_with_glob_walk(case_sensitive : bool, src_folder: &Path, dest_folder: &Path, include_patterns: &[&str], exclude_patterns: &[&str]) -> Result<()> {
+pub async fn copy_folder_with_glob_walk(
+    case_sensitive : bool,
+    src_folder: &Path,
+    dest_folder: &Path,
+    include_patterns: Option<Vec<String>>,
+    exclude_patterns: Option<Vec<String>>
+) -> Result<()> {
 
-    let mut include = include_patterns.to_vec();
-    if include.is_empty() {
-        include.push("**");
-    }
-
-    let mut exclude_globs = globset::GlobSetBuilder::new();
-    for pattern in exclude_patterns {
-        exclude_globs.add(Glob::new(pattern)?);
-    }
-    let exclude_globs = exclude_globs.build()?;
+    let include = match include_patterns {
+        Some(patterns) if patterns.len() != 0 => {
+            patterns
+        },
+        _ => {
+            vec!["**".to_string()]
+        }
+    };
+    
+    let exclude_globs = match exclude_patterns {
+        Some(patterns) if patterns.len()!= 0 => {
+            let mut exclude_globs = globset::GlobSetBuilder::new();
+            for pattern in patterns {
+                exclude_globs.add(Glob::new(&pattern)?);
+            }
+            Some(exclude_globs.build()?)
+        },
+        _ => { None }
+    };
 
     let mut folders = HashSet::new();
     let mut files = HashSet::new();
     for pattern in include {
-        let builder = globmatch::Builder::new( pattern)
+        let builder = globmatch::Builder::new( &pattern)
             .case_sensitive(case_sensitive)
             .build(src_folder)?;
 
@@ -155,8 +170,10 @@ pub async fn copy_folder_with_glob_walk(case_sensitive : bool, src_folder: &Path
                 continue;
             }
 
-            if !exclude_globs.is_empty() && exclude_globs.is_match(&relative) {
-                continue;
+            if let Some(globs) = &exclude_globs {
+                if globs.is_match(&relative) {
+                    continue
+                }
             }
 
             if path.is_dir() {
@@ -182,8 +199,8 @@ pub async fn copy_folder_with_glob_filters(
     // case_sensitive : bool, 
     src_folder: &Path, 
     dest_folder: &Path, 
-    include_patterns: &[&str], 
-    exclude_patterns: &[&str],
+    include_patterns: Option<Vec<String>>, 
+    exclude_patterns: Option<Vec<String>>,
 ) -> Result<()> {
 
     let ctx = GlobCtx::try_new(src_folder, include_patterns, exclude_patterns)?;
@@ -203,23 +220,28 @@ pub struct GlobCtx {
 impl GlobCtx {
     pub fn try_new(
         base : &Path, 
-        include_patterns: &[&str], 
-        exclude_patterns: &[&str]
+        include_patterns: Option<Vec<String>>, 
+        exclude_patterns: Option<Vec<String>>
     ) -> Result<GlobCtx> {
 
         let mut include_globs = GlobSetBuilder::new();
         let mut exclude_globs = GlobSetBuilder::new();
 
-        if include_patterns.is_empty() {
-            include_globs.add(Glob::new("**/*")?);
-        } else {
-            for pattern in include_patterns.iter() {
-                include_globs.add(Glob::new(pattern)?);
+        match include_patterns {
+            Some(patterns) if patterns.len() != 0 => {
+                for pattern in patterns.iter() {
+                    include_globs.add(Glob::new(pattern)?);
+                }
+            },
+            _ => {
+                include_globs.add(Glob::new("**/*")?);
             }
         }
-    
-        for pattern in exclude_patterns.iter() {
-            exclude_globs.add(Glob::new(pattern)?);
+
+        if let Some(patterns) = exclude_patterns {
+            for pattern in patterns.iter() {
+                exclude_globs.add(Glob::new(pattern)?);
+            }
         }
     
         let include = include_globs.build()?;
@@ -236,7 +258,6 @@ impl GlobCtx {
 
     pub fn include(&self, path : &Path)
     -> bool 
-    // where P : AsRef<std::path::Path>
     {
         if is_hidden(path) {
             return false;

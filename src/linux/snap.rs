@@ -1,9 +1,9 @@
 use crate::prelude::*;
-use async_std::path::Path;
+use async_std::{path::Path, fs};
 use serde::{Serialize,Deserialize};
 
 #[derive(Serialize, Deserialize)]
-pub struct Snap {
+pub struct SnapData {
     name: String,
     version: String,
     summary: String,
@@ -39,9 +39,9 @@ pub struct Attr {
     value: String,
 }
 
-impl Snap {
-    pub fn new(ctx: &Context) -> Snap {
-        let snap = Snap {
+impl SnapData {
+    pub fn new(ctx: &Context) -> SnapData {
+        let snap = SnapData {
             name: ctx.manifest.application.title.clone(), 
             version: ctx.manifest.application.version.clone(),
             summary: ctx.manifest.application.description.clone(),
@@ -57,9 +57,34 @@ impl Snap {
         snap
     }
 
-    pub fn store(&self, file : &Path) -> Result<()> {
+    pub async fn store(&self, file : &Path) -> Result<()> {
         let yaml = serde_yaml::to_string(self)?;
-println!("YAML:{}",yaml);
+        fs::write(file,yaml).await?;
         Ok(())
     }
 }
+
+
+pub struct Snap {
+    data: SnapData,
+    ctx: Arc<Context>, 
+}
+
+impl Snap {
+    pub fn new(ctx: &Arc<Context>) -> Snap {
+        Snap {
+            data: SnapData::new(&ctx),
+            ctx : ctx.clone()
+        }
+    }
+
+    pub async fn create(&self) -> Result<()> {
+
+        self.data.store(&self.ctx.build_folder.join("snap.yaml")).await?;
+
+
+
+        Ok(())
+    }
+}
+

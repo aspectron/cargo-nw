@@ -30,12 +30,17 @@ pub struct Context {
     pub cargo_target_folder : PathBuf,
     /// Source application folder
     pub app_root_folder : PathBuf,
+    /// Project folder (nw.toml location). Can be the same as [`app_root_folder`]
+    pub project_root_folder : PathBuf,
     /// Folder that contains setup resources
     pub setup_resources_folder : PathBuf,
+    // pub app_snake_name : PathBuf,
     pub build_cache_folder : PathBuf,
     pub build_folder : PathBuf,
     pub output_folder : PathBuf,
     
+    pub app_snake_name : String,
+
     pub sdk : bool,
     pub deps : Dependencies,
     pub tpl : Arc<Mutex<Tpl>>,
@@ -47,8 +52,6 @@ impl Context {
         location : Option<String>,
         platform: Platform, 
         arch : Architecture,
-        // manifest: Manifest,
-        // project_root: &Path,
         options: Options,
     ) -> Result<Context> {
         let home_folder: PathBuf = home::home_dir().unwrap().into();
@@ -57,22 +60,28 @@ impl Context {
         let nw_toml = Manifest::locate(location).await?;
         let manifest = Manifest::load(&nw_toml).await?;
         let project_root = nw_toml.parent().unwrap();
+        let app_snake_name = format!("{}-{}-{}-{}",
+            manifest.application.name,
+            manifest.application.version,
+            platform,
+            arch
+        );
 
         let cargo_toml_folder = search_upwards(&cwd,"Cargo.toml").await
             .map(|location|location.parent().unwrap().to_path_buf())
             .unwrap_or(cwd.clone());
         let cargo_target_folder = cargo_toml_folder.join("target");
         let cargo_nw_target_folder = cargo_target_folder.join("nw");
-        let build_folder = Path::new(&cargo_nw_target_folder).join("build");//.join(application_folder_name);
+        let build_folder = Path::new(&cargo_nw_target_folder).join("build");//.join(app_snake_name);
         let build_cache_folder = Path::new(&cargo_nw_target_folder).join("cache").join(&manifest.application.title);
 
-        let project_root = project_root.to_path_buf();
-        let app_root_folder = manifest.application.root.as_ref()
-            .map(|root|project_root.to_path_buf().join(root))
-            .unwrap_or(project_root);
+        let project_root_folder = project_root.to_path_buf();
+        let app_root_folder = manifest.package.root.as_ref()
+            .map(|root|project_root_folder.to_path_buf().join(root))
+            .unwrap_or(project_root_folder.clone());
         let app_root_folder = std::path::PathBuf::from(&app_root_folder).parse_dot()?.to_path_buf().into();
-        
-        let setup_resources_folder = cwd.join(&manifest.application.resources.as_ref().unwrap_or(&"resources".to_string())).into();
+
+        let setup_resources_folder = cwd.join(&manifest.package.resources.as_ref().unwrap_or(&"resources".to_string())).into();
         let output_folder = Path::new(&cargo_nw_target_folder).join("setup");//.join(&manifest.application.title);
         let sdk = manifest.nwjs.sdk.unwrap_or(options.sdk);
         let deps = Dependencies::new(&platform,&manifest,sdk);
@@ -88,7 +97,9 @@ impl Context {
             home_folder,
             cargo_target_folder,
             build_folder,
+            app_snake_name,
             app_root_folder,
+            project_root_folder,
             setup_resources_folder,
 
             build_cache_folder,
@@ -126,7 +137,7 @@ impl Context {
     }
 
     pub fn tpl(&self, text : &str) -> String {
-        let mut tpl = self.tpl.lock().unwrap();
+        let tpl = self.tpl.lock().unwrap();
         tpl.transform(text)
     }
 

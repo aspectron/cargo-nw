@@ -4,7 +4,6 @@ use async_std::path::PathBuf;
 use async_std::fs;
 use fs_extra::dir;
 use image::imageops::FilterType;
-use serde::Serialize;
 use image::GenericImageView;
 use duct::cmd;
 use regex::Regex;
@@ -34,7 +33,7 @@ impl Installer for MacOS {
         self.generate_icons().await?;
 
 
-        if let Some(actions) = &self.ctx.manifest.application.execute {
+        if let Some(actions) = &self.ctx.manifest.package.execute {
             log!("Build","Executing build actions");
             for action in actions {
                 if let Execute::Pack { cmd, folder, platform, arch } = action {
@@ -48,9 +47,11 @@ impl Installer for MacOS {
         // log!("MacOS","creating {:?} installer",installer_type);
 
         let mut files = Vec::new();
-        if targets.contains(&Target::Archive) {
+        if targets.contains(&Target::Archive) || self.ctx.manifest.package.archive.unwrap_or(false) {
             log!("MacOS","creating archive");
             
+            let filename = Path::new(&format!("{}.zip",self.ctx.app_snake_name)).to_path_buf();
+            files.push(filename);
         }
         
         if targets.contains(&Target::DMG) {
@@ -65,7 +66,7 @@ impl Installer for MacOS {
                 &self.nwjs_root_folder,
                 &self.app_resources_folder.join("app.icns"),
                 &self.ctx.setup_resources_folder.join("macos-background.png"),
-                &self.ctx.build_folder,
+                &self.ctx.build_folder.join(&self.ctx.app_snake_name),
                 &self.ctx.output_folder
             );
 
@@ -108,16 +109,23 @@ impl MacOS {
 
     async fn copy_app_data(&self) -> Result<()> {
 
-        let mut options = dir::CopyOptions::new();
-        options.content_only = true;
-        options.overwrite = true;
+        copy_folder_with_glob_filters(
+            &self.ctx.app_root_folder,
+            &self.app_nw_folder,
+            self.ctx.manifest.package.include.clone(),
+            self.ctx.manifest.package.exclude.clone()
+        ).await?;
+
+        // let mut options = dir::CopyOptions::new();
+        // options.content_only = true;
+        // options.overwrite = true;
         
-        log!("Integrating","application data");
-        dir::copy(
-            &self.ctx.app_root_folder, 
-            &self.app_nw_folder, 
-            &options
-        )?;
+        // log!("Integrating","application data");
+        // dir::copy(
+        //     &self.ctx.app_root_folder, 
+        //     &self.app_nw_folder, 
+        //     &options
+        // )?;
 
         Ok(())
     }
