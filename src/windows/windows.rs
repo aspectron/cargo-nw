@@ -69,7 +69,7 @@ impl Installer for Windows {
 
         if targets.contains(&Target::InnoSetup) {
 
-            self.create_windows_icon(&self.setup_icon_file).await?;
+            self.create_innosetup_icon(&self.setup_icon_file).await?;
 
             let setup_script = ISS::new(
                 self.ctx.clone(),
@@ -163,13 +163,17 @@ impl Windows {
         list.into_iter().map(|(k,v)|(k.to_string(),v.to_string())).collect()
     }
 
-    async fn create_windows_icon(&self, ico_file : &PathBuf) -> Result<()> {
+    async fn create_innosetup_icon(&self, ico_file : &PathBuf) -> Result<()> {
 
         if Path::new(ico_file).exists().await {
             return Ok(());
         }
 
-        let app_icon_png = self.ctx.setup_resources_folder.join("app.png");
+        let app_icon_png = find_file(&self.ctx.setup_resources_folder, &[
+            "innosetup.png",
+            "windows-application.png",
+            "application.png"
+        ]).await?;
         let mut src = image::open(&app_icon_png)
             .expect(&format!("Unable to open {:?}", app_icon_png));
         let dimensions = src.dimensions();
@@ -234,7 +238,8 @@ impl Windows {
 
         // ~~~
 
-        let app_icon_png = self.ctx.setup_resources_folder.join("app.png");
+        // let app_icon_png = self.ctx.setup_resources_folder.join("app.png");
+        let app_icon_png = find_file(self.ctx.setup_resources_folder, &["windows-application.png","application.png"]);
         let mut app_icon_image = image::open(&app_icon_png)
             .expect(&format!("Unable to open {:?}", app_icon_png));
 

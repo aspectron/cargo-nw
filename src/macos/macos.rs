@@ -37,8 +37,8 @@ impl Installer for MacOS {
         if let Some(actions) = &self.ctx.manifest.application.execute {
             log!("Build","Executing build actions");
             for action in actions {
-                if let Execute::Pack { cmd, folder } = action {
-                    execute(&self.ctx,&cmd,&folder).await?;
+                if let Execute::Pack { cmd, folder, platform, arch } = action {
+                    execute(&self.ctx,cmd,folder,platform,arch).await?;
                 }
             }
         }
@@ -64,7 +64,7 @@ impl Installer for MacOS {
                 &self.ctx.arch.to_string(),
                 &self.nwjs_root_folder,
                 &self.app_resources_folder.join("app.icns"),
-                &self.ctx.setup_resources_folder.join("background.png"),
+                &self.ctx.setup_resources_folder.join("macos-background.png"),
                 &self.ctx.build_folder,
                 &self.ctx.output_folder
             );
@@ -126,10 +126,12 @@ impl MacOS {
 
         log!("MacOS","generating icons");
         
-        let app_icon = self.ctx.setup_resources_folder.join("app.png");
+        let app_icon = find_file(&self.ctx.setup_resources_folder, &["macos-application.png","application.png"]).await?;
+        // let app_icon = self.ctx.setup_resources_folder.join("macos-application.png");
         // self._generate_icns_sips(&app_icon, &self.app_resources_folder.join("app.icns")).await?;
         self.generate_icns_internal(&app_icon, &self.app_resources_folder.join("app.icns")).await?;
-        let document_icon = self.ctx.setup_resources_folder.join("document.png");
+        let document_icon = find_file(&self.ctx.setup_resources_folder, &["macos-document.png","document.png"]).await?;
+        // let document_icon = self.ctx.setup_resources_folder.join("macos-document.png");
         // self._generate_icns_sips(&document_icon, &self.app_resources_folder.join("document.icns")).await?;
         self.generate_icns_internal(&document_icon, &self.app_resources_folder.join("document.icns")).await?;
 

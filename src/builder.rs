@@ -36,8 +36,8 @@ impl Builder {
         if let Some(actions) = &self.ctx.manifest.application.execute {
             log!("Build","Executing build actions");
             for action in actions {
-                if let Execute::Build { cmd, folder } = action {
-                    execute(&self.ctx,&cmd,&folder).await?;
+                if let Execute::Build { cmd, folder, platform, arch } = action {
+                    execute(&self.ctx,cmd,folder,platform,arch).await?;
                 }
             }
         }
@@ -74,8 +74,8 @@ impl Builder {
         if let Some(actions) = &self.ctx.manifest.application.execute {
             log!("Build","Executing deploy actions");
             for action in actions {
-                if let Execute::Deploy { cmd, folder } = action {
-                    execute(&self.ctx,&cmd,&folder).await?;
+                if let Execute::Deploy { cmd, folder, platform, arch } = action {
+                    execute(&self.ctx,cmd,folder,platform,arch).await?;
                 }
             }
         }

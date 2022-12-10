@@ -1,5 +1,6 @@
 use cfg_if::cfg_if;
-use std::fmt;
+use std::{fmt, str::FromStr};
+use crate::error::Error;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Platform {
@@ -39,6 +40,7 @@ impl fmt::Display for Platform {
 pub enum Architecture {
     x64,
     ia32,
+    aarch64,
 }
 
 impl Default for Architecture {
@@ -52,10 +54,22 @@ impl fmt::Display for Architecture {
         match self {
             Architecture::x64 => write!(f, "x64"),
             Architecture::ia32 => write!(f, "ia32"),
+            Architecture::aarch64 => write!(f, "aarch64"),
         }
     }
 }
 
+impl FromStr for Architecture {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "x64" => Ok(Architecture::x64),
+            "ia32" => Ok(Architecture::ia32),
+            "aarch64" => Ok(Architecture::aarch64),
+            _ => Err(Error::InvalidArchitecture(s.to_string())),
+        }
+    }
+}
 
 // pub enum Target {
 //     Archive,

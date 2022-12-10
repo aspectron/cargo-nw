@@ -301,7 +301,25 @@ pub fn copy_folder_recurse(src_folder: &Path, dest_folder: &Path, ctx : &GlobCtx
     Ok(())
 }
 
-pub async fn execute(ctx : &Context, cmd : &str, folder : &Option<String>) -> Result<()> {
+pub async fn execute(
+    ctx: &Context,
+    cmd: &str,
+    folder: &Option<String>,
+    platform: &Option<String>,
+    arch: &Option<String>,
+) -> Result<()> {
+
+    if let Some(arch) = arch {
+        if arch != &ctx.arch.to_string() {
+            return Ok(());
+        }
+    }
+
+    if let Some(platform) = platform {
+        if platform != &ctx.platform.to_string() {
+            return Ok(());
+        }
+    }
 
     let folder = if let Some(folder) = folder {
         ctx.app_root_folder.join(folder)
@@ -321,3 +339,13 @@ pub async fn execute(ctx : &Context, cmd : &str, folder : &Option<String>) -> Re
     }
 }
 
+pub async fn find_file(folder: &Path,files: &[&str]) -> Result<PathBuf> {
+
+    for file in files {
+        let path = folder.join(file);
+        if path.exists().await {
+            return Ok(path);
+        }
+    }
+    return Err(format!("Unable to locate any of the files: {}", files.join(", ")).into())
+}

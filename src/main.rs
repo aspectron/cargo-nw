@@ -21,6 +21,7 @@ pub mod installer;
 pub mod log;
 pub mod init;
 pub mod signatures;
+pub mod tpl;
 
 // #[cfg(target_os = "macos")]
 pub mod macos;
@@ -54,52 +55,54 @@ enum Cmd {
 
 #[derive(Debug, clap::Args)]
 struct Args {
-
-    /// Location of nw.toml file
-    #[clap(name = "location")]//, help = "location of nw.toml file")]
+    /// Location of the nw.toml manifest file
+    #[clap(name = "location")]
     location: Option<String>,
-
+    /// Action to execute (build,clean,init)
     #[clap(subcommand)]
     action : Action,
-    // #[clap(short, long)]
-    // verbose : Option<bool>,
 }
 
 #[derive(Subcommand, Debug)]
 enum Action {
     /// Build NWJS package
     Build {
+        /// Package using NWJS SDK edition
         #[clap(short, long)]
         sdk : Option<bool>,
-
-        // #[clap(short, long)]
-        // archive : bool,
-        
-
+        /// Package target (for multi-target output)
         #[clap(short, long)]
         target : Option<Vec<Target>>,
-        
+        /// Target platform architecture (x64,ia32,aarch64)
+        #[clap(short, long)]
+        arch : Option<Architecture>,
+        /// Package target
         #[clap(subcommand)]
         default: Option<Target>
-        // #[clap(short, long)]
-        // target : Option<String>,
-
     },
-    /// Clean cache files
+    /// Clean intermediate build folders
     Clean { 
+        /// Clean only downloaded dependency packages
         #[clap(long)]
         deps : bool,
+        /// Clean dependencies and build folders
         #[clap(long)]
         all : bool,
     },
-
+    /// Create NW package template
     Init {
-
-        #[clap(name = "name", help = "the name of the project")]
+        /// The name of the project
+        #[clap(name = "name")]
         name: Option<String>,
-
+        /// JavaScript-only (Do not generate WASM stubs)
         #[clap(long)]
         js : bool,
+        /// Create nw.toml manifest only
+        #[clap(long)]
+        manifest : bool,
+        /// Force overwrite existing project files
+        #[clap(long)]
+        force : bool,
         
     }
 }
@@ -138,32 +141,18 @@ pub async fn async_main() -> Result<()> {
 
     
     let platform = Platform::default();
-    let arch = Architecture::default();
+    // let arch = Architecture::default();
     
     
     match action {
         Action::Build {
+            arch,
             sdk,
             // target,
             // archive,
             target,
             default
         } => {
-
-            // let nw_toml = Manifest::locate(location).await?;
-            // let manifest = Manifest::load(&nw_toml).await?;
-            // let project_root = nw_toml.parent().unwrap(); //get_parent_folder_name(&nw_toml);
-                    // let installer_type = if archive {
-            //     Target::Archive
-            // } else {
-            //     match platform {
-            //         Platform::Windows => Target::InnoSetup,
-            //         Platform::MacOS => Target::InnoSetup,
-            //         // FIXME - allow user to specify package manager
-            //         Platform::Linux => Target::Archive,
-            //         // Platform::MacOS => InstallerType::DMG,
-            //     }
-            // };
 
             let mut targets = TargetSet::new();
             if let Some(target) = target {
@@ -178,12 +167,11 @@ pub async fn async_main() -> Result<()> {
                 sdk : sdk.unwrap_or(false),
             };
 
+            let arch = arch.unwrap_or_default();
             let ctx = Arc::new(Context::create(
                 location,
                 platform,
                 arch,
-                // manifest,
-                // project_root,
                 options
             ).await?);
 
@@ -206,7 +194,7 @@ pub async fn async_main() -> Result<()> {
             let ctx = Arc::new(Context::create(
                 location,
                 platform,
-                arch,
+                Architecture::default(),
                 // manifest,
                 // project_root,
                 Options::default()
@@ -227,8 +215,11 @@ pub async fn async_main() -> Result<()> {
         },
         Action::Init {
             name,
-            js
+            js,
+            manifest,
+            force,
         } => {
+            // let arch = Architecture::default();
             let folder : PathBuf = env::current_dir().unwrap().into();
             let name = if let Some(name) = name {
                 name
@@ -236,9 +227,12 @@ pub async fn async_main() -> Result<()> {
                 folder.file_name().unwrap().to_str().unwrap().to_string()
             };
             // let name = name.as_ref().unwrap_or(folder.file_name().expect("").to_str().expect());
+            let options = init::Options {
+                js, manifest, force
+            };
             let mut project = init::Project::try_new(name, folder)?;
 
-            project.generate().await?;
+            project.generate(options).await?;
 
         }
     }

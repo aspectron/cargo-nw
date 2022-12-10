@@ -13,24 +13,27 @@ pub enum Error {
     #[error("Error: {0}")]
     String(String),
     
-    #[error("Error: {0}")]
+    #[error("Unknown architecture: '{0}'")]
+    InvalidArchitecture(String),
+    
+    #[error("I/O error: {0}")]
     IoError(#[from] std::io::Error),
 
-    #[error("OsString Error: {0}")]
+    #[error("OsString error: {0}")]
     OsString(String),
     
-    #[error("Error: {0}")]
+    #[error("FileSystem error: {0}")]
     FsExtra(#[from] fs_extra::error::Error),
     
     #[cfg(target_os = "windows")]
-    #[error("Error: {0}")]
+    #[error("Windows resource error: {0}")]
     #[cfg(target_os = "windows")]
     WinRes(#[from] winres_edit::Error),
     
-    #[error("Error: {0}")]
+    #[error("Glob error: {0}")]
     GlobError(#[from] GlobError),
     
-    #[error("Error: {0}")]
+    #[error("YAML error: {0}")]
     SerdeYamlError(#[from] serde_yaml::Error),
     
     // #[error("Error: {0}")]

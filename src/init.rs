@@ -5,6 +5,7 @@ use async_std::fs;
 use convert_case::{Case, Casing};
 use question::{Answer, Question};
 use console::style;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct PackageJson {
@@ -17,13 +18,13 @@ pub struct PackageJson {
 
 const INDEX_JS: &str = r###"
 (async()=>{
-    let $$NAME = await import('../$NAME/$NAME.js');
-    window.$$NAME = $$NAME;
-    const wasm = await $$NAME.default('/$NAME/$NAME_bg.wasm');
+    window.$$SNAKE = await import('../$NAME/$NAME.js');
+    // window.$$SNAKE = $$NAME;
+    const wasm = await window.$$SNAKE.default('/$NAME/$NAME_bg.wasm');
     //console.log("wasm", wasm, workflow)
-    //$$NAME.init_console_panic_hook();
-    //$$NAME.show_panic_hook_logs();
-    $$NAME.initialize();
+    //$$SNAKE.init_console_panic_hook();
+    //$$SNAKE.show_panic_hook_logs();
+    window.$$SNAKE.initialize();
 })();
 
 "###;
@@ -31,10 +32,10 @@ const INDEX_JS: &str = r###"
 const INDEX_HTML: &str = r###"
 
 (async()=>{
-    let $$NAME = await import('../$NAME/$NAME.js');
+    let $$SNAKE = await import('../$NAME/$NAME.js');
     const wasm = await $$NAME.default('/$NAME/$NAME_bg.wasm'); 
-    $$NAME.run();
-    // console.log("create_context_menu", $$NAME.create_context_menu())
+    $$SNAKE.run();
+    // console.log("create_context_menu", $$SNAKE.create_context_menu())
 })();
 "###;
 
@@ -46,7 +47,11 @@ const NW_TOML: &str = r###"
 name = "$NAME"
 version = "0.1.0"
 title = "$TITLE"
-description = "$TITLE"
+summary = "..."
+description = """
+...
+""""
+
 # root = "root"
 # resources = "resources/setup"
 # organization = "Your Organization Name"
@@ -78,7 +83,7 @@ const CARGO_TOML: &str = r###"
 [package]
 name = "$NAME"
 version = "$VERSION"
-edition = "$RUST_EDITION"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -92,11 +97,21 @@ const LIB_RS: &str = r###"
 
 "###;
 
+
+pub struct Options {
+    pub manifest: bool,
+    pub js : bool,
+    pub force : bool,
+}
+
 #[derive(Debug)]
 pub struct Project {
+    pub folder : PathBuf,
     pub name : String,
     pub title : String,
-    pub folder : PathBuf,
+    pub group : String,
+    pub version : String,
+    pub uuid : Uuid,
 }
 
 impl Project {
@@ -104,41 +119,33 @@ impl Project {
 
         let name = name.to_case(Case::Kebab);
         let title = name.from_case(Case::Lower).to_case(Case::Title);
-
-        let nw_toml = folder.join("nw.toml");
-        let package_json = folder.join("package.json");
-        let index_js = folder.join("index.js");
-        let index_html = folder.join("index.html");
+        let group = title.clone();
+        let version = format!("0.1.0");
+        let uuid = Uuid::new_v4();
 
         let project = Project {
+            folder,
             name,
             title,
-            folder
+            group,
+            version,
+            uuid,
         };
 
         Ok(project)
     }
 
-    pub async fn generate(&mut self) -> Result<()> {
-
-        // println!("TODO - init template project...");
+    pub async fn generate(&mut self, _options: Options) -> Result<()> {
 
         let name = Question::new(&format!("Project name [default:'{}']:",style(&self.name).yellow())).ask();
-
         if let Some(Answer::RESPONSE(name)) = name {
-
             if !name.is_empty() {
-                // name.chars().all(char::is_alphanumeric)
-                // name.chars().all(char::is_alphanumeric)
-
                 if name.contains(" ") {
                     println!("{}",style("\nError: project name can not contain spaces\n").red());
                     std::process::exit(1);
                 }
 
-                // let name = name.to_lowercase().to_case(Case::Kebab);
                 let name = name.to_case(Case::Kebab);
-
                 if name != self.name {
                     // self.title = name.from_case(Case::Kebab).to_case(Case::Camel);
                     self.title = name.from_case(Case::Kebab).to_case(Case::Title);
@@ -148,7 +155,6 @@ impl Project {
             }
         }
         let title = Question::new(&format!("Project title [default:'{}']:",style(&self.title).yellow())).ask();
-
         if let Some(Answer::RESPONSE(title)) = title {
             if !title.is_empty() {
                 self.title = title;
@@ -156,9 +162,8 @@ impl Project {
         }
 
         println!("");
-        log!("Init","creating project...");
+        log!("Init","creating '{}'",self.name);
         println!("");
-        // println!("name:{:?} title:{:?}",self.name,self.title);
 
         println!("{:?}", self);
 
@@ -168,46 +173,47 @@ impl Project {
         };
         let package_json = serde_json::to_string(&package).unwrap();
 
-        let files = [
-            ("nw.toml",NW_TOML),
-            ("package.json",&package_json),
-            ("index.js", INDEX_JS),
-            ("Cargo.toml", CARGO_TOML),
-            ("libr.rs", CARGO_TOML),
-            // ("",),
-            // ("",),
-            // ("",),
-            // ("",),
-            // ("",),
+        let tpl = self.tpl()?;
 
+        let files = [
+            ("nw.toml",tpl.transform(NW_TOML)),
+            ("package.json",tpl.transform(&package_json)),
+            ("index.js", tpl.transform(INDEX_JS)),
+            ("Cargo.toml", tpl.transform(CARGO_TOML)),
+            ("lib.rs", tpl.transform(CARGO_TOML)),
         ];
 
         for (filename, content) in files.iter() {
-            fs::write(filename,content).await?;
+            fs::write(filename,&content).await?;
         }
 
-        // let answer = Question::new("Continue?")
-        // .default(Answer::YES)
-        // .show_defaults()
-        // .confirm();
-
-        // ^ TODO - create files
-
         Ok(())
     }
 
-    async fn create_package_json(&self, ctx: &Context) -> Result<()> {
-        log!("MacOS","creating package.json");
+    fn tpl(&self) -> Result<Tpl> {
 
-        let package_json = PackageJson {
-            name : ctx.manifest.application.title.clone(),
-            main : "index.js".to_string(),
-        };
+        let tpl : Tpl = [
+            ("$NAME",self.name.clone()),
+            ("$SNAKE",self.name.from_case(Case::Kebab).to_case(Case::Snake)),
+            ("$TITLE",self.title.clone()),
+            ("$UUID",self.uuid.to_string()),
+            ("$VERSION",self.version.to_string()),
+        ].as_slice().try_into()?;
 
-        let json = serde_json::to_string(&package_json).unwrap();
-        fs::write(&self.folder.join("package.json"), json).await?;
-        Ok(())
+        Ok(tpl)
     }
 
+
+    // async fn create_package_json(&self, ctx: &Context) -> Result<()> {
+    //     log!("MacOS","creating package.json");
+    //     let package_json = PackageJson {
+    //         name : ctx.manifest.application.title.clone(),
+    //         main : "index.js".to_string(),
+    //     };
+    //     let json = serde_json::to_string(&package_json).unwrap();
+    //     fs::write(&self.folder.join("package.json"), json).await?;
+    //     Ok(())
+    // }
 
 }
+

@@ -1,3 +1,5 @@
+use std::sync::Mutex;
+
 use async_std::path::Path;
 use async_std::path::PathBuf;
 use crate::prelude::*;
@@ -36,6 +38,7 @@ pub struct Context {
     
     pub sdk : bool,
     pub deps : Dependencies,
+    pub tpl : Arc<Mutex<Tpl>>,
 }
 
 
@@ -74,6 +77,10 @@ impl Context {
         let sdk = manifest.nwjs.sdk.unwrap_or(options.sdk);
         let deps = Dependencies::new(&platform,&manifest,sdk);
 
+        let tpl : Tpl = [
+            ("$ROOT",&app_root_folder),
+        ].as_slice().try_into()?;
+
         let ctx = Context {
             manifest,
             platform,
@@ -90,6 +97,7 @@ impl Context {
             // app_root_folder,
             sdk,
             deps,
+            tpl : Arc::new(Mutex::new(tpl)),
         };
 
         Ok(ctx)
@@ -115,6 +123,11 @@ impl Context {
             async_std::fs::remove_dir_all(&self.build_folder).await?;
         }
         Ok(())
+    }
+
+    pub fn tpl(&self, text : &str) -> String {
+        let mut tpl = self.tpl.lock().unwrap();
+        tpl.transform(text)
     }
 
 }

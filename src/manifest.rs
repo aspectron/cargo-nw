@@ -53,11 +53,11 @@ impl Manifest {
 // #[allow(non_camel_case_types)]
 pub enum Execute {
     #[serde(rename = "build")]
-    Build { cmd : String, folder : Option<String> },
+    Build { cmd : String, folder : Option<String>, platform: Option<String>, arch: Option<String> },
     #[serde(rename = "build")]
-    Pack { cmd : String, folder : Option<String> },
+    Pack { cmd : String, folder : Option<String>, platform: Option<String>, arch: Option<String>  },
     #[serde(rename = "deploy")]
-    Deploy { cmd : String, folder : Option<String> },
+    Deploy { cmd : String, folder : Option<String>, platform: Option<String>, arch: Option<String>  },
 
 }
 
