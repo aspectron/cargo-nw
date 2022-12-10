@@ -80,7 +80,8 @@ impl Context {
         let cargo_nw_target_folder = cargo_target_folder.join("nw");
         let build_folder = Path::new(&cargo_nw_target_folder).join("build").join(&app_snake_name);
         let cache_folder = Path::new(&cargo_nw_target_folder).join("cache").join(&app_snake_name);
-        let output_folder = if let Some(output) = output {
+        
+        let output_folder = if let Some(output) = output.or(manifest.package.output.clone()) {
             let output = Path::new(&output);
             if output.is_absolute() {
                 output.to_owned()
