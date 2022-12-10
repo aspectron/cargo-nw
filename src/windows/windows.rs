@@ -60,7 +60,7 @@ impl Installer for Windows {
 
         let mut files = Vec::new();
 
-        if targets.contains(&Target::Archive)  || self.ctx.manifest.package.archive.unwrap_or(false) {
+        if targets.contains(&Target::Archive) {
             log!("Windows","creating archive");
             
             let filename = Path::new(&format!("{}.zip",self.ctx.app_snake_name)).to_path_buf();
@@ -91,7 +91,7 @@ impl Windows {
         options.content_only = true;
         options.skip_exist = true;
         
-        log!("Integrating","NWJS binaries");
+        log!("Integrating","NW binaries");
         dir::copy(
             Path::new(&self.ctx.deps.nwjs.target),
             &self.nwjs_root_folder, 

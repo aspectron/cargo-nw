@@ -185,7 +185,7 @@ impl Dependencies {
                 log!("Dependencies","extracting {}", &meta.file);
                 let file = Path::new(&self.dir).join(&meta.file);
                 // let target_dir = meta.get_extract_path(&self.dir);
-                extract(&file, &meta.target).await?;
+                extract(&file.into(), &meta.target.clone().into()).await?;
             }
         } else {
             // log!("Dependencies","ok");

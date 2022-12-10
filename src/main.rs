@@ -8,6 +8,7 @@ pub mod result;
 pub mod manifest;
 pub mod builder;
 pub mod utils;
+pub mod archive;
 pub mod platform;
 pub mod context;
 pub mod deps;
@@ -73,18 +74,19 @@ enum Action {
         /// Package using Node Webkit SDK edition
         #[clap(short, long)]
         sdk : Option<bool>,
-        /// Package target (for multi-target output)
-        #[clap(short, long)]
-        target : Option<Vec<Target>>,
         /// Target platform architecture (x64,ia32,aarch64)
         #[clap(short, long)]
         arch : Option<Architecture>,
-        /// Package target
-        #[clap(subcommand)]
-        default: Option<Target>,
         /// Use custom manifest file
         #[clap(short, long)]
         manifest: Option<String>,
+        /// Package target (for multi-target output)
+        #[clap(short, long)]
+        target : Option<Vec<Target>>,
+        /// Package target
+        #[clap(subcommand)]
+        default: Option<Target>,
+        // default: Option<Target>,
     },
     /// Clean intermediate build folders
     Clean { 
@@ -155,6 +157,7 @@ pub async fn async_main() -> Result<()> {
                 targets.insert(default);
             }
 
+
             let options = Options {
                 sdk : sdk.unwrap_or(false),
             };
@@ -168,7 +171,12 @@ pub async fn async_main() -> Result<()> {
                 options
             ).await?);
 
-            println!("... executing ...");
+            if ctx.manifest.package.archive.is_some() {
+                targets.insert(Target::Archive);
+            }
+
+
+            // println!("... executing ...");
 
             // println!("build context: {:#?}", ctx);
 
@@ -233,8 +241,9 @@ pub async fn async_main() -> Result<()> {
 #[tokio::main]
 async fn main() -> Result<()> {
     match async_main().await {
-        Err(Error::String(s)) => println!("\n{}", style(s).red()),
-        Err(e) => println!("\n{}", e),
+        // Err(Error::String(s)) => println!("\n{}", style(s).red()),
+        Err(Error::Warning(warn)) => println!("\nWarning: {}\n",style(format!("{}", warn)).yellow()),
+        Err(err) => println!("\n{}\n",style(format!("{}", err)).red()),
         Ok(_) => { }
     };
     Ok(())

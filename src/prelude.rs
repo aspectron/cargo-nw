@@ -7,6 +7,7 @@ pub use crate:: {
     platform::*,
     deps::*,
     builder::*,
+    archive::*,
     utils::*,
     installer::*,
     log::*,

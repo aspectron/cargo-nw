@@ -45,6 +45,7 @@ path-dedot = "3.0.18"
 sha2 = "0.10.6"
 serde_yaml = "0.9.14"
 question = "0.2.2"
+walkdir = "2.3.2"
 uuid = { version = "1.2.2", features = ["v4"] }
 manual-serializer = { path="../manual-serializer" }
 

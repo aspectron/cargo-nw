@@ -13,12 +13,26 @@ use std::{collections::HashSet, str::FromStr};
 #[derive(Debug, Clone, Subcommand, Hash, PartialEq, Eq)]
 pub enum Target {
     Archive,
-    // #[cfg(target_os = "macos")]
+    #[cfg(target_os = "macos")]
     DMG,
-    // #[cfg(target_os = "windows")]
+    #[cfg(target_os = "windows")]
     InnoSetup,
-    // #[cfg(target_os = "linux")]
+    #[cfg(target_os = "linux")]
     Snap,
+}
+
+impl ToString for Target {
+    fn to_string(&self) -> String {
+        match self {
+            Target::Archive => "Archive",
+            #[cfg(target_os = "macos")]
+            Target::DMG => "DMG",
+            #[cfg(target_os = "windows")]
+            Target::InnoSetup => "InnoSetup",
+            #[cfg(target_os = "linux")]
+            Target::Snap => "Snap",
+        }.to_string()
+    }
 }
 
 impl FromStr for Target {

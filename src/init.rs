@@ -176,7 +176,7 @@ impl Project {
     pub async fn generate(&mut self, mut options: Options) -> Result<()> {
 
         if !options.force &&  Path::new("nw.toml").exists().await {
-            return Err("Existing nw.toml found ...aborting (use --force to re-create)".into());
+            return Err("existing nw.toml found ...aborting (use --force to re-create)".into());
         }
 
         if Path::new("package.json").exists().await {

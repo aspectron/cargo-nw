@@ -73,7 +73,8 @@ impl Context {
             .unwrap_or(cwd.clone());
         let cargo_target_folder = cargo_toml_folder.join("target");
         let cargo_nw_target_folder = cargo_target_folder.join("nw");
-        let build_folder = Path::new(&cargo_nw_target_folder).join("build");//.join(app_snake_name);
+        let build_folder = Path::new(&cargo_nw_target_folder).join("build").join(&app_snake_name);
+        // let build_folder = Path::new(&cargo_nw_target_folder).join("build");//.join(app_snake_name);
         let build_cache_folder = Path::new(&cargo_nw_target_folder).join("cache").join(&manifest.application.title);
 
         let project_root_folder = project_root.to_path_buf();

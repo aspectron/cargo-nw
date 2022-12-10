@@ -16,6 +16,9 @@ cfg_if::cfg_if!{
 pub enum Error {
     #[error("Error: {0}")]
     String(String),
+
+    #[error("Warning: {0}")]
+    Warning(String),
     
     #[error("Unknown architecture: '{0}'")]
     InvalidArchitecture(String),
@@ -42,6 +45,10 @@ pub enum Error {
     
     #[error("JSON error: {0}")]
     JsonError(#[from] serde_json::Error),
+    
+    
+    #[error("ZIP error: {0}")]
+    ZipError(#[from] zip::result::ZipError),
     
     // #[error("Error: {0}")]
     // TryFromSliceError(#[from] TryFromSliceError),

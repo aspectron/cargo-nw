@@ -138,7 +138,8 @@ pub enum Build {
 #[derive(Debug, Clone, Deserialize)]
 pub struct Package {
     pub build: Option<Vec<Build>>,
-    pub archive: Option<bool>,
+    pub archive: Option<Archive>,
+    pub signatures: Option<bool>,
     pub resources: Option<String>,
     pub root: Option<String>,
     pub include: Option<Vec<String>>,
@@ -201,4 +202,23 @@ pub struct PackageJson {
     pub main : String,
     pub description : Option<String>,
     pub version : Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Archive {
+    STORE,
+    BZIP2,
+    DEFLATE,
+    ZSTD
+}
+
+impl Into<zip::CompressionMethod> for Archive {
+    fn into(self) -> zip::CompressionMethod {
+        match self {
+            Archive::STORE => zip::CompressionMethod::Stored,
+            Archive::BZIP2 => zip::CompressionMethod::Bzip2,
+            Archive::DEFLATE => zip::CompressionMethod::Deflated,
+            Archive::ZSTD => zip::CompressionMethod::Zstd,
+        }
+    }
 }

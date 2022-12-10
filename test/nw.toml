@@ -14,6 +14,8 @@ long = """
 """
 
 [package]
+# archive = "STORE"
+signatures = true
 root = ".."
 # build = [
     # { WASM = { } },
@@ -24,11 +26,11 @@ wasm = "root/wasm"
 resources = "resources"
 include = ["root/*.html","root/*.js"]
 exclude = ["*.html"]
-execute = [
-    { build = { cmd = "123", folder = "456" } },
-    { build = { cmd = "456", folder = "789" } },
-    { deploy = { cmd = "ABC", folder = "XYZ" } },
-]
+# execute = [
+#     { build = { cmd = "123", folder = "456" } },
+#     { build = { cmd = "456", folder = "789" } },
+#     { deploy = { cmd = "ABC", folder = "XYZ" } },
+# ]
 
 [nwjs]
 version = "0.70.1"

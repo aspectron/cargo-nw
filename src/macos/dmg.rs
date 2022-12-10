@@ -217,8 +217,8 @@ impl DMG {
             &self.build_file
         ).stdout_null().run()?;
 
-        let dmg_size = std::fs::metadata(&self.output_file)?.len() as f64;
-        log!("DMG","resulting DMG size: {:.2}Mb", dmg_size/1024.0/1024.0);
+        // let dmg_size = std::fs::metadata(&self.output_file)?.len() as f64;
+        // log!("DMG","resulting DMG size: {:.2}Mb", dmg_size/1024.0/1024.0);
 
         Ok(self.output_file.clone())
     }

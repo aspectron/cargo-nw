@@ -110,7 +110,7 @@ impl ISS {
 			println!("please download innosetup 6 at:");
 			println!("https://jrsoftware.org/isdl.php");
             println!("");
-            return Err("Missing InnoSetup Compiler".into())
+            return Err("missing InnoSetup compiler".into())
         }
         Ok(())
     

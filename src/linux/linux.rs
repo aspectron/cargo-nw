@@ -28,7 +28,7 @@ impl Installer for Linux {
 
         let mut files = Vec::new();
 
-        if targets.contains(&Target::Archive)  || self.ctx.manifest.package.archive.unwrap_or(false) {
+        if targets.contains(&Target::Archive) {
             log!("Linux","creating archive");
             
             let filename = Path::new(&format!("{}.tgz",self.ctx.app_snake_name)).to_path_buf();
@@ -55,7 +55,7 @@ impl Linux {
         options.content_only = true;
         options.skip_exist = true;
         
-        log!("Integrating","NWJS binaries");
+        log!("Integrating","NW binaries");
         dir::copy(
             Path::new(&self.ctx.deps.nwjs.target),
             &self.nwjs_root_folder, 

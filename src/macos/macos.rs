@@ -53,10 +53,22 @@ impl Installer for MacOS {
         // log!("MacOS","creating {:?} installer",installer_type);
 
         let mut files = Vec::new();
-        if targets.contains(&Target::Archive) || self.ctx.manifest.package.archive.unwrap_or(false) {
+        if targets.contains(&Target::Archive) {
             log!("MacOS","creating archive");
             
+            // let level = self.ctx.manifest.package.archive.clone().unwrap_or(Archive::BZIP2);
+            let level = self.ctx.manifest.package.archive.clone().unwrap_or(Archive::DEFLATE);
+
             let filename = Path::new(&format!("{}.zip",self.ctx.app_snake_name)).to_path_buf();
+
+            compress_folder(
+                &self.nwjs_root_folder,
+                &self.ctx.output_folder.join(&filename),
+                // dst_file, 
+                // zip::CompressionMethod::Bzip2
+                level.into()
+            )?;
+
             files.push(filename);
         }
         
@@ -72,7 +84,7 @@ impl Installer for MacOS {
                 &self.nwjs_root_folder,
                 &self.app_resources_folder.join("app.icns"),
                 &self.ctx.setup_resources_folder.join("macos-background.png"),
-                &self.ctx.build_folder.join(&self.ctx.app_snake_name),
+                &self.ctx.build_folder,//.join(&self.ctx.app_snake_name),
                 &self.ctx.output_folder
             );
 
@@ -103,7 +115,7 @@ impl MacOS {
         options.content_only = true;
         options.skip_exist = true;
         
-        log!("Integrating","NWJS binaries");
+        log!("Integrating","NW binaries");
         dir::copy(
             Path::new(&self.ctx.deps.nwjs.target).join("nwjs.app"), 
             &self.nwjs_root_folder, 
