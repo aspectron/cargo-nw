@@ -269,7 +269,7 @@ impl GlobCtx {
     pub fn include(&self, path : &Path)
     -> bool 
     {
-        if self.hidden && is_hidden(path) {
+        if !self.hidden && is_hidden(path) {
             return false;
         }
 
