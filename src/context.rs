@@ -35,11 +35,14 @@ pub struct Context {
     /// Folder that contains setup resources
     pub setup_resources_folder : PathBuf,
     // pub app_snake_name : PathBuf,
-    pub build_cache_folder : PathBuf,
+    pub cache_folder : PathBuf,
     pub build_folder : PathBuf,
     pub output_folder : PathBuf,
     
     pub app_snake_name : String,
+
+    pub include : Vec<String>,
+    pub exclude : Vec<String>,
 
     pub sdk : bool,
     pub deps : Dependencies,
@@ -74,23 +77,47 @@ impl Context {
         let cargo_target_folder = cargo_toml_folder.join("target");
         let cargo_nw_target_folder = cargo_target_folder.join("nw");
         let build_folder = Path::new(&cargo_nw_target_folder).join("build").join(&app_snake_name);
-        // let build_folder = Path::new(&cargo_nw_target_folder).join("build");//.join(app_snake_name);
-        let build_cache_folder = Path::new(&cargo_nw_target_folder).join("cache").join(&manifest.application.title);
+        let cache_folder = Path::new(&cargo_nw_target_folder).join("cache").join(&app_snake_name);
+        let output_folder = Path::new(&cargo_nw_target_folder).join("setup");
 
         let project_root_folder = project_root.to_path_buf();
         let app_root_folder = manifest.package.root.as_ref()
             .map(|root|project_root_folder.to_path_buf().join(root))
             .unwrap_or(project_root_folder.clone());
-        let app_root_folder = std::path::PathBuf::from(&app_root_folder).parse_dot()?.to_path_buf().into();
+        let app_root_folder: PathBuf = std::path::PathBuf::from(&app_root_folder).parse_dot()?.to_path_buf().into();
 
         let setup_resources_folder = cwd.join(&manifest.package.resources.as_ref().unwrap_or(&"resources".to_string())).into();
-        // let output_folder = Path::new(&cargo_nw_target_folder).join("setup");//.join(&manifest.application.title);
-        let output_folder = Path::new(&cargo_nw_target_folder).join("setup");//.join(&manifest.application.title);
         let sdk = manifest.nwjs.sdk.unwrap_or(options.sdk);
         let deps = Dependencies::new(&platform,&manifest,sdk);
 
+        let include = manifest.package.include.clone().unwrap_or(vec![]);
+        let mut exclude = manifest.package.exclude.clone().unwrap_or(vec![]);
+
+        if manifest.package.gitignore.unwrap_or(true) {
+            let gitignore = app_root_folder.join(".gitignore");
+            if gitignore.exists().await {
+                let gitignore = match std::fs::read_to_string(&gitignore) {
+                    Ok(gitignore) => gitignore,
+                    Err(e) => {
+                        return Err(format!("Unable to open '{}' - {}",gitignore.display(),e).into());
+                    }
+                };
+                let list = gitignore
+                    .split("\n")
+                    .filter(|s|!s.is_empty())
+                    .map(|s|s.to_string())
+                    .collect::<Vec<_>>();
+                exclude.extend(list);
+            }
+        }
+
         let tpl : Tpl = [
-            ("$ROOT",&app_root_folder),
+            ("$ROOT",app_root_folder.to_str().unwrap().to_string()),
+            ("$NAME",manifest.application.name.clone()),
+            ("$VERSION",manifest.application.version.clone()),
+            ("$OUTPUT",output_folder.to_str().unwrap().to_string()),
+            ("$PLATFORM",platform.to_string()),
+            ("$ARCH",arch.to_string()),
         ].as_slice().try_into()?;
 
         let ctx = Context {
@@ -105,9 +132,11 @@ impl Context {
             project_root_folder,
             setup_resources_folder,
 
-            build_cache_folder,
+            cache_folder,
             output_folder,
 
+            include,
+            exclude,
             // app_root_folder,
             sdk,
             deps,
@@ -118,7 +147,7 @@ impl Context {
     }
 
     pub async fn ensure_folders(&self) -> Result<()> {
-        let folders = [&self.build_folder, &self.output_folder];
+        let folders = [&self.build_folder, &self.output_folder, &self.cache_folder];
         for folder in folders {
             if !std::path::Path::new(folder).exists() {
                 std::fs::create_dir_all(folder)?;

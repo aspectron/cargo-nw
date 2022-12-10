@@ -57,19 +57,19 @@ impl Installer for MacOS {
             log!("MacOS","creating archive");
             
             // let level = self.ctx.manifest.package.archive.clone().unwrap_or(Archive::BZIP2);
-            let level = self.ctx.manifest.package.archive.clone().unwrap_or(Archive::DEFLATE);
+            let level = self.ctx.manifest.package.archive.clone().unwrap_or_default(); //(Archive::DEFLATE);
 
             let filename = Path::new(&format!("{}.zip",self.ctx.app_snake_name)).to_path_buf();
-
+            let target_file = self.ctx.output_folder.join(&filename);
             compress_folder(
                 &self.nwjs_root_folder,
-                &self.ctx.output_folder.join(&filename),
+                &target_file, //self.ctx.output_folder.join(&filename),
                 // dst_file, 
                 // zip::CompressionMethod::Bzip2
                 level.into()
             )?;
 
-            files.push(filename);
+            files.push(target_file);
         }
         
         if targets.contains(&Target::DMG) {
@@ -130,8 +130,8 @@ impl MacOS {
         copy_folder_with_glob_filters(
             &self.ctx.app_root_folder,
             &self.app_nw_folder,
-            self.ctx.manifest.package.include.clone(),
-            self.ctx.manifest.package.exclude.clone(),
+            self.ctx.include.clone(),
+            self.ctx.exclude.clone(),
             self.ctx.manifest.package.hidden.unwrap_or(false),
         ).await?;
         Ok(())

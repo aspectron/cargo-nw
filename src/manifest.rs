@@ -110,6 +110,14 @@ pub enum Execute {
         arch: Option<String>,
         env : Option<Vec<String>>,
     },
+    #[serde(rename = "publish")]
+    Publish {
+        cmd : String,
+        folder : Option<String>,
+        platform: Option<String>,
+        arch: Option<String>,
+        env : Option<Vec<String>>,
+    },
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -137,6 +145,7 @@ pub enum Build {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Package {
+    pub gitignore: Option<bool>,
     pub build: Option<Vec<Build>>,
     pub archive: Option<Archive>,
     pub signatures: Option<bool>,
@@ -210,6 +219,12 @@ pub enum Archive {
     BZIP2,
     DEFLATE,
     ZSTD
+}
+
+impl Default for Archive {
+    fn default() -> Self {
+        Archive::ZSTD
+    }
 }
 
 impl Into<zip::CompressionMethod> for Archive {

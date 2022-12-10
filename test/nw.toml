@@ -26,11 +26,19 @@ wasm = "root/wasm"
 resources = "resources"
 include = ["root/*.html","root/*.js"]
 exclude = ["*.html"]
-# execute = [
+execute = [
+    { publish = { cmd = "bash publish $OUTPUT/$NAME-$VERSION" } },
 #     { build = { cmd = "123", folder = "456" } },
 #     { build = { cmd = "456", folder = "789" } },
 #     { deploy = { cmd = "ABC", folder = "XYZ" } },
+]
+
+# publish = [
+#     "publish $OUTPUT/$NAME-$VERSION"
 # ]
+
+# [publish]
+# cmd = "script"
 
 [nwjs]
 version = "0.70.1"

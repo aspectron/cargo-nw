@@ -102,8 +102,8 @@ pub async fn copy_folder_with_glob_filters(
     // case_sensitive : bool, 
     src_folder: &Path, 
     dest_folder: &Path, 
-    include_patterns: Option<Vec<String>>, 
-    exclude_patterns: Option<Vec<String>>,
+    include_patterns: Vec<String>, 
+    exclude_patterns: Vec<String>,
     hidden : bool,
 ) -> Result<()> {
 
@@ -131,29 +131,24 @@ pub struct GlobCtx {
 impl GlobCtx {
     pub fn try_new(
         base : &Path, 
-        include_patterns: Option<Vec<String>>, 
-        exclude_patterns: Option<Vec<String>>,
+        include_patterns: Vec<String>, 
+        exclude_patterns: Vec<String>,
         hidden: bool,
     ) -> Result<GlobCtx> {
 
         let mut include_globs = GlobSetBuilder::new();
         let mut exclude_globs = GlobSetBuilder::new();
 
-        match include_patterns {
-            Some(patterns) if patterns.len() != 0 => {
-                for pattern in patterns.iter() {
-                    include_globs.add(Glob::new(pattern)?);
-                }
-            },
-            _ => {
-                include_globs.add(Glob::new("**/*")?);
+        if include_patterns.len() > 0 {
+            for pattern in include_patterns.iter() {
+                include_globs.add(Glob::new(pattern)?);
             }
+        } else {
+            include_globs.add(Glob::new("**/*")?);
         }
 
-        if let Some(patterns) = exclude_patterns {
-            for pattern in patterns.iter() {
-                exclude_globs.add(Glob::new(pattern)?);
-            }
+        for pattern in exclude_patterns.iter() {
+            exclude_globs.add(Glob::new(pattern)?);
         }
     
         let include = include_globs.build()?;
@@ -263,7 +258,16 @@ pub async fn execute(
         ctx.app_root_folder.clone()
     };
 
-    let program = argv.first().expect("missing program in build config");
+    let argv = argv
+        .iter()
+        .map(|s|ctx
+            .tpl
+            .lock()
+            .unwrap()
+            .transform(s)
+            .to_string()
+        ).collect::<Vec<_>>();
+    let program = argv.first().expect("missing program (frist argument) in the execution config");
     let args = argv[1..].to_vec();
 
     let mut proc = duct::cmd(program,args).dir(&folder);

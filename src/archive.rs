@@ -176,6 +176,8 @@ pub fn compress_folder(
         return Err(ZipError::FileNotFound.into());
     }
 
+    log!("Archive","compressing");
+
     let path = Path::new(dst_file);
     let file = File::create(path).unwrap();
 

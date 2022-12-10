@@ -5,7 +5,7 @@ pub mod impls {
     use super::*;
 
     pub fn log_state_impl(source: &str, args : &fmt::Arguments<'_>) {
-        print!("{}",format!("\r\x1b[2K{:>12} {}",style(source).green().bold(), args.to_string()));
+        print!("{}",format!("\r\x1b[2K{:>12} {}\r",style(source).green().bold(), args.to_string()));
     }
 
     pub fn log_impl(source: &str, args : &fmt::Arguments<'_>) {

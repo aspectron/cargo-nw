@@ -118,7 +118,13 @@ impl Builder {
         if let Some(actions) = &self.ctx.manifest.package.execute {
             log!("Build","Executing build actions");
             for action in actions {
-                if let Execute::Build {cmd, env, folder, platform, arch } = action {
+                if let Execute::Build {
+                    cmd,
+                    env,
+                    folder,
+                    platform,
+                    arch
+                } = action {
                     let argv = cmd.split(" ").map(|s|s.to_string()).collect();
                     execute(&self.ctx,argv,env,folder,platform,arch).await?;
                 }
@@ -144,7 +150,7 @@ impl Builder {
 
         let duration = ts_start.elapsed();
 
-        let files: Vec<(_,_)> = files.iter().map(|f|(f,self.ctx.output_folder.join(f))).collect();
+        let files: Vec<(_,_)> = files.iter().map(|f|(f.file_name().unwrap().to_owned(),f)).collect();
 
         if self.ctx.manifest.package.signatures.unwrap_or(false) {
             log!("Build","generating signatures");
@@ -163,7 +169,13 @@ impl Builder {
         if let Some(actions) = &self.ctx.manifest.package.execute {
             log!("Build","Executing deploy actions");
             for action in actions {
-                if let Execute::Deploy { cmd, env, folder, platform, arch } = action {
+                if let Execute::Deploy {
+                    cmd,
+                    env,
+                    folder,
+                    platform,
+                    arch
+                } = action {
                     let argv = cmd.split(" ").map(|s|s.to_string()).collect();
                     execute(&self.ctx,argv,env,folder,platform,arch).await?;
                 }

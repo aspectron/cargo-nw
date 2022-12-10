@@ -60,7 +60,7 @@ enum Cmd {
 #[derive(Debug, clap::Args)]
 struct Args {
     /// Location of the nw.toml manifest file
-    #[clap(name = "location")]
+    #[clap(name = "manifest")]
     location: Option<String>,
     /// Action to execute (build,clean,init)
     #[clap(subcommand)]
@@ -111,8 +111,14 @@ enum Action {
         /// Force overwrite existing project files
         #[clap(long)]
         force : bool,
-        
-    }
+    },
+    Publish {
+        #[clap(name = "manifest")]
+        manifest: Option<String>,
+    },
+    //  {
+
+    // }
 }
 
 
@@ -230,6 +236,37 @@ pub async fn async_main() -> Result<()> {
             let mut project = init::Project::try_new(name, folder)?;
 
             project.generate(options).await?;
+
+        },
+        Action::Publish {
+            manifest
+        } => {
+
+            let arch = Architecture::default();
+            let ctx = Arc::new(Context::create(
+                location,
+                manifest,
+                platform,
+                arch,
+                Options::default()
+            ).await?);
+
+            if let Some(actions) = &ctx.manifest.package.execute {
+                log!("Build","executing publish actions");
+                for action in actions {
+                    if let Execute::Publish { 
+                        cmd,
+                        env,
+                        folder,
+                        platform,
+                        arch
+                    } = action {
+                        let argv = cmd.split(" ").map(|s|s.to_string()).collect();
+                        execute(&ctx,argv,env,folder,platform,arch).await?;
+                    }
+                }
+            }
+    
 
         }
     }
