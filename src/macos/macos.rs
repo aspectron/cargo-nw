@@ -29,14 +29,19 @@ impl Installer for MacOS {
         self.copy_app_data().await?;
         self.rename_app_bundle(&self.app_contents_folder).await?;
         self.generate_resource_strings(&self.app_contents_folder).await?;
-        // self._create_package_json(ctx).await?;
         self.generate_icons().await?;
 
+        let tpl = create_installer_tpl(
+            &self.ctx,
+            &self.ctx.app_root_folder,
+            &self.nwjs_root_folder
+        )?;
 
         if let Some(actions) = &self.ctx.manifest.package.execute {
             log!("Build","Executing build actions");
             for action in actions {
                 if let Execute::Pack { cmd, folder, platform, arch } = action {
+                    let cmd = &tpl.transform(cmd);
                     execute(&self.ctx,cmd,folder,platform,arch).await?;
                 }
             }
@@ -108,25 +113,14 @@ impl MacOS {
     }
 
     async fn copy_app_data(&self) -> Result<()> {
-
+        log!("Integrating","application data");
         copy_folder_with_glob_filters(
             &self.ctx.app_root_folder,
             &self.app_nw_folder,
             self.ctx.manifest.package.include.clone(),
-            self.ctx.manifest.package.exclude.clone()
+            self.ctx.manifest.package.exclude.clone(),
+            self.ctx.manifest.package.hidden.unwrap_or(false),
         ).await?;
-
-        // let mut options = dir::CopyOptions::new();
-        // options.content_only = true;
-        // options.overwrite = true;
-        
-        // log!("Integrating","application data");
-        // dir::copy(
-        //     &self.ctx.app_root_folder, 
-        //     &self.app_nw_folder, 
-        //     &options
-        // )?;
-
         Ok(())
     }
 

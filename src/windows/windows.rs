@@ -102,28 +102,16 @@ impl Windows {
     }
 
     async fn copy_app_data(&self) -> Result<()> {
-
+        log!("Integrating","application data");
         copy_folder_with_glob_filters(
             &self.ctx.app_root_folder,
             &self.nwjs_root_folder,
             self.ctx.manifest.package.include.clone(),
-            self.ctx.manifest.package.exclude.clone()
+            self.ctx.manifest.package.exclude.clone(),
+            self.ctx.manifest.package.hidden.unwrap_or(false),
         ).await?;
-
-        // let mut options = dir::CopyOptions::new();
-        // options.content_only = true;
-        // options.overwrite = true;
-        
-        // log!("Integrating","application data");
-        // dir::copy(
-        //     &self.ctx.app_root_folder, 
-        //     &self.nwjs_root_folder, 
-        //     &options
-        // )?;
-
         Ok(())
     }
-
 
     fn get_resource_strings(&self) -> Vec<(String,String)> {
         let windows = self.ctx.manifest.windows.as_ref();

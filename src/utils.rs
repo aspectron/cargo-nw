@@ -201,9 +201,16 @@ pub async fn copy_folder_with_glob_filters(
     dest_folder: &Path, 
     include_patterns: Option<Vec<String>>, 
     exclude_patterns: Option<Vec<String>>,
+    hidden : bool,
 ) -> Result<()> {
 
-    let ctx = GlobCtx::try_new(src_folder, include_patterns, exclude_patterns)?;
+    let ctx = GlobCtx::try_new(
+        src_folder,
+        include_patterns,
+        exclude_patterns,
+        hidden,
+    )?;
+
     if ctx.include(src_folder) {
         copy_folder_recurse(src_folder, dest_folder, &ctx)?;
     }
@@ -215,13 +222,15 @@ pub struct GlobCtx {
     root : PathBuf,
     include : GlobSet,
     exclude : GlobSet,
+    hidden : bool,
 }
 
 impl GlobCtx {
     pub fn try_new(
         base : &Path, 
         include_patterns: Option<Vec<String>>, 
-        exclude_patterns: Option<Vec<String>>
+        exclude_patterns: Option<Vec<String>>,
+        hidden: bool,
     ) -> Result<GlobCtx> {
 
         let mut include_globs = GlobSetBuilder::new();
@@ -250,7 +259,8 @@ impl GlobCtx {
         let ctx = GlobCtx {
             root : root.to_path_buf(),
             include,
-            exclude
+            exclude,
+            hidden,
         };
 
         Ok(ctx)
@@ -259,7 +269,7 @@ impl GlobCtx {
     pub fn include(&self, path : &Path)
     -> bool 
     {
-        if is_hidden(path) {
+        if self.hidden && is_hidden(path) {
             return false;
         }
 

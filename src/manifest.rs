@@ -82,6 +82,7 @@ pub struct Package {
     pub root: Option<String>,
     pub include: Option<Vec<String>>,
     pub exclude: Option<Vec<String>>,
+    pub hidden: Option<bool>,
     pub execute: Option<Vec<Execute>>,
 }
 
