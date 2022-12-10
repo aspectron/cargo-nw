@@ -38,8 +38,8 @@ impl Installer for MacOS {
         )?;
 
         if let Some(actions) = &self.ctx.manifest.package.execute {
-            log!("Build","Executing build actions");
             for action in actions {
+                log!("Build","executing pack action");
                 if let Execute::Pack { cmd, env, folder, platform, arch } = action {
                     let cmd = &tpl.transform(cmd);
                     let argv = cmd.split(" ").map(|s|s.to_string()).collect();

@@ -1,14 +1,16 @@
 use async_std::fs::*;
-use async_std::path::PathBuf;
+use async_std::path::{PathBuf, Path};
 use crate::prelude::*;
 use regex::Regex;
+use path_dedot::*;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Manifest {
     pub application : Application,
     pub description : Description,
     pub package : Package,
-    pub nwjs : NWJS,
+    #[serde(rename = "node-webkit")]
+    pub node_webkit : NW,
     pub windows : Option<Windows>,
     pub firewall : Option<Firewall>,
     pub languages : Option<Languages>,
@@ -16,29 +18,44 @@ pub struct Manifest {
 
 impl Manifest {
 
-    pub async fn locate(location: Option<String>, manifest : Option<String>) -> Result<PathBuf> {
-        let manifest = manifest.unwrap_or("nw.toml".to_string());
+    pub async fn locate(location: Option<String>) -> Result<PathBuf> {
         let cwd = current_dir().await;
-        if let Some(location) = location {
-            let location = cwd.join(location).join(&manifest);
-            if location.exists().await {
-                Ok(location)
+
+        let location = if let Some(location) = location {
+            let location = Path::new(&location).to_path_buf();
+            if location.is_absolute() {
+                location
             } else {
-                Err(format!("Unable to locate 'nw.toml' in '{}'", location.display()).into())
+                cwd.join(&location)
             }
         } else {
-            let location = cwd.join(&manifest);
-            if location.exists().await {
-                Ok(location)
-            } else {
-                let location = search_upwards(&cwd.clone(), &manifest).await;
-                location.ok_or(format!("Unable to locate 'nw.toml' in '{}'", cwd.display()).into())
+            cwd
+        };
+
+        let location = match location.extension() {
+            Some(extension) if extension.to_str().unwrap() == "toml" && location.is_file().await => {
+                Some(location)
+            },
+            _ => {
+                let location = location.join("nw.toml");
+                if location.is_file().await {
+                    Some(location)
+                } else {
+                    None
+                }
             }
+        };
+
+        if let Some(location) = location {
+            let location = std::path::PathBuf::from(&location).parse_dot()?.to_path_buf();
+            Ok(location.into())
+        } else {
+            Err(format!("Unable to locate 'nw.toml' manifest").into())
         }
     }
     
-    pub async fn load(nwjs_toml : &PathBuf) -> Result<Manifest> {
-        let nwjs_toml = read_to_string(nwjs_toml).await?;
+    pub async fn load(toml : &PathBuf) -> Result<Manifest> {
+        let nwjs_toml = read_to_string(toml).await?;
         let manifest: Manifest = match toml::from_str(&nwjs_toml) {
             Ok(manifest) => manifest,
             Err(err) => {
@@ -62,14 +79,21 @@ impl Manifest {
     }
 }
 
-
+/// Application section of the nw.toml manifest
 #[derive(Debug, Clone, Deserialize)]
 pub struct Application {
+    /// Application name (must be alphanumeric, lowercase, underscore and dash)
+    /// This name is used to identity the project in file names
     pub name: String,
+    /// Project version in x.x.x or x.x.x.x format
     pub version: String,
+    /// Human-readable title of the project
     pub title: String,
+    /// Project Authors
     pub authors: Option<String>,
+    /// Organization - Used in Windows and MacOS application manifests
     pub organization: String,
+    /// Copyright message
     pub copyright: Option<String>,
     pub trademarks: Option<String>,
     pub url: Option<String>,
@@ -160,7 +184,8 @@ pub struct Package {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct NWJS {
+#[serde(rename = "node-webkit")]
+pub struct NW {
     pub version: String,
     pub ffmpeg: Option<bool>,
     pub sdk: Option<bool>,

@@ -104,8 +104,6 @@ impl Builder {
             println!("");
         }
 
-        // return Ok(());
-
         let ts_start = Instant::now();
         log!("Build","building {} version {}",style(&self.ctx.manifest.application.title).cyan(),style(&self.ctx.manifest.application.version).cyan());
         let target_list = targets.iter().map(|v|v.to_string()).collect::<Vec<String>>().join(", ");
@@ -116,8 +114,8 @@ impl Builder {
         self.ctx.ensure_folders().await?;
 
         if let Some(actions) = &self.ctx.manifest.package.execute {
-            log!("Build","Executing build actions");
             for action in actions {
+                log!("Build","executing build actions");
                 if let Execute::Build {
                     cmd,
                     env,
@@ -153,7 +151,7 @@ impl Builder {
         let files: Vec<(_,_)> = files.iter().map(|f|(f.file_name().unwrap().to_owned(),f)).collect();
 
         if self.ctx.manifest.package.signatures.unwrap_or(false) {
-            log!("Build","generating signatures");
+            log!("Build","generating signatures (SHA)");
             for (_,path) in files.iter() {
                 generate_sha256sum(&path).await?;
             }
@@ -167,8 +165,8 @@ impl Builder {
         log!("Finished","build completed in {:.0}s", duration.as_millis() as f64/1000.0);
 
         if let Some(actions) = &self.ctx.manifest.package.execute {
-            log!("Build","Executing deploy actions");
             for action in actions {
+                log!("Build","executing deploy actions");
                 if let Execute::Deploy {
                     cmd,
                     env,

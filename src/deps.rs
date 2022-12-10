@@ -72,7 +72,7 @@ pub fn get_nwjs_ffmpeg_meta(
     target: &PathBuf,
 ) -> Meta {
 
-    let version = &manifest.nwjs.version;
+    let version = &manifest.node_webkit.version;
     let suffix = get_nwjs_suffix(platform);
     let folder = format!("ffmpeg-{version}-{suffix}-x64");
     let file = format!("{version}-{suffix}-x64.zip");
@@ -85,7 +85,7 @@ pub fn get_nwjs_sdk_meta(
     manifest : &Manifest,
     target: &PathBuf,
 ) -> Meta {
-    let version = format!("v{}",manifest.nwjs.version);
+    let version = format!("v{}",manifest.node_webkit.version);
     let suffix = get_nwjs_suffix(platform);
     let folder = format!("nwjs-sdk-{version}-{suffix}-x64");
     let archive_extension = get_nwjs_archive_extension(platform);
@@ -99,7 +99,7 @@ pub fn get_nwjs_meta(
     manifest : &Manifest,
     target: &PathBuf,
 ) -> Meta {
-    let version = format!("v{}",manifest.nwjs.version);
+    let version = format!("v{}",manifest.node_webkit.version);
     let suffix = get_nwjs_suffix(platform);
     let folder = format!("nwjs-{version}-{suffix}-x64");
     let archive_extension = get_nwjs_archive_extension(platform);
@@ -130,7 +130,7 @@ impl Dependencies {
             get_nwjs_meta(platform, manifest, &dir)
         };
 
-        let ffmpeg = if manifest.nwjs.ffmpeg.unwrap_or(false) {
+        let ffmpeg = if manifest.node_webkit.ffmpeg.unwrap_or(false) {
             Some(get_nwjs_ffmpeg_meta(platform, manifest, &dir))
         } else {
             None

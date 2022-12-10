@@ -77,9 +77,9 @@ enum Action {
         /// Target platform architecture (x64,ia32,aarch64)
         #[clap(short, long)]
         arch : Option<Architecture>,
-        /// Use custom manifest file
-        #[clap(short, long)]
-        manifest: Option<String>,
+        // /// Use custom manifest file
+        // #[clap(short, long)]
+        // manifest: Option<String>,
         /// Package target (for multi-target output)
         #[clap(short, long)]
         target : Option<Vec<Target>>,
@@ -113,45 +113,29 @@ enum Action {
         force : bool,
     },
     Publish {
-        #[clap(name = "manifest")]
-        manifest: Option<String>,
+        // #[clap(name = "manifest")]
+        // location: Option<String>,
     },
-    //  {
-
-    // }
+    #[cfg(feature = "test")]
+    Test {
+        // #[clap(name = "manifest")]
+        // manifest: Option<String>,
+    }
 }
-
-
-// cfg_if! {
-//     if #[cfg(target_os = "windows")] {
-
-//     } else if #[cfg(target_os = "macos")] {
-//     }
-// }
 
 
 pub async fn async_main() -> Result<()> {
     
-    // let cwd = std::env::current_dir()?;
     let args = Cmd::parse();
     let Cmd::Args(Args { action, location }) = args;
-    // let action = match args { Cmd::Args(args) => args.action };
-    // println!("action: {:?}", action);
-
-    
     let platform = Platform::default();
-    // let arch = Architecture::default();
-    
     
     match action {
         Action::Build {
             arch,
             sdk,
-            // target,
-            // archive,
             target,
             default,
-            manifest,
         } => {
 
             let mut targets = TargetSet::new();
@@ -163,6 +147,9 @@ pub async fn async_main() -> Result<()> {
                 targets.insert(default);
             }
 
+            if targets.contains(&Target::All) {
+                targets = Target::get_all_targets();
+            }
 
             let options = Options {
                 sdk : sdk.unwrap_or(false),
@@ -171,7 +158,6 @@ pub async fn async_main() -> Result<()> {
             let arch = arch.unwrap_or_default();
             let ctx = Arc::new(Context::create(
                 location,
-                manifest,
                 platform,
                 arch,
                 options
@@ -180,13 +166,6 @@ pub async fn async_main() -> Result<()> {
             if ctx.manifest.package.archive.is_some() {
                 targets.insert(Target::Archive);
             }
-
-
-            // println!("... executing ...");
-
-            // println!("build context: {:#?}", ctx);
-
-            // return Ok(());
 
             let build = Builder::new(ctx);
             build.execute(targets).await?;
@@ -197,17 +176,12 @@ pub async fn async_main() -> Result<()> {
         } => {
             let deps = deps || all;
 
-            // let ctx = Context::create(platform,arch,manifest,project_root,Options::default()).await?;
             let ctx = Arc::new(Context::create(
                 location,
-                None,
                 platform,
                 Architecture::default(),
-                // manifest,
-                // project_root,
                 Options::default()
             ).await?);
-            // println!("clean context: {:#?}", ctx);
 
             if deps {
                 ctx.deps.clean().await?;
@@ -239,13 +213,12 @@ pub async fn async_main() -> Result<()> {
 
         },
         Action::Publish {
-            manifest
+            // location
         } => {
 
             let arch = Architecture::default();
             let ctx = Arc::new(Context::create(
                 location,
-                manifest,
                 platform,
                 arch,
                 Options::default()
@@ -266,8 +239,21 @@ pub async fn async_main() -> Result<()> {
                     }
                 }
             }
-    
+        },
+        #[cfg(feature = "test")]
+        Action::Test {
+            // manifest
+        } => {
 
+            let arch = Architecture::default();
+            let ctx = Arc::new(Context::create(
+                location,
+                platform,
+                arch,
+                Options::default()
+            ).await?);
+
+            println!("{:#?}",ctx);
         }
     }
 

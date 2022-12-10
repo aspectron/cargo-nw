@@ -11,7 +11,9 @@ description = """
 Cargo subcommand for building Node Webkit application deployment packages
 """
 
-# [features]
+[features]
+test = []
+default = ["test"]
 # multiplatform = []
 # default = ["multiplatform"]
 

@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use cfg_if::cfg_if;
 use async_std::path::PathBuf;
 use clap::Subcommand;
 use std::{collections::HashSet, str::FromStr};
@@ -12,6 +13,7 @@ use std::{collections::HashSet, str::FromStr};
 
 #[derive(Debug, Clone, Subcommand, Hash, PartialEq, Eq)]
 pub enum Target {
+    All,
     Archive,
     #[cfg(target_os = "macos")]
     DMG,
@@ -24,6 +26,7 @@ pub enum Target {
 impl ToString for Target {
     fn to_string(&self) -> String {
         match self {
+            Target::All => "all",
             Target::Archive => "Archive",
             #[cfg(target_os = "macos")]
             Target::DMG => "DMG",
@@ -40,9 +43,10 @@ impl FromStr for Target {
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err>
     {
         match s {
-            "dmg" => Ok(Target::DMG),
-            #[cfg(target_os = "macos")]
+            "all" => Ok(Target::All),
             "archive" => Ok(Target::Archive),
+            #[cfg(target_os = "macos")]
+            "dmg" => Ok(Target::DMG),
             #[cfg(target_os = "windows")]
             "innosetup" => Ok(Target::InnoSetup),
             #[cfg(target_os = "linux")]
@@ -52,6 +56,29 @@ impl FromStr for Target {
     }
 }
 
+impl Target {
+    pub fn get_all_targets() -> HashSet<Target> {
+        // let list = 
+        cfg_if! {
+            if #[cfg(target_os = "macos")] {
+                vec![
+                    Target::Archive,
+                    Target::DMG
+                ].into_iter().collect()
+            } else if #[cfg(target_os = "windows")] {
+                let list = vec![
+                    Target::Archive,
+                    Target::InnoSetup
+                ].into_iter().collect()
+            } else if #[cfg(target_os = "linux")] {
+                let list = vec![
+                    Target::Archive,
+                    Target::Snap
+                ].into_iter().collect()
+            }
+        }
+    }
+}
 
 pub type TargetSet = HashSet<Target>;
 

@@ -53,17 +53,19 @@ pub struct Context {
 impl Context {
     pub async fn create(
         location : Option<String>,
-        manifest : Option<String>,
+        // manifest : Option<String>,
         platform: Platform, 
         arch : Architecture,
         options: Options,
     ) -> Result<Context> {
-        let home_folder: PathBuf = home::home_dir().unwrap().into();
-        let cwd = current_dir().await;
+        println!("");
 
-        let nw_toml = Manifest::locate(location, manifest).await?;
-        let manifest = Manifest::load(&nw_toml).await?;
-        let project_root = nw_toml.parent().unwrap();
+        let home_folder: PathBuf = home::home_dir().unwrap().into();
+        let manifest_toml = Manifest::locate(location).await?;
+        log!("Manifest","`{}`",manifest_toml.to_str().unwrap());
+        let manifest_folder = manifest_toml.parent().unwrap().to_path_buf();
+        let manifest = Manifest::load(&manifest_toml).await?;
+        let project_root = manifest_toml.parent().unwrap();
         let app_snake_name = format!("{}-{}-{}-{}",
             manifest.application.name,
             manifest.application.version,
@@ -71,9 +73,9 @@ impl Context {
             arch
         );
 
-        let cargo_toml_folder = search_upwards(&cwd,"Cargo.toml").await
+        let cargo_toml_folder = search_upwards(&manifest_folder,"Cargo.toml").await
             .map(|location|location.parent().unwrap().to_path_buf())
-            .unwrap_or(cwd.clone());
+            .unwrap_or(manifest_folder.clone());
         let cargo_target_folder = cargo_toml_folder.join("target");
         let cargo_nw_target_folder = cargo_target_folder.join("nw");
         let build_folder = Path::new(&cargo_nw_target_folder).join("build").join(&app_snake_name);
@@ -86,12 +88,14 @@ impl Context {
             .unwrap_or(project_root_folder.clone());
         let app_root_folder: PathBuf = std::path::PathBuf::from(&app_root_folder).parse_dot()?.to_path_buf().into();
 
-        let setup_resources_folder = cwd.join(&manifest.package.resources.as_ref().unwrap_or(&"resources".to_string())).into();
-        let sdk = manifest.nwjs.sdk.unwrap_or(options.sdk);
+        let setup_resources_folder = manifest_folder.join(&manifest.package.resources.as_ref().unwrap_or(&"resources".to_string())).into();
+        let sdk = manifest.node_webkit.sdk.unwrap_or(options.sdk);
         let deps = Dependencies::new(&platform,&manifest,sdk);
 
         let include = manifest.package.include.clone().unwrap_or(vec![]);
         let mut exclude = manifest.package.exclude.clone().unwrap_or(vec![]);
+
+        log!("Target","`{}`",output_folder.to_str().unwrap());
 
         if manifest.package.gitignore.unwrap_or(true) {
             let gitignore = app_root_folder.join(".gitignore");

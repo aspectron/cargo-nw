@@ -40,7 +40,7 @@ execute = [
 # [publish]
 # cmd = "script"
 
-[nwjs]
+[node-webkit]
 version = "0.70.1"
 ffmpeg = true
 
