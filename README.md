@@ -82,3 +82,4 @@ application = "in:out"
 in = [ "bin\\windows-x64\\my-utility.exe" ]
 out = [ "bin\\windows-x64\\test.exe" ]
 ```
+

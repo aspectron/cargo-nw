@@ -111,6 +111,7 @@ pub enum Execute {
         env : Option<Vec<String>>,
     },
     #[serde(rename = "publish")]
+    /// Esecution invoked when running `cargo nw publish`
     Publish {
         cmd : String,
         folder : Option<String>,
