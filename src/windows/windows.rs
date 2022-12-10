@@ -116,12 +116,13 @@ impl Windows {
     fn get_resource_strings(&self) -> Vec<(String,String)> {
         let windows = self.ctx.manifest.windows.as_ref();
         let application = &self.ctx.manifest.application;
+        let description = &self.ctx.manifest.description;
 
         let mut list : HashMap<&str,String> = [
             ("ProductVersion",&application.version),
             ("ProductName",&application.title),
             ("FileVersion",&application.version),
-            ("FileDescription",&application.description),
+            ("FileDescription",&description.short),
             ("InternalName",&application.title),
             ("CompanyName",&application.organization),
             ("LegalCopyright",&format!("Copyright © {} {}",chrono::Utc::now().year(), application.organization)),

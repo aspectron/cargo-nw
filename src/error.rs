@@ -40,6 +40,9 @@ pub enum Error {
     #[error("YAML error: {0}")]
     SerdeYamlError(#[from] serde_yaml::Error),
     
+    #[error("JSON error: {0}")]
+    JsonError(#[from] serde_json::Error),
+    
     // #[error("Error: {0}")]
     // TryFromSliceError(#[from] TryFromSliceError),
 }

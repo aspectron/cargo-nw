@@ -1,14 +1,20 @@
 use async_std::path::{PathBuf, Path};
+use fs_extra::dir;
 use crate::prelude::*;
 
 pub struct Linux {
     ctx : Arc<Context>,
+    pub nwjs_root_folder : PathBuf,
 }
 
 impl Linux {
     pub fn new(ctx: Arc<Context>) -> Linux {
+
+        let nwjs_root_folder = ctx.build_folder.join(&ctx.app_snake_name);
+
         Linux {
-            ctx
+            ctx,
+            nwjs_root_folder
         }
     }
 }
@@ -40,6 +46,9 @@ impl Installer for Linux {
 
         Ok(vec![])
     }
+}
+
+impl Linux {
 
     async fn copy_nwjs_folder(&self) -> Result<()>{
         let mut options = dir::CopyOptions::new();

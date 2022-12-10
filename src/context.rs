@@ -50,6 +50,7 @@ pub struct Context {
 impl Context {
     pub async fn create(
         location : Option<String>,
+        manifest : Option<String>,
         platform: Platform, 
         arch : Architecture,
         options: Options,
@@ -57,7 +58,7 @@ impl Context {
         let home_folder: PathBuf = home::home_dir().unwrap().into();
         let cwd = current_dir().await;
 
-        let nw_toml = Manifest::locate(location).await?;
+        let nw_toml = Manifest::locate(location, manifest).await?;
         let manifest = Manifest::load(&nw_toml).await?;
         let project_root = nw_toml.parent().unwrap();
         let app_snake_name = format!("{}-{}-{}-{}",

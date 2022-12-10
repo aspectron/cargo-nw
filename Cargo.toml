@@ -11,8 +11,8 @@ description = """
 Cargo subcommand for building NWJS application packages
 """
 
-[features]
-multiplatform = []
+# [features]
+# multiplatform = []
 # default = ["multiplatform"]
 
 [dependencies]

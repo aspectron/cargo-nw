@@ -5,6 +5,7 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Deserialize)]
 pub struct Manifest {
     pub application : Application,
+    pub description : Description,
     pub package : Package,
     pub nwjs : NWJS,
     pub windows : Option<Windows>,
@@ -14,21 +15,22 @@ pub struct Manifest {
 
 impl Manifest {
 
-    pub async fn locate(location: Option<String>) -> Result<PathBuf> {
+    pub async fn locate(location: Option<String>, manifest : Option<String>) -> Result<PathBuf> {
+        let manifest = manifest.unwrap_or("nw.toml".to_string());
         let cwd = current_dir().await;
         if let Some(location) = location {
-            let location = cwd.join(location).join("nw.toml");
+            let location = cwd.join(location).join(&manifest);
             if location.exists().await {
                 Ok(location)
             } else {
                 Err(format!("Unable to locate 'nw.toml' in '{}'", location.display()).into())
             }
         } else {
-            let location = cwd.join("nw.toml");
+            let location = cwd.join(&manifest);
             if location.exists().await {
                 Ok(location)
             } else {
-                let location = search_upwards(&cwd.clone(), "nw.toml").await;
+                let location = search_upwards(&cwd.clone(), &manifest).await;
                 location.ok_or(format!("Unable to locate 'nw.toml' in '{}'", cwd.display()).into())
             }
         }
@@ -65,13 +67,20 @@ pub struct Application {
     pub name: String,
     pub version: String,
     pub title: String,
-    pub summary: Option<String>,
-    pub description: String,
+    // pub summary: Option<String>,
+    // pub description: Option<String>,
     pub authors: Option<String>,
     pub organization: String,
     pub copyright: Option<String>,
     pub trademarks: Option<String>,
     pub url: Option<String>,
+}
+
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Description {
+    pub short: String,
+    pub long: String,
 }
 
 
@@ -144,3 +153,11 @@ pub struct Deploy {
     pub folder: Option<String>
 }
 
+// ~~~
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PackageJson {
+    pub name : String,
+    pub main : String,
+    pub description : Option<String>,
+    pub version : Option<String>,
+}

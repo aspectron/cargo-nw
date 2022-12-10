@@ -81,7 +81,10 @@ enum Action {
         arch : Option<Architecture>,
         /// Package target
         #[clap(subcommand)]
-        default: Option<Target>
+        default: Option<Target>,
+        /// Use custom manifest file
+        #[clap(short, long)]
+        manifest: Option<String>,
     },
     /// Clean intermediate build folders
     Clean { 
@@ -139,7 +142,8 @@ pub async fn async_main() -> Result<()> {
             // target,
             // archive,
             target,
-            default
+            default,
+            manifest,
         } => {
 
             let mut targets = TargetSet::new();
@@ -158,6 +162,7 @@ pub async fn async_main() -> Result<()> {
             let arch = arch.unwrap_or_default();
             let ctx = Arc::new(Context::create(
                 location,
+                manifest,
                 platform,
                 arch,
                 options
@@ -181,6 +186,7 @@ pub async fn async_main() -> Result<()> {
             // let ctx = Context::create(platform,arch,manifest,project_root,Options::default()).await?;
             let ctx = Arc::new(Context::create(
                 location,
+                None,
                 platform,
                 Architecture::default(),
                 // manifest,

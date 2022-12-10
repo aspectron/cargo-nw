@@ -44,8 +44,8 @@ impl SnapData {
         let snap = SnapData {
             name: ctx.manifest.application.title.clone(), 
             version: ctx.manifest.application.version.clone(),
-            summary: ctx.manifest.application.description.clone(),
-            description: String::new(),
+            summary: ctx.manifest.description.short.clone(),
+            description: ctx.manifest.description.long.clone(),
             confinement: Confinement {
                 value: String::new(),
             },

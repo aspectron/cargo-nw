@@ -2,21 +2,12 @@ use std::collections::HashSet;
 
 use crate::prelude::*;
 use async_std::path::{PathBuf, Path};
-use serde::Serialize;
 use async_std::fs;
 use convert_case::{Case, Casing};
 use question::{Answer, Question};
 use console::style;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize)]
-pub struct PackageJson {
-    name : String,
-    main : String,
-}
-
-// const PACKAGE_JSON: &str = r###"
-// "###;
 
 const INDEX_JS: &str = r###"
 (async()=>{
@@ -47,17 +38,19 @@ const NW_TOML: &str = r###"
 
 [application]
 name = "$NAME"
-version = "0.1.0"
+version = "$VERSION"
 title = "$TITLE"
-summary = "..."
-description = """
-...
+# organization = "Your Organization Name"
+
+[description]
+short = "..."
+long = """
+$DESCRIPTION
 """"
 
 [package]
-# root = "root"
+# root = ""
 # resources = "resources/setup"
-# organization = "Your Organization Name"
 
 [nwjs]
 version = "0.71.0"
@@ -152,6 +145,7 @@ pub struct Project {
     pub title : String,
     pub group : String,
     pub version : String,
+    pub description : String,
     pub uuid : Uuid,
 }
 
@@ -162,6 +156,7 @@ impl Project {
         let title = name.from_case(Case::Lower).to_case(Case::Title);
         let group = title.clone();
         let version = format!("0.1.0");
+        let description = format!("...");
         let uuid = Uuid::new_v4();
 
         let project = Project {
@@ -170,39 +165,61 @@ impl Project {
             title,
             group,
             version,
+            description,
             uuid,
         };
 
         Ok(project)
     }
 
-    pub async fn generate(&mut self, options: Options) -> Result<()> {
+    pub async fn generate(&mut self, mut options: Options) -> Result<()> {
 
         if !options.force &&  Path::new("nw.toml").exists().await {
             return Err("Existing nw.toml found ...aborting (use --force to re-create)".into());
         }
 
-        let name = Question::new(&format!("Project name [default:'{}']:",style(&self.name).yellow())).ask();
-        if let Some(Answer::RESPONSE(name)) = name {
-            if !name.is_empty() {
-                if name.contains(" ") {
-                    println!("{}",style("\nError: project name can not contain spaces\n").red());
-                    std::process::exit(1);
-                }
+        if Path::new("package.json").exists().await {
 
-                let name = name.to_case(Case::Kebab);
-                if name != self.name {
-                    // self.title = name.from_case(Case::Kebab).to_case(Case::Camel);
-                    self.title = name.from_case(Case::Kebab).to_case(Case::Title);
-                }
+            let text = fs::read_to_string("package.json").await?;
+            let package_json: PackageJson = serde_json::from_str(&text)?;
 
-                self.name = name;
+            self.name = package_json.name.to_lowercase().replace(" ","-");
+            self.title = package_json.name;
+            if let Some(version) = package_json.version {
+                self.version = version.to_string();
             }
-        }
-        let title = Question::new(&format!("Project title [default:'{}']:",style(&self.title).yellow())).ask();
-        if let Some(Answer::RESPONSE(title)) = title {
-            if !title.is_empty() {
-                self.title = title;
+            if let Some(description) = package_json.description {
+                self.description = description.to_string();
+            }
+
+            log!("Project","detected existing 'package.json' manifest");
+            log!("Project","name: '{}' title: '{}' version: '{}'", self.name, self.title, self.version);
+            options.manifest = true;
+
+        } else {
+
+            let name = Question::new(&format!("Project name [default:'{}']:",style(&self.name).yellow())).ask();
+            if let Some(Answer::RESPONSE(name)) = name {
+                if !name.is_empty() {
+                    if name.contains(" ") {
+                        println!("{}",style("\nError: project name can not contain spaces\n").red());
+                        std::process::exit(1);
+                    }
+
+                    let name = name.to_case(Case::Kebab);
+                    if name != self.name {
+                        // self.title = name.from_case(Case::Kebab).to_case(Case::Camel);
+                        self.title = name.replace("-"," ").from_case(Case::Kebab).to_case(Case::Title);
+                    }
+
+                    self.name = name;
+                }
+            }
+            let title = Question::new(&format!("Project title [default:'{}']:",style(&self.title).yellow())).ask();
+            if let Some(Answer::RESPONSE(title)) = title {
+                if !title.is_empty() {
+                    self.title = title;
+                }
             }
         }
 
@@ -212,20 +229,22 @@ impl Project {
 
         println!("{:?}", self);
 
-        let package = PackageJson {
-            name : self.title.clone(),
-            main : "root/index.js".to_string()
-        };
-        let package_json = serde_json::to_string(&package).unwrap();
-
         let tpl = self.tpl()?;
-
         let files = 
             if options.manifest {
                 [
                     ("nw.toml",tpl.transform(NW_TOML)),
                 ].to_vec()
             } else {
+
+                let package = PackageJson {
+                    name : self.title.clone(),
+                    main : "root/index.js".to_string(),
+                    version: None,
+                    description: None,
+                };
+                let package_json = serde_json::to_string(&package).unwrap();
+    
                 [
                     ("root/package.json",tpl.transform(&package_json)),
                     ("root/index.js", tpl.transform(INDEX_JS)),
@@ -259,8 +278,8 @@ impl Project {
         }
 
         println!("Please run 'build' script to build the project");
-        println!("");
         println!("Following this, you can run 'nw .' to start run the application");
+        println!("");
 
         Ok(())
     }
@@ -273,6 +292,7 @@ impl Project {
             ("$TITLE",self.title.clone()),
             ("$UUID",self.uuid.to_string()),
             ("$VERSION",self.version.to_string()),
+            ("$DESCRIPTION",self.description.to_string()),
         ].as_slice().try_into()?;
 
         Ok(tpl)
