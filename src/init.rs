@@ -176,7 +176,11 @@ impl Project {
         Ok(project)
     }
 
-    pub async fn generate(&mut self, _options: Options) -> Result<()> {
+    pub async fn generate(&mut self, options: Options) -> Result<()> {
+
+        if !options.force &&  Path::new("nw.toml").exists().await {
+            return Err("Existing nw.toml found ...aborting (use --force to re-create)".into());
+        }
 
         let name = Question::new(&format!("Project name [default:'{}']:",style(&self.name).yellow())).ask();
         if let Some(Answer::RESPONSE(name)) = name {
@@ -216,16 +220,23 @@ impl Project {
 
         let tpl = self.tpl()?;
 
-        let files = [
-            ("root/package.json",tpl.transform(&package_json)),
-            ("root/index.js", tpl.transform(INDEX_JS)),
-            ("root/index.html", tpl.transform(INDEX_HTML)),
-            ("src/lib.rs", tpl.transform(LIB_RS)),
-            ("nw.toml",tpl.transform(NW_TOML)),
-            ("Cargo.toml", tpl.transform(CARGO_TOML)),
-            ("build", tpl.transform(BUILD_SH)),
-            ("build.ps1", tpl.transform(BUILD_PS1)),
-        ];
+        let files = 
+            if options.manifest {
+                [
+                    ("nw.toml",tpl.transform(NW_TOML)),
+                ].to_vec()
+            } else {
+                [
+                    ("root/package.json",tpl.transform(&package_json)),
+                    ("root/index.js", tpl.transform(INDEX_JS)),
+                    ("root/index.html", tpl.transform(INDEX_HTML)),
+                    ("src/lib.rs", tpl.transform(LIB_RS)),
+                    ("nw.toml",tpl.transform(NW_TOML)),
+                    ("Cargo.toml", tpl.transform(CARGO_TOML)),
+                    ("build", tpl.transform(BUILD_SH)),
+                    ("build.ps1", tpl.transform(BUILD_PS1)),
+                ].to_vec()
+            };
 
         let folders: HashSet<&Path> = files
             .iter()

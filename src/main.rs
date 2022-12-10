@@ -1,6 +1,7 @@
 use std::{sync::Arc, env};
 use async_std::path::PathBuf;
 use clap::{Parser,Subcommand};
+use console::style;
 
 pub mod error;
 pub mod result;
@@ -99,7 +100,7 @@ enum Action {
         /// JavaScript-only (Do not generate WASM stubs)
         #[clap(long)]
         js : bool,
-        /// Create nw.toml manifest only
+        /// Create 'nw.toml' manifest file only
         #[clap(long)]
         manifest : bool,
         /// Force overwrite existing project files
@@ -226,6 +227,7 @@ pub async fn async_main() -> Result<()> {
 #[tokio::main]
 async fn main() -> Result<()> {
     match async_main().await {
+        Err(Error::String(s)) => println!("\n{}", style(s).red()),
         Err(e) => println!("\n{}", e),
         Ok(_) => { }
     };
