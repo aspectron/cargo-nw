@@ -51,6 +51,7 @@ $DESCRIPTION
 [package]
 # root = ""
 # resources = "resources/setup"
+exclude = ["resources/setup"]
 
 [nwjs]
 version = "0.71.0"

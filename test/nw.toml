@@ -8,8 +8,19 @@ organization = "ASPECTRON Inc"
 # path = "resources"
 # icons = "sips"
 
+[description]
+short = ""
+long = """
+"""
+
 [package]
 root = ".."
+# build = [
+    # { WASM = { } },
+    # { NPM = { } }
+# ]
+# build = { type = { } }
+wasm = "root/wasm"
 resources = "resources"
 include = ["root/*.html","root/*.js"]
 exclude = ["*.html"]

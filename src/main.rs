@@ -47,7 +47,7 @@ use prelude::*;
     dont_collapse_args_in_usage = true,
 )]
 enum Cmd {
-    #[clap(name = "nwjs")]
+    #[clap(name = "nw")]
     #[clap(about, author, version)]
     #[clap(
         setting = clap::AppSettings::DeriveDisplayOrder,
@@ -68,9 +68,9 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Action {
-    /// Build NWJS package
+    /// Build Node Webkit Application package
     Build {
-        /// Package using NWJS SDK edition
+        /// Package using Node Webkit SDK edition
         #[clap(short, long)]
         sdk : Option<bool>,
         /// Package target (for multi-target output)

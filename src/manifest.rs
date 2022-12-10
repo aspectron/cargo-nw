@@ -1,6 +1,7 @@
 use async_std::fs::*;
 use async_std::path::PathBuf;
 use crate::prelude::*;
+use regex::Regex;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Manifest {
@@ -45,20 +46,20 @@ impl Manifest {
             }
         };    
 
+        manifest.sanity_checks()?;
+
         Ok(manifest)
     }
-}
+    
+    pub fn sanity_checks(&self) -> Result<()> {
 
-#[derive(Debug, Clone, Deserialize)]
-// #[allow(non_camel_case_types)]
-pub enum Execute {
-    #[serde(rename = "build")]
-    Build { cmd : String, folder : Option<String>, platform: Option<String>, arch: Option<String> },
-    #[serde(rename = "build")]
-    Pack { cmd : String, folder : Option<String>, platform: Option<String>, arch: Option<String>  },
-    #[serde(rename = "deploy")]
-    Deploy { cmd : String, folder : Option<String>, platform: Option<String>, arch: Option<String>  },
+        let regex = Regex::new(r"^[^\s]*[a-z0-9-_]*$").unwrap();
+        if !regex.is_match(&self.application.name) {
+            return Err(format!("invalid application name '{}'", self.application.name).into());
+        }
 
+        Ok(())
+    }
 }
 
 
@@ -67,8 +68,6 @@ pub struct Application {
     pub name: String,
     pub version: String,
     pub title: String,
-    // pub summary: Option<String>,
-    // pub description: Option<String>,
     pub authors: Option<String>,
     pub organization: String,
     pub copyright: Option<String>,
@@ -85,7 +84,60 @@ pub struct Description {
 
 
 #[derive(Debug, Clone, Deserialize)]
+// #[allow(non_camel_case_types)]
+pub enum Execute {
+    #[serde(rename = "build")]
+    Build { 
+        cmd : String,
+        folder : Option<String>,
+        platform: Option<String>,
+        arch: Option<String>,
+        env : Option<Vec<String>>,
+    },
+    #[serde(rename = "build")]
+    Pack {
+        cmd : String,
+        folder : Option<String>,
+        platform: Option<String>,
+        arch: Option<String>,
+        env : Option<Vec<String>>,
+    },
+    #[serde(rename = "deploy")]
+    Deploy {
+        cmd : String,
+        folder : Option<String>,
+        platform: Option<String>,
+        arch: Option<String>,
+        env : Option<Vec<String>>,
+    },
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub enum Build {
+    WASM { 
+        clean : Option<bool>,
+        purge : Option<bool>,
+        dev : Option<bool>,
+        folder : Option<String>,
+        args : Option<String>,
+        env : Option<Vec<String>>,
+    },
+    NPM {
+        clean : Option<bool>,
+        dev : Option<bool>,
+        args : Option<String>,
+        env : Option<Vec<String>>,
+    },
+    #[serde(rename = "custom")]
+    Custom {
+        cmd : String,
+        env : Option<Vec<String>>,
+    },
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct Package {
+    pub build: Option<Vec<Build>>,
     pub archive: Option<bool>,
     pub resources: Option<String>,
     pub root: Option<String>,
@@ -93,6 +145,7 @@ pub struct Package {
     pub exclude: Option<Vec<String>>,
     pub hidden: Option<bool>,
     pub execute: Option<Vec<Execute>>,
+    // pub output: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -140,20 +193,8 @@ pub struct Languages {
     pub languages: Option<Vec<String>>,
 }
 
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct Build {
-    pub cmd: String,
-    pub folder: Option<String>
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct Deploy {
-    pub cmd: String,
-    pub folder: Option<String>
-}
-
 // ~~~
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PackageJson {
     pub name : String,

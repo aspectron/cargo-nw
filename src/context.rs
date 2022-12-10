@@ -83,6 +83,7 @@ impl Context {
         let app_root_folder = std::path::PathBuf::from(&app_root_folder).parse_dot()?.to_path_buf().into();
 
         let setup_resources_folder = cwd.join(&manifest.package.resources.as_ref().unwrap_or(&"resources".to_string())).into();
+        // let output_folder = Path::new(&cargo_nw_target_folder).join("setup");//.join(&manifest.application.title);
         let output_folder = Path::new(&cargo_nw_target_folder).join("setup");//.join(&manifest.application.title);
         let sdk = manifest.nwjs.sdk.unwrap_or(options.sdk);
         let deps = Dependencies::new(&platform,&manifest,sdk);

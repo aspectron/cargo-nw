@@ -40,9 +40,10 @@ impl Installer for MacOS {
         if let Some(actions) = &self.ctx.manifest.package.execute {
             log!("Build","Executing build actions");
             for action in actions {
-                if let Execute::Pack { cmd, folder, platform, arch } = action {
+                if let Execute::Pack { cmd, env, folder, platform, arch } = action {
                     let cmd = &tpl.transform(cmd);
-                    execute(&self.ctx,cmd,folder,platform,arch).await?;
+                    let argv = cmd.split(" ").map(|s|s.to_string()).collect();
+                    execute(&self.ctx,argv,env,folder,platform,arch).await?;
                 }
             }
         }
@@ -128,6 +129,8 @@ impl MacOS {
 
         log!("MacOS","generating icons");
         
+        // TODO - refactor to use https://crates.io/crates/icns
+
         let app_icon = find_file(&self.ctx.setup_resources_folder, &["macos-application.png","application.png"]).await?;
         // let app_icon = self.ctx.setup_resources_folder.join("macos-application.png");
         // self._generate_icns_sips(&app_icon, &self.app_resources_folder.join("app.icns")).await?;

@@ -1,5 +1,5 @@
 [package]
-name = "cargo-nwjs"
+name = "cargo-nw"
 version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0 OR MIT"
@@ -8,7 +8,7 @@ keywords = ["cargo", "subcommand", "installation", "package","nwjs","nw"]
 categories = ["command-line-utilities", "development-tools::cargo-plugins", "development-tools::build-utils"]
 exclude = ["/.*", "/test"]
 description = """
-Cargo subcommand for building NWJS application packages
+Cargo subcommand for building Node Webkit application deployment packages
 """
 
 # [features]

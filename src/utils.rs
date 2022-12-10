@@ -6,7 +6,7 @@ use async_std::path::PathBuf;
 use async_std::path::Path;
 use globset::{Glob,GlobSet,GlobSetBuilder};
 use globmatch;
-
+use regex::Regex;
 use crate::prelude::*;
 
 // pub async fn extract(file: &str, dir: &str) -> Result<()> {
@@ -334,7 +334,9 @@ pub fn copy_folder_recurse(src_folder: &Path, dest_folder: &Path, ctx : &GlobCtx
 
 pub async fn execute(
     ctx: &Context,
-    cmd: &str,
+    // cmd: &str,
+    argv: Vec<String>,
+    env: &Option<Vec<String>>,
     folder: &Option<String>,
     platform: &Option<String>,
     arch: &Option<String>,
@@ -358,12 +360,19 @@ pub async fn execute(
         ctx.app_root_folder.clone()
     };
 
-    let argv : Vec<String> = cmd.split(" ").map(|s|s.to_string()).collect();
     let program = argv.first().expect("missing program in build config");
     let args = argv[1..].to_vec();
 
-    if let Err(e) = duct::cmd(program,args).dir(&folder).run() {
-        println!("Error while executing: '{}'", cmd);
+    let mut proc = duct::cmd(program,args).dir(&folder);
+    if let Some(env) = env {
+        let defs = get_env_defs(env)?;
+        for (k,v) in defs.iter() {
+            proc = proc.env(k,v);
+        }
+    }
+
+    if let Err(e) = proc.run() {
+        println!("Error executing: '{}'", argv.join(" "));
         Err(e.into())
     } else {
         Ok(())
@@ -380,3 +389,24 @@ pub async fn find_file(folder: &Path,files: &[&str]) -> Result<PathBuf> {
     }
     return Err(format!("Unable to locate any of the files: {}", files.join(", ")).into())
 }
+
+
+pub fn get_env_defs(strings: &Vec<String>) -> Result<Vec<(String, String)>> {
+    let regex = Regex::new(r"([^=]+?)=(.+)").unwrap();
+
+    let mut parsed_strings = Vec::new();
+
+    for string in strings {
+        let captures = regex.captures(&string).unwrap();
+        if captures.len() != 2 {
+            return Err(format!("Error parsing the environment string: '{string}'").into());
+        }
+        let a = captures[1].to_string();
+        let b = captures[2].to_string();
+
+        parsed_strings.push((a, b));
+    }
+
+    Ok(parsed_strings)
+}
+
