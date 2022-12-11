@@ -150,7 +150,7 @@ impl DMG {
         let mountpoint = PathBuf::from(format!("/Volumes/{volume_name}"));
 
         if std::path::Path::new(&mountpoint).exists() {
-            log!("DMG","{}",style("detaching existing DMG image").yellow());
+            log_info!("DMG","{}",style("detaching existing DMG image").yellow());
             cmd!(
                 "hdiutil",
                 "detach",&mountpoint
@@ -165,7 +165,7 @@ impl DMG {
             std::fs::remove_file(&self.output_file)?;
         }
 
-        log!("DMG","creating (UDRW HFS+)");
+        log_info!("DMG","creating (UDRW HFS+)");
         cmd!(
             "hdiutil",
             "create",
@@ -179,7 +179,7 @@ impl DMG {
 
         // println!("vvv: {:?}", vvv);
 
-        log!("DMG","attaching");
+        log_info!("DMG","attaching");
         cmd!(
             "hdiutil", 
             "attach",
@@ -189,24 +189,24 @@ impl DMG {
             &self.build_file,
         ).stdout_null().run()?;
 
-        log!("DMG","configuring DMG window");
+        log_info!("DMG","configuring DMG window");
         self.copy_aux_files(&mountpoint).await?;
         self.configure_finder().await?;
-        log!("DMG","configuring DMG icon");
+        log_info!("DMG","configuring DMG icon");
         self.configure_icon(&mountpoint).await?;
 
-        log!("DMG","sync");
+        log_info!("DMG","sync");
         cmd!("sync").stdout_null().run()?;
         sleep(std::time::Duration::from_millis(1000)).await;
         cmd!("sync").stdout_null().run()?;
 
-        log!("DMG","detaching");
+        log_info!("DMG","detaching");
         cmd!(
             "hdiutil",
             "detach",&mountpoint
         ).stdout_null().run()?;
 
-        log!("DMG","compressing (UDZO)");
+        log_info!("DMG","compressing (UDZO)");
         cmd!(
             "hdiutil",
             "convert",

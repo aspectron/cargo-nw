@@ -147,6 +147,7 @@ impl Dependencies {
 
     pub async fn clean(&self) -> Result<()> {
         if self.dir.exists().await {
+            log_info!("Cleaning","`{}`",self.dir.display());
             async_std::fs::remove_dir_all(&self.dir).await?;
         }
 
@@ -168,14 +169,14 @@ impl Dependencies {
             .collect::<Vec<&Meta>>();
 
         if !downloads.is_empty() {
-            log!("Dependencies","... downloading NW dependencies ...");
+            log_info!("Dependencies","... downloading NW dependencies ...");
             // println!("");
             
             self.download(&downloads).await?;
             println!("");
             
             for meta in downloads {
-                log!("Dependencies","extracting {}", &meta.file);
+                log_info!("Dependencies","extracting {}", &meta.file);
                 let file = Path::new(&self.dir).join(&meta.file);
                 // let target_dir = meta.get_extract_path(&self.dir);
                 extract(&file.into(), &meta.target.clone().into()).await?;
@@ -203,7 +204,7 @@ impl Dependencies {
                 Status::Fail(e) => return Err(Error::String(e.into())),
                 Status::NotStarted => return Err(format!("Unable to start download for: {}",summary.download().url).into()),
                 Status::Skipped(msg) => {
-                    log!("Dependencies","{}",msg);
+                    log_info!("Dependencies","{}",msg);
                     // return Err(Error::String(e.into()))
                 },
                 Status::Success => { }

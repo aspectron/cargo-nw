@@ -62,7 +62,7 @@ impl Context {
 
         let home_folder: PathBuf = home::home_dir().unwrap().into();
         let manifest_toml = Manifest::locate(location).await?;
-        log!("Manifest","`{}`",manifest_toml.to_str().unwrap());
+        log_info!("Manifest","`{}`",manifest_toml.to_str().unwrap());
         let manifest_folder = manifest_toml.parent().unwrap().to_path_buf();
         let manifest = Manifest::load(&manifest_toml).await?;
         let project_root = manifest_toml.parent().unwrap();
@@ -105,7 +105,7 @@ impl Context {
         let include = manifest.package.include.clone().unwrap_or(vec![]);
         let mut exclude = manifest.package.exclude.clone().unwrap_or(vec![]);
 
-        log!("Target","`{}`",output_folder.to_str().unwrap());
+        log_info!("Target","`{}`",output_folder.to_str().unwrap());
 
         if manifest.package.gitignore.unwrap_or(true) {
             let gitignore = app_root_folder.join(".gitignore");
@@ -177,6 +177,7 @@ impl Context {
 
     pub async fn clean(&self) -> Result<()> {
         if self.build_folder.exists().await {
+            log_info!("Cleaning","`{}`",self.build_folder.display());
             async_std::fs::remove_dir_all(&self.build_folder).await?;
         }
         Ok(())

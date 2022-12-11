@@ -193,8 +193,8 @@ impl Project {
                 self.description = description.to_string();
             }
 
-            log!("Project","detected existing 'package.json' manifest");
-            log!("Project","name: '{}' title: '{}' version: '{}'", self.name, self.title, self.version);
+            log_info!("Project","detected existing 'package.json' manifest");
+            log_info!("Project","name: '{}' title: '{}' version: '{}'", self.name, self.title, self.version);
             options.manifest = true;
 
         } else {
@@ -225,7 +225,7 @@ impl Project {
         }
 
         println!("");
-        log!("Init","creating '{}'",self.name);
+        log_info!("Init","creating '{}'",self.name);
         println!("");
 
         println!("{:?}", self);

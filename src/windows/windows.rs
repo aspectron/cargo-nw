@@ -7,7 +7,6 @@ use fs_extra::dir;
 use image::imageops::FilterType;
 use image::GenericImageView;
 use crate::prelude::*;
-use super::iss::ISS;
 use winres_edit::*;
 use chrono::Datelike;
 
@@ -62,7 +61,7 @@ impl Installer for Windows {
         let mut files = Vec::new();
 
         if targets.contains(&Target::Archive) {
-            log!("Windows","creating archive");
+            log_info!("Windows","creating archive");
             
             // let filename = Path::new(&format!("{}.zip",self.ctx.app_snake_name)).to_path_buf();
             let level = self.ctx.manifest.package.archive.clone().unwrap_or_default();
@@ -78,11 +77,12 @@ impl Installer for Windows {
             // files.push(filename);
         }
 
+        #[cfg(target_os = "windows")]
         if targets.contains(&Target::InnoSetup) {
 
             self.create_innosetup_icon(&self.setup_icon_file).await?;
 
-            let setup_script = ISS::new(
+            let setup_script = super::iss::ISS::new(
                 self.ctx.clone(),
                 self.setup_icon_file.clone(),
             );
@@ -102,7 +102,7 @@ impl Windows {
         options.content_only = true;
         options.skip_exist = true;
         
-        log!("Integrating","NW binaries");
+        log_info!("Integrating","NW binaries");
 
         dir::copy(
             // &nwjs_deps,//Path::new(&self.ctx.deps.nwjs.target),
@@ -120,7 +120,7 @@ impl Windows {
     }
 
     async fn copy_app_data(&self) -> Result<()> {
-        log!("Integrating","application data");
+        log_info!("Integrating","application data");
         copy_folder_with_glob_filters(
             &self.ctx.app_root_folder,
             &self.nwjs_root_folder,
@@ -258,7 +258,7 @@ impl Windows {
             .expect(&format!("Unable to open {:?}", app_icon_png));
 
         if app_icon_image.width() < 256 || app_icon_image.height() < 256 {
-            log!("Resources","{}",style("WARNING: application icon image size should be at least 256x256 (1024x1024 for MacOS)").red());
+            log_info!("Resources","{}",style("WARNING: application icon image size should be at least 256x256 (1024x1024 for MacOS)").red());
         }
         if app_icon_image.width() > 256 || app_icon_image.height() > 256 {
             app_icon_image = app_icon_image.resize( 256, 256, FilterType::Lanczos3);

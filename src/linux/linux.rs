@@ -29,7 +29,7 @@ impl Installer for Linux {
         let mut files = Vec::new();
 
         if targets.contains(&Target::Archive) {
-            log!("Linux","creating archive");
+            log_info!("Linux","creating archive");
             
             let level = self.ctx.manifest.package.archive.clone().unwrap_or_default();
             let filename = Path::new(&format!("{}.zip",self.ctx.app_snake_name)).to_path_buf();
@@ -43,8 +43,9 @@ impl Installer for Linux {
             files.push(target_file);
         }
 
+        #[cfg(target_os = "linux")]
         if targets.contains(&Target::Snap) {
-            log!("Linux","creating SNAP package");
+            log_info!("Linux","creating SNAP package");
             
             // let filename = Path::new(format!("{}.zip",self.ctx.app_snake_name)).to_path_buf();
             // files.push(filename);
@@ -63,7 +64,7 @@ impl Linux {
         options.content_only = true;
         options.skip_exist = true;
         
-        log!("Integrating","NW binaries");
+        log_info!("Integrating","NW binaries");
         dir::copy(
             Path::new(&self.ctx.deps.nwjs.source),
             &self.nwjs_root_folder, 
@@ -74,7 +75,7 @@ impl Linux {
     }
 
     async fn copy_app_data(&self) -> Result<()> {
-        log!("Integrating","application data");
+        log_info!("Integrating","application data");
         copy_folder_with_glob_filters(
             &self.ctx.app_root_folder,
             &self.nwjs_root_folder,

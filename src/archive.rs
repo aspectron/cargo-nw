@@ -181,7 +181,7 @@ pub fn compress_folder(
 
 
 
-    log!("Archive","compressing ({})", method.to_string());
+    log_info!("Archive","compressing ({})", method.to_string());
 
     let method : zip::CompressionMethod = method.into();
 

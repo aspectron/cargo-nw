@@ -31,7 +31,7 @@ impl Builder {
 
         if let Some(builds) = &self.ctx.manifest.package.build {
 
-            log!("Build","building...");
+            log_info!("Build","building...");
             println!("");
 
             let cwd = self.ctx.app_root_folder.to_str().unwrap().to_string();
@@ -110,14 +110,14 @@ impl Builder {
         }
 
         let ts_start = Instant::now();
-        log!("Build","building {} version {}",style(&self.ctx.manifest.application.title).cyan(),style(&self.ctx.manifest.application.version).cyan());
+        log_info!("Build","building {} version {}",style(&self.ctx.manifest.application.title).cyan(),style(&self.ctx.manifest.application.version).cyan());
         let target_list = targets.iter().map(|v|v.to_string()).collect::<Vec<String>>().join(", ");
-        log!("Build","installer type: {}",style(format!("{}", target_list)).cyan());
+        log_info!("Build","installer type: {}",style(format!("{}", target_list)).cyan());
 
 
         if let Some(actions) = &self.ctx.manifest.package.execute {
             for action in actions {
-                log!("Build","executing build actions");
+                log_info!("Build","executing build actions");
                 if let Execute::Build {
                     cmd,
                     env,
@@ -153,7 +153,7 @@ impl Builder {
         let files: Vec<(_,_)> = files.iter().map(|f|(f.file_name().unwrap().to_owned(),f)).collect();
 
         if self.ctx.manifest.package.signatures.unwrap_or(false) {
-            log!("Build","generating signatures (SHA)");
+            log_info!("Build","generating signatures (SHA)");
             for (_,path) in files.iter() {
                 generate_sha256sum(&path).await?;
             }
@@ -161,14 +161,14 @@ impl Builder {
 
         for (file,path) in files.iter() {
             let package_size = (std::fs::metadata(&path)?.len() as f64) / 1024.0 / 1024.0;
-            log!("Package","{} - {}", style(file.to_str().unwrap()).cyan(),style(format!("{:.2}Mb", package_size)).cyan());
+            log_info!("Package","{} - {}", style(file.to_str().unwrap()).cyan(),style(format!("{:.2}Mb", package_size)).cyan());
         }
 
-        log!("Finished","build completed in {:.0}s", duration.as_millis() as f64/1000.0);
+        log_info!("Finished","build completed in {:.0}s", duration.as_millis() as f64/1000.0);
 
         if let Some(actions) = &self.ctx.manifest.package.execute {
             for action in actions {
-                log!("Build","executing deploy actions");
+                log_info!("Build","executing deploy actions");
                 if let Execute::Deploy {
                     cmd,
                     env,

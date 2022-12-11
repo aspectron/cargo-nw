@@ -230,7 +230,7 @@ pub async fn async_main() -> Result<()> {
             ).await?);
 
             if let Some(actions) = &ctx.manifest.package.execute {
-                log!("Build","executing publish actions");
+                log_info!("Build","executing publish actions");
                 for action in actions {
                     if let Execute::Publish { 
                         cmd,

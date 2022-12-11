@@ -39,7 +39,7 @@ impl Installer for MacOS {
 
         if let Some(actions) = &self.ctx.manifest.package.execute {
             for action in actions {
-                log!("Build","executing pack action");
+                log_info!("Build","executing pack action");
                 if let Execute::Pack { cmd, env, folder, platform, arch } = action {
                     let cmd = &tpl.transform(cmd);
                     let argv = cmd.split(" ").map(|s|s.to_string()).collect();
@@ -54,7 +54,7 @@ impl Installer for MacOS {
 
         let mut files = Vec::new();
         if targets.contains(&Target::Archive) {
-            log!("MacOS","creating archive");
+            log_info!("MacOS","creating archive");
             
             let level = self.ctx.manifest.package.archive.clone().unwrap_or_default();
             let filename = Path::new(&format!("{}.zip",self.ctx.app_snake_name)).to_path_buf();
@@ -69,7 +69,7 @@ impl Installer for MacOS {
         }
         
         if targets.contains(&Target::DMG) {
-            log!("MacOS","creating DMG build");
+            log_info!("MacOS","creating DMG build");
 
             let dmg = DMG::new(
                 &self.ctx.manifest.application.name,
@@ -111,7 +111,7 @@ impl MacOS {
         options.content_only = true;
         options.skip_exist = true;
         
-        log!("Integrating","NW binaries");
+        log_info!("Integrating","NW binaries");
         dir::copy(
             // &nwjs_deps,
             Path::new(&self.ctx.deps.nwjs.source).join("nwjs.app"), 
@@ -123,7 +123,7 @@ impl MacOS {
     }
 
     async fn copy_app_data(&self) -> Result<()> {
-        log!("Integrating","application data");
+        log_info!("Integrating","application data");
         copy_folder_with_glob_filters(
             &self.ctx.app_root_folder,
             &self.app_nw_folder,
@@ -136,7 +136,7 @@ impl MacOS {
 
     async fn generate_icons(&self) -> Result<()> {
 
-        log!("MacOS","generating icons");
+        log_info!("MacOS","generating icons");
         
         // TODO - refactor to use https://crates.io/crates/icns
 
@@ -298,7 +298,7 @@ impl MacOS {
 
     async fn rename_app_bundle(&self, app_contents_folder: &PathBuf) -> Result<()> {
 
-        log!("MacOS","configuring application bundle");
+        log_info!("MacOS","configuring application bundle");
 
         let plist_file = app_contents_folder.join("info.plist");
         self.plist_bundle_rename(
