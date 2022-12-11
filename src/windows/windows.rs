@@ -178,6 +178,7 @@ impl Windows {
     }
 
     async fn create_innosetup_icon(&self, ico_file : &PathBuf) -> Result<()> {
+        log_info!("Innosetup","generating icons");
 
         if Path::new(ico_file).exists().await {
             return Ok(());
@@ -210,7 +211,7 @@ impl Windows {
 
         let sizes = vec![256,128,64,32,16];
         for size in sizes {
-            let dest = src.resize(size*2,size*2,resize_filter_type);
+            let dest = src.resize(size,size,resize_filter_type);
 
             let image_data = dest
                 .as_rgba8()
@@ -234,6 +235,7 @@ impl Windows {
 
     async fn update_resources(&self) -> Result<()> {
 
+        log_info!("Windows","updating resources");
         let strings = self.get_resource_strings();
 
         let mut version = self.ctx.manifest.application.version

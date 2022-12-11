@@ -88,9 +88,9 @@ impl InnoSetup {
             .from_case(Case::Lower)
             .to_case(Case::Title);
             if lang.as_str() == "english" {
-                args.push(&[qs!("Name",lang_title),qs!("MessageFile","compiler:Default.isl")])
+                args.push(&[qs!("Name",lang_title),qs!("MessagesFile","compiler:Default.isl")])
             } else {
-                args.push(&[qs!("Name",lang_title),qs!("MessageFile",format!("compiler:Languages\\{lang_title}.isl"))])
+                args.push(&[qs!("Name",lang_title),qs!("MessagesFile",format!("compiler:Languages\\{lang_title}.isl"))])
 
             };
         }

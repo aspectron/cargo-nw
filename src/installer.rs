@@ -18,6 +18,7 @@ pub enum Target {
     #[cfg(target_os = "macos")]
     DMG,
     #[cfg(target_os = "windows")]
+    #[clap(name = "innosetup")]
     InnoSetup,
     #[cfg(target_os = "linux")]
     Snap,
