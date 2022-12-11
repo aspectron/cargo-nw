@@ -95,7 +95,7 @@ async fn extract_zip(file: &PathBuf, dir: &PathBuf) -> Result<()> {
             use std::os::unix::fs::PermissionsExt;
 
             if let Some(mode) = file.unix_mode() {
-                std::fs::set_permissions(&outpath, fs::Permissions::from_mode(mode)).unwrap();
+                std::fs::set_permissions(&outpath, std::fs::Permissions::from_mode(mode)).unwrap();
             }
         }
     }
