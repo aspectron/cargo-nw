@@ -44,6 +44,12 @@ cargo install cargo-nw
 * `cargo nw clean` removes temporary files
 * `cargo nw clean --deps` removes downloaded Node Webkit binaries
 
+## Issues
+Linux
+```bash
+sudo apt install libssl-dev
+```
+
 ## Manifest
 
 The `nw.toml` package manifest file contains TOML specification for the project. It is typically located in the project root.
