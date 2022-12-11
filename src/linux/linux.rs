@@ -70,8 +70,8 @@ impl Linux {
         copy_folder_with_glob_filters(
             &self.ctx.app_root_folder,
             &self.nwjs_root_folder,
-            self.ctx.manifest.package.include.clone(),
-            self.ctx.manifest.package.exclude.clone(),
+            self.ctx.include.clone(),
+            self.ctx.exclude.clone(),
             self.ctx.manifest.package.hidden.unwrap_or(false),
         ).await?;
         Ok(())
