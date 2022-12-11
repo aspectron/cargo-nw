@@ -211,7 +211,7 @@ impl Icons {
             qs!("Filename", filename)
         ];
         if let Some(task) = task {
-            args.push(("Task".into(), task.into()));
+            args.push(("Tasks".into(), task.into()));
         }
         self.section.push(&args);
         self
@@ -267,7 +267,7 @@ impl Tasks {
         let mut args = vec![
             qs!("Name", name),
             qs!("Description", description),
-            qs!("GroiupDescription", group),
+            qs!("GroupDescription", group),
         ];
         if let Some(flags) = flags {
             args.push(("Flags".into(), flags.into()));

@@ -16,7 +16,7 @@ pub struct ISS {
     app_group : String,
     app_version : String,
     app_uuid : String,
-    app_folder : PathBuf,
+    // app_folder : PathBuf,
     app_authors: String,
     app_url: String,
     app_exe_file: String,
@@ -26,6 +26,7 @@ pub struct ISS {
     // // setup_icon : PathBuf,
     // // background_image : PathBuf,
     build_folder : PathBuf,
+    cache_folder : PathBuf,
     // // output_folder : PathBuf,
 
     // // build_file : PathBuf,
@@ -45,7 +46,8 @@ impl ISS {
         let app_title = ctx.manifest.application.title.clone();
         let app_version = ctx.manifest.application.version.clone();
         let build_folder = ctx.build_folder.clone();
-        let app_folder = build_folder.join(&app_title);
+        let cache_folder = ctx.cache_folder.clone();
+        // let app_folder = build_folder.join(&app_title);
         let app_authors = if let Some(authors) = ctx.manifest.application.authors.as_ref() {
             authors.to_string()
         } else {
@@ -86,8 +88,9 @@ impl ISS {
             app_version,
             app_authors,
             app_url,
-            app_folder,
+            // app_folder,
             build_folder,
+            cache_folder,
             iss_filename,
             output_file,
             app_exe_file,
@@ -196,7 +199,8 @@ impl ISS {
 
         iss.files()
             .replicate(
-                self.app_folder.to_str().unwrap(),
+                // self.app_folder.to_str().unwrap(),
+                &format!("{}\\*",self.build_folder.to_str().unwrap()),
                 "{app}",
                 Some("recursesubdirs ignoreversion")
             );
@@ -252,7 +256,7 @@ impl ISS {
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         let iss_text = iss.to_string();
-        let iss_file = self.build_folder.join(format!("{}.iss",self.app_name));
+        let iss_file = self.cache_folder.join(format!("{}.iss",self.app_name));
         std::fs::write(&iss_file, &iss_text)?;
 
         log_info!("InnoSetup","building...");
