@@ -5,17 +5,17 @@ Application deployment package builder for [Node-Webkit](https://nwjs.io)
 [![Crates.io](https://img.shields.io/crates/l/manual-serializer.svg?maxAge=2592000)](https://crates.io/crates/manual-serializer)
 [![Crates.io](https://img.shields.io/crates/v/manual-serializer.svg?maxAge=2592000)](https://crates.io/crates/manual-serializer)
 
-## Overview
+### Overview
 
 `cargo-nw` allows creation custom application deployment packages for NW applications by bundling application files with NW binaries.
 This tool was created to build Node Webkit Rust WASM applications, but it can be used with any new or existing project.
 
-## OS support
+### OS support
 * MacOS: DMG, archive
 * Windows: InnoSetup, archive
 * Linux: archive, (SNAP is under development)
 
-## Features
+### Features
 * No external dependencies for basic functionality
 * Automatic download of Node Webkit distribution binaries
 * Automatic handling of application icons
@@ -29,12 +29,12 @@ This tool was created to build Node Webkit Rust WASM applications, but it can be
 * [InnoSetup for Windows](https://jrsoftware.org/isdl.php) for creation of interactive Windows installers
 * [Wasmpack](https://rustwasm.github.io/wasm-pack/installer/) if building Rust WASM applications
 
-## Installation
+### Installation
 ```bash
 cargo install cargo-nw
 ```
 
-## Usage
+### Usage
 
 * `cargo nw init` creates a new Rust WASM project;
     * if the folder is empty, `cargo-nw` will create a new Rust WASM (wasm-pack) project
@@ -44,13 +44,13 @@ cargo install cargo-nw
 * `cargo nw clean` removes temporary files
 * `cargo nw clean --deps` removes downloaded Node Webkit binaries
 
-## Issues
+### Issues
 Linux
 ```bash
 sudo apt install libssl-dev
 ```
 
-## Manifest
+### Manifest
 
 The `nw.toml` package manifest file contains TOML specification for the project. It is typically located in the project root.
 

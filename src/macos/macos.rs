@@ -113,6 +113,7 @@ impl MacOS {
         
         log!("Integrating","NW binaries");
         dir::copy(
+            // &nwjs_deps,
             Path::new(&self.ctx.deps.nwjs.target).join("nwjs.app"), 
             &self.nwjs_root_folder, 
             &options

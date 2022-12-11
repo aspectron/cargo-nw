@@ -99,7 +99,6 @@ pub async fn copy_folder_with_glob_walk(
 }
 
 pub async fn copy_folder_with_glob_filters(
-    // case_sensitive : bool, 
     src_folder: &Path, 
     dest_folder: &Path, 
     include_patterns: Vec<String>, 
@@ -122,7 +121,7 @@ pub async fn copy_folder_with_glob_filters(
 }
 
 pub struct GlobCtx {
-    root : PathBuf,
+    prefix_len : usize,
     include : GlobSet,
     exclude : GlobSet,
     hidden : bool,
@@ -139,23 +138,18 @@ impl GlobCtx {
         let mut include_globs = GlobSetBuilder::new();
         let mut exclude_globs = GlobSetBuilder::new();
 
-        if include_patterns.len() > 0 {
-            for pattern in include_patterns.iter() {
-                include_globs.add(Glob::new(pattern)?);
-            }
-        } else {
-            include_globs.add(Glob::new("**/*")?);
+        for pattern in include_patterns.iter() {
+            include_globs.add(Glob::new(pattern)?);
         }
-
         for pattern in exclude_patterns.iter() {
             exclude_globs.add(Glob::new(pattern)?);
         }
     
         let include = include_globs.build()?;
         let exclude = exclude_globs.build()?;
-        let root = base.to_path_buf();
+        let prefix_len = base.to_path_buf().to_string_lossy().len();
         let ctx = GlobCtx {
-            root : root.to_path_buf(),
+            prefix_len,
             include,
             exclude,
             hidden,
@@ -170,17 +164,14 @@ impl GlobCtx {
         if !self.hidden && is_hidden(path) {
             return false;
         }
-
-        let path = path.strip_prefix(&self.root).unwrap();
-
-        if !self.include.is_empty() &&  !self.include.is_match(path) {
+        let path = path.to_string_lossy();
+        let path = path.split_at(self.prefix_len).1;
+        if !self.include.is_empty() && !self.include.is_match(path) {
             return false;
         }
-
         if !self.exclude.is_empty() && self.exclude.is_match(path) {
             return false;
         }
-
         true
     }
 }
@@ -199,7 +190,6 @@ where
     is_hidden
 }
 
-
 pub fn copy_folder_recurse(src_folder: &Path, dest_folder: &Path, ctx : &GlobCtx) -> Result<()> {
     std::fs::create_dir_all(dest_folder)?; 
 
@@ -215,7 +205,6 @@ pub fn copy_folder_recurse(src_folder: &Path, dest_folder: &Path, ctx : &GlobCtx
                 std::fs::copy(src, dest)?;
             }
         }
-
         else if path.is_dir() {
             let dir_name = path.file_name().unwrap();
             let src_path = src_folder.join(dir_name);

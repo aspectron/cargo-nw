@@ -25,7 +25,11 @@ root = ".."
 wasm = "root/wasm"
 resources = "resources"
 # include = ["root/*.html","root/*.js"]
-exclude = ["*.html"]
+# exclude = ["/resources","/src"]
+# exclude = ["/src/*"]
+# exclude = ["src/**/*"]
+exclude = ["/src","/target","/test/resources","/test/root"]
+
 execute = [
     { publish = { cmd = "bash publish $OUTPUT/$NAME-$VERSION" } },
 #     { build = { cmd = "123", folder = "456" } },

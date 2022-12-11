@@ -58,7 +58,7 @@ impl Context {
         arch : Architecture,
         options: Options,
     ) -> Result<Context> {
-        println!("");
+        // println!("");
 
         let home_folder: PathBuf = home::home_dir().unwrap().into();
         let manifest_toml = Manifest::locate(location).await?;
