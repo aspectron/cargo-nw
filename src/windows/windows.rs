@@ -102,36 +102,11 @@ impl Windows {
         options.content_only = true;
         options.skip_exist = true;
         
-        // ^ TODO
-        // ^ TODO
-        // ^ TODO
-        // ^ TODO
-        // ^ TODO
-        // ^ TODO
-        // ^ TODO
-        // ^ TODO
-        // ^ TODO
-        // ^ TODO
-
-
-        // let nwjs_deps = Path::new(&self.ctx.deps.nwjs.target);
-
-        // // ! TODO - CHECK IF THE FOLDER EXISTS !
-        // // ^ TODO - CHECK IF THE FOLDER EXISTS !
-        // // ! TODO - CHECK IF THE FOLDER EXISTS !
-        // // ^ TODO - CHECK IF THE FOLDER EXISTS !
-        // // ! TODO - CHECK IF THE FOLDER EXISTS !
-        // // ^ TODO - CHECK IF THE FOLDER EXISTS !
-        // // ! TODO - CHECK IF THE FOLDER EXISTS !
-        // // ^ TODO - CHECK IF THE FOLDER EXISTS !
-
-        // let nwjs_deps = nwjs_deps.join(nwjs_deps.file_name().unwrap());
-
         log!("Integrating","NW binaries");
 
         dir::copy(
             // &nwjs_deps,//Path::new(&self.ctx.deps.nwjs.target),
-            &Path::new(&self.ctx.deps.nwjs.target),
+            &Path::new(&self.ctx.deps.nwjs.source),
             &self.nwjs_root_folder, 
             &options
         )?;

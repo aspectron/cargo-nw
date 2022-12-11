@@ -65,7 +65,7 @@ impl Linux {
         
         log!("Integrating","NW binaries");
         dir::copy(
-            Path::new(&self.ctx.deps.nwjs.target),
+            Path::new(&self.ctx.deps.nwjs.source),
             &self.nwjs_root_folder, 
             &options
         )?;

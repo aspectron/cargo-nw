@@ -8,9 +8,9 @@ use async_std::path::Path;
 use async_std::path::PathBuf;
 use crate::prelude::*;
 
-fn to_target(dir: &PathBuf, folder: &str) -> PathBuf {
-    Path::new(dir).join(folder)//.into_os_string().into_string().unwrap()
-}
+// fn to_target(dir: &PathBuf, folder: &str) -> PathBuf {
+//     Path::new(dir).join(folder)//.into_os_string().into_string().unwrap()
+// }
 
 #[derive(Debug, Clone)]
 pub struct Meta {
@@ -18,36 +18,21 @@ pub struct Meta {
     pub folder : String,
     pub url : String,
     // pub extract_to_subfolder : bool,
-    pub target: PathBuf,
+    target: PathBuf,
+    pub source: PathBuf,
 }
 
 impl Meta {
-    pub fn new(file: &str, folder: &str, url: &str, target: &PathBuf) -> Self {
+    pub fn new(file: &str, folder: &str, url: &str, target: &PathBuf, source: &PathBuf) -> Self {
         Meta {
             file: file.to_string(),
             folder: folder.to_string(),
             url: url.to_string(),
             // extract_to_subfolder: false,
-            target: to_target(target,folder)
+            target: target.as_path().join(folder), //to_target(target,folder),
+            source: source.as_path().join(folder), //to_target(target,folder),
         }
     }
-    // pub fn new_with_subfolder(file: &str, folder: &str, url: &str, target: &PathBuf) -> Self {
-    //     Meta {
-    //         file: file.to_string(),
-    //         folder: folder.to_string(),
-    //         url: url.to_string(),
-    //         target_dir: to_target(target,folder)
-    //         // extract_to_subfolder: true,
-    //     }
-    // }
-    // pub fn get_extract_path(&self, dir: &PathBuf) -> PathBuf {
-    //     let target = Path::new(dir);
-    //     if self.extract_to_subfolder {
-    //         target.join(&self.folder)
-    //     } else {
-    //         target.into()
-    //     }
-    // }
 }
 
 pub fn get_nwjs_suffix(platform: &Platform) -> String {
@@ -77,7 +62,7 @@ pub fn get_nwjs_ffmpeg_meta(
     let folder = format!("ffmpeg-{version}-{suffix}-x64");
     let file = format!("{version}-{suffix}-x64.zip");
     let url = format!("https://github.com/iteufel/nwjs-ffmpeg-prebuilt/releases/download/{version}/{file}");
-    Meta::new(&file,&folder,&url,&target)
+    Meta::new(&file,&folder,&url,&target,&target)
 }
 
 pub fn get_nwjs_sdk_meta(
@@ -91,7 +76,11 @@ pub fn get_nwjs_sdk_meta(
     let archive_extension = get_nwjs_archive_extension(platform);
     let file = format!("{folder}.{archive_extension}");
     let url = format!("https://dl.nwjs.io/{version}/{file}");
-    Meta::new(&file,&folder,&url,target)
+    if archive_extension == "zip" {
+        Meta::new(&file,&folder,&url,&target,&target.join(&folder))
+    } else {
+        Meta::new(&file,&folder,&url,&target,&target)
+    }
 }
 
 pub fn get_nwjs_meta(
@@ -105,7 +94,11 @@ pub fn get_nwjs_meta(
     let archive_extension = get_nwjs_archive_extension(platform);
     let file = format!("{folder}.{archive_extension}");
     let url = format!("https://dl.nwjs.io/{version}/{file}");
-    Meta::new(&file,&folder,&url,&target.join(&folder))
+    if archive_extension == "zip" {
+        Meta::new(&file,&folder,&url,&target,&target.join(&folder))
+    } else {
+        Meta::new(&file,&folder,&url,&target,&target)
+    }
 }
 
 #[derive(Debug)]
