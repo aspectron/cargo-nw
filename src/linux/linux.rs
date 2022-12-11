@@ -52,7 +52,7 @@ impl Installer for Linux {
             snap.create().await?;
         }
 
-        Ok(vec![])
+        Ok(files)
     }
 }
 
