@@ -24,6 +24,11 @@ impl Builder {
             return Err("no build targets selected".into());
         }
 
+        self.ctx.clean().await?;
+        self.ctx.deps.ensure().await?;
+        self.ctx.ensure_folders().await?;
+
+
         if let Some(builds) = &self.ctx.manifest.package.build {
 
             log!("Build","building...");
@@ -109,9 +114,6 @@ impl Builder {
         let target_list = targets.iter().map(|v|v.to_string()).collect::<Vec<String>>().join(", ");
         log!("Build","installer type: {}",style(format!("{}", target_list)).cyan());
 
-        self.ctx.clean().await?;
-        self.ctx.deps.ensure().await?;
-        self.ctx.ensure_folders().await?;
 
         if let Some(actions) = &self.ctx.manifest.package.execute {
             for action in actions {

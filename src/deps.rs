@@ -122,7 +122,7 @@ impl Dependencies {
         sdk: bool,
     ) -> Dependencies {
         let home_dir: PathBuf = home::home_dir().unwrap().into();
-        let dir: PathBuf = Path::new(&home_dir).join(".nwjs");
+        let dir: PathBuf = Path::new(&home_dir).join(".cargo-nw");
 
         let nwjs = if sdk {
             get_nwjs_sdk_meta(platform, manifest, &dir)
@@ -175,8 +175,8 @@ impl Dependencies {
             .collect::<Vec<&Meta>>();
 
         if !downloads.is_empty() {
-            log!("Dependencies","downloading...");
-            println!("");
+            log!("Dependencies","... downloading NW dependencies ...");
+            // println!("");
             
             self.download(&downloads).await?;
             println!("");

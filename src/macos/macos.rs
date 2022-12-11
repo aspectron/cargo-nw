@@ -56,16 +56,12 @@ impl Installer for MacOS {
         if targets.contains(&Target::Archive) {
             log!("MacOS","creating archive");
             
-            // let level = self.ctx.manifest.package.archive.clone().unwrap_or(Archive::BZIP2);
-            let level = self.ctx.manifest.package.archive.clone().unwrap_or_default(); //(Archive::DEFLATE);
-
+            let level = self.ctx.manifest.package.archive.clone().unwrap_or_default();
             let filename = Path::new(&format!("{}.zip",self.ctx.app_snake_name)).to_path_buf();
             let target_file = self.ctx.output_folder.join(&filename);
             compress_folder(
                 &self.nwjs_root_folder,
-                &target_file, //self.ctx.output_folder.join(&filename),
-                // dst_file, 
-                // zip::CompressionMethod::Bzip2
+                &target_file,
                 level.into()
             )?;
 

@@ -66,12 +66,12 @@ impl Target {
                     Target::DMG
                 ].into_iter().collect()
             } else if #[cfg(target_os = "windows")] {
-                let list = vec![
+                vec![
                     Target::Archive,
                     Target::InnoSetup
                 ].into_iter().collect()
             } else if #[cfg(target_os = "linux")] {
-                let list = vec![
+                vec![
                     Target::Archive,
                     Target::Snap
                 ].into_iter().collect()

@@ -1,5 +1,6 @@
 use async_std::path::Path;
 use async_std::path::PathBuf;
+use async_std::fs;
 use std::collections::HashMap;
 use console::style;
 use fs_extra::dir;
@@ -21,13 +22,13 @@ pub struct Windows {
 impl Windows {
     pub fn new(ctx: Arc<Context>) -> Windows {
 
-        let nwjs_root_folder = ctx.build_folder.join(&ctx.manifest.application.title);
+        let nwjs_root_folder = ctx.build_folder.clone(); // ctx.build_folder.join(&ctx.manifest.application.title);
         let app_name = ctx.manifest.application.name.clone();
 
         let setup_icon_file = if let Some(crate::manifest::Windows { setup_icon : Some(setup_icon ), .. }) = &ctx.manifest.windows {
             ctx.app_root_folder.join(setup_icon)
         } else {
-            ctx.build_cache_folder.join(&format!("{app_name}-setup.ico"))
+            ctx.cache_folder.join(&format!("{app_name}-setup.ico"))
         };
 
         let app_exe_file = match ctx.manifest.windows {
@@ -63,8 +64,18 @@ impl Installer for Windows {
         if targets.contains(&Target::Archive) {
             log!("Windows","creating archive");
             
+            // let filename = Path::new(&format!("{}.zip",self.ctx.app_snake_name)).to_path_buf();
+            let level = self.ctx.manifest.package.archive.clone().unwrap_or_default();
             let filename = Path::new(&format!("{}.zip",self.ctx.app_snake_name)).to_path_buf();
-            files.push(filename);
+            let target_file = self.ctx.output_folder.join(&filename);
+            compress_folder(
+                &self.nwjs_root_folder,
+                &target_file,
+                level.into()
+            )?;
+
+            files.push(target_file);
+            // files.push(filename);
         }
 
         if targets.contains(&Target::InnoSetup) {
@@ -91,12 +102,43 @@ impl Windows {
         options.content_only = true;
         options.skip_exist = true;
         
+        // ^ TODO
+        // ^ TODO
+        // ^ TODO
+        // ^ TODO
+        // ^ TODO
+        // ^ TODO
+        // ^ TODO
+        // ^ TODO
+        // ^ TODO
+        // ^ TODO
+
+
+        let nwjs_deps = Path::new(&self.ctx.deps.nwjs.target);
+
+        // ! TODO - CHECK IF THE FOLDER EXISTS !
+        // ^ TODO - CHECK IF THE FOLDER EXISTS !
+        // ! TODO - CHECK IF THE FOLDER EXISTS !
+        // ^ TODO - CHECK IF THE FOLDER EXISTS !
+        // ! TODO - CHECK IF THE FOLDER EXISTS !
+        // ^ TODO - CHECK IF THE FOLDER EXISTS !
+        // ! TODO - CHECK IF THE FOLDER EXISTS !
+        // ^ TODO - CHECK IF THE FOLDER EXISTS !
+
+        let nwjs_deps = nwjs_deps.join(nwjs_deps.file_name().unwrap());
+
         log!("Integrating","NW binaries");
+
         dir::copy(
-            Path::new(&self.ctx.deps.nwjs.target),
+            &nwjs_deps,//Path::new(&self.ctx.deps.nwjs.target),
             &self.nwjs_root_folder, 
             &options
         )?;
+
+        fs::rename(
+            self.nwjs_root_folder.join("nw.exe"),
+            self.nwjs_root_folder.join(&self.app_exe_file),//format!("{}.exe",)),
+        ).await?;
 
         Ok(())
     }
@@ -106,8 +148,8 @@ impl Windows {
         copy_folder_with_glob_filters(
             &self.ctx.app_root_folder,
             &self.nwjs_root_folder,
-            self.ctx.manifest.package.include.clone(),
-            self.ctx.manifest.package.exclude.clone(),
+            self.ctx.include.clone(),
+            self.ctx.exclude.clone(),
             self.ctx.manifest.package.hidden.unwrap_or(false),
         ).await?;
         Ok(())
