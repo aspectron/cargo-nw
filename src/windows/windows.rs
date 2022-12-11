@@ -71,7 +71,7 @@ impl Installer for Windows {
             compress_folder(
                 &self.nwjs_root_folder,
                 &target_file,
-                level.into()
+                level
             )?;
 
             files.push(target_file);

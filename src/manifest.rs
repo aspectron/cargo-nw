@@ -359,3 +359,14 @@ impl Into<zip::CompressionMethod> for Archive {
         }
     }
 }
+
+impl ToString for Archive {
+    fn to_string(&self) -> String {
+        match self {
+            Archive::STORE => "STORE",
+            Archive::BZIP2 => "BZIP2",
+            Archive::DEFLATE => "DEFLATE",
+            Archive::ZSTD => "ZSTD",
+        }.into()
+    }
+}

@@ -31,8 +31,16 @@ impl Installer for Linux {
         if targets.contains(&Target::Archive) {
             log!("Linux","creating archive");
             
-            let filename = Path::new(&format!("{}.tgz",self.ctx.app_snake_name)).to_path_buf();
-            files.push(filename);
+            let level = self.ctx.manifest.package.archive.clone().unwrap_or_default();
+            let filename = Path::new(&format!("{}.zip",self.ctx.app_snake_name)).to_path_buf();
+            let target_file = self.ctx.output_folder.join(&filename);
+            compress_folder(
+                &self.nwjs_root_folder,
+                &target_file,
+                level
+            )?;
+
+            files.push(target_file);
         }
 
         if targets.contains(&Target::Snap) {

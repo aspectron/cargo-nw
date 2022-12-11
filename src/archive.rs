@@ -12,6 +12,7 @@ use walkdir::{DirEntry, WalkDir};
 // use async_std::path::PathBuf;
 // use async_std::path::Path;
 use std::io::{Seek, Write};
+// use crate::manifest::Archive;
 use crate::prelude::*;
 use console::style;
 
@@ -170,13 +171,19 @@ where
 pub fn compress_folder(
     src_dir: &async_std::path::Path,
     dst_file: &async_std::path::Path,
-    method: zip::CompressionMethod,
+    // method: crate::manifest::Archive,
+    method: crate::manifest::Archive,
+    // method: zip::CompressionMethod,
 ) -> Result<()> { //zip::result::ZipResult<()> {
     if !Path::new(src_dir).is_dir() {
         return Err(ZipError::FileNotFound.into());
     }
 
-    log!("Archive","generating");
+
+
+    log!("Archive","compressing ({})", method.to_string());
+
+    let method : zip::CompressionMethod = method.into();
 
     let path = Path::new(dst_file);
     let file = File::create(path).unwrap();
