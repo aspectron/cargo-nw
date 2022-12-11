@@ -24,7 +24,7 @@ root = ".."
 # build = { type = { } }
 wasm = "root/wasm"
 resources = "resources"
-include = ["root/*.html","root/*.js"]
+# include = ["root/*.html","root/*.js"]
 exclude = ["*.html"]
 execute = [
     { publish = { cmd = "bash publish $OUTPUT/$NAME-$VERSION" } },
