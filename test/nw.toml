@@ -31,8 +31,8 @@ resources = "resources"
 exclude = ["/src","/target","/test/resources","/test/root"]
 
 execute = [
-    { publish = { cmd = "bash publish $OUTPUT/$NAME-$VERSION" } },
-#     { build = { cmd = "123", folder = "456" } },
+    # { publish = { cmd = "bash publish $OUTPUT/$NAME-$VERSION" } },
+    { build = { argv = ["123"], folder = "456" } },
 #     { build = { cmd = "456", folder = "789" } },
 #     { deploy = { cmd = "ABC", folder = "XYZ" } },
 ]

@@ -219,62 +219,6 @@ pub fn copy_folder_recurse(src_folder: &Path, dest_folder: &Path, ctx : &GlobCtx
     Ok(())
 }
 
-pub async fn execute(
-    ctx: &Context,
-    // cmd: &str,
-    argv: Vec<String>,
-    env: &Option<Vec<String>>,
-    folder: &Option<String>,
-    platform: &Option<String>,
-    arch: &Option<String>,
-) -> Result<()> {
-
-    if let Some(arch) = arch {
-        if arch != &ctx.arch.to_string() {
-            return Ok(());
-        }
-    }
-
-    if let Some(platform) = platform {
-        if platform != &ctx.platform.to_string() {
-            return Ok(());
-        }
-    }
-
-    let folder = if let Some(folder) = folder {
-        ctx.app_root_folder.join(folder)
-    } else {
-        ctx.app_root_folder.clone()
-    };
-
-    let argv = argv
-        .iter()
-        .map(|s|ctx
-            .tpl
-            .lock()
-            .unwrap()
-            .transform(s)
-            .to_string()
-        ).collect::<Vec<_>>();
-    let program = argv.first().expect("missing program (frist argument) in the execution config");
-    let args = argv[1..].to_vec();
-
-    let mut proc = duct::cmd(program,args).dir(&folder);
-    if let Some(env) = env {
-        let defs = get_env_defs(env)?;
-        for (k,v) in defs.iter() {
-            proc = proc.env(k,v);
-        }
-    }
-
-    if let Err(e) = proc.run() {
-        println!("Error executing: '{}'", argv.join(" "));
-        Err(e.into())
-    } else {
-        Ok(())
-    }
-}
-
 pub async fn find_file(folder: &Path,files: &[&str]) -> Result<PathBuf> {
 
     for file in files {
@@ -285,7 +229,6 @@ pub async fn find_file(folder: &Path,files: &[&str]) -> Result<PathBuf> {
     }
     return Err(format!("Unable to locate any of the files: {}", files.join(", ")).into())
 }
-
 
 pub fn get_env_defs(strings: &Vec<String>) -> Result<Vec<(String, String)>> {
     let regex = Regex::new(r"([^=]+?)=(.+)").unwrap();
@@ -306,3 +249,63 @@ pub fn get_env_defs(strings: &Vec<String>) -> Result<Vec<(String, String)>> {
     Ok(parsed_strings)
 }
 
+pub enum ExecArgs {
+    String(String),
+    Argv(Vec<String>),
+}
+
+impl ExecArgs {
+    pub fn try_new(cmd: &Option<String>, argv : &Option<Vec<String>>) -> Result<ExecArgs> {
+        if cmd.is_some() && argv.is_some() {
+            Err(
+                format!("cmd and argv can not be present at the same time: '{:?}' and '{:?}' ",
+                    cmd.as_ref().unwrap(),
+                    argv.as_ref().unwrap()
+                ).into()
+            )
+        } else if let Some(cmd) = cmd {
+            Ok(ExecArgs::String(cmd.clone()))
+        } else if let Some(argv) = argv{
+            Ok(ExecArgs::Argv(argv.clone()))
+        } else {
+            Err(format!("ExecArgs::try_new() cmd or argv must be present").into())
+        }
+    }
+
+    pub fn get(&self, tpl: Option<&Tpl>) -> Vec<String> {
+        match self {
+            ExecArgs::String(cmd) => {
+                tpl
+                .map(|tpl|tpl.transform(&cmd))
+                .unwrap_or(cmd.clone())
+                .split(" ")
+                .map(|s|s.to_string())
+                .collect::<Vec<String>>()
+            },
+            ExecArgs::Argv(argv) => {
+                tpl
+                .map(|tpl|
+                    argv
+                    .into_iter()
+                    .map(|v|
+                        tpl
+                        .transform(&v)
+                    )
+                    .collect()
+                ).unwrap_or(argv.clone())
+            },
+        }
+    }
+}
+
+impl From<&[&str]> for ExecArgs {
+    fn from(args: &[&str]) -> Self {
+        ExecArgs::Argv(args.iter().map(|s|s.to_string()).collect())
+    }
+}
+
+impl From<Vec<&str>> for ExecArgs {
+    fn from(args: Vec<&str>) -> Self {
+        ExecArgs::Argv(args.iter().map(|s|s.to_string()).collect())
+    }
+}

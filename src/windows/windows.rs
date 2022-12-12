@@ -58,6 +58,22 @@ impl Installer for Windows {
         self.copy_app_data().await?;
         self.update_resources().await?;
 
+        let tpl = create_installer_tpl(
+            &self.ctx,
+            &self.ctx.app_root_folder,
+            &self.nwjs_root_folder
+        )?;
+
+        if let Some(actions) = &self.ctx.manifest.package.execute {
+            for action in actions {
+                log_info!("Build","executing pack action");
+                if let Execute::Pack(ec) = action {
+                    log_info!("MacOS","executing `{}`",ec.display(Some(&tpl)));
+                    self.ctx.execute_with_context(ec, None).await?;
+                }
+            }
+        }
+
         let mut files = Vec::new();
 
         if targets.contains(&Target::Archive) {
@@ -105,16 +121,23 @@ impl Windows {
         log_info!("Integrating","NW binaries");
 
         dir::copy(
-            // &nwjs_deps,//Path::new(&self.ctx.deps.nwjs.target),
-            &Path::new(&self.ctx.deps.nwjs.source),
+            &Path::new(&self.ctx.deps.nwjs.target()),
             &self.nwjs_root_folder, 
             &options
         )?;
 
         fs::rename(
             self.nwjs_root_folder.join("nw.exe"),
-            self.nwjs_root_folder.join(&self.app_exe_file),//format!("{}.exe",)),
+            self.nwjs_root_folder.join(&self.app_exe_file),
         ).await?;
+
+        if self.ctx.manifest.node_webkit.ffmpeg.unwrap_or(false) {
+            log_info!("Integrating","FFMPEG binaries");
+            fs::copy(
+                Path::new(&self.ctx.deps.ffmpeg.as_ref().unwrap().target()).join("ffmpeg.dll"),
+                self.nwjs_root_folder.join("ffmpeg.dll")
+            ).await?;
+        }
 
         Ok(())
     }

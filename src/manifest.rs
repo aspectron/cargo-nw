@@ -14,7 +14,7 @@ pub struct Manifest {
     pub package : Package,
     /// Node Webkit directives
     #[serde(rename = "node-webkit")]
-    pub node_webkit : NW,
+    pub node_webkit : NodeWebkit,
     /// Windows-specific settings
     pub windows : Option<Windows>,
     /// Firewall settings
@@ -118,42 +118,79 @@ pub struct Description {
 }
 
 
+
+#[derive(Debug, Clone, Deserialize)]
+// #[allow(non_camel_case_types)]
+pub struct ExecutionContext {
+    pub name: Option<String>,
+    pub argv : Option<Vec<String>>,
+    pub cmd : Option<String>,
+    pub folder : Option<String>,
+    pub platform: Option<Platform>,
+    pub arch: Option<Architecture>,
+    pub env : Option<Vec<String>>,
+}
+
+impl ExecutionContext {
+    pub fn validate(&self) -> Result<()> {
+        if self.argv.is_none() && self.cmd.is_none() {
+            Err(format!("no command or arguments specified").into())
+        } else if self.argv.is_some() && self.cmd.is_some() {
+            Err(format!("invalid execution arguments - both 'argv' and 'cmd' are not allowed argv: {:?} cmd: {:?}",
+                self.argv.as_ref().unwrap(),
+                self.cmd.as_ref().unwrap()
+            ).into())
+        } else {
+            Ok(())
+        }
+    }
+    pub fn get_args(&self) -> Result<ExecArgs> {
+        ExecArgs::try_new(&self.cmd,&self.argv)
+    }
+
+    pub fn display(&self, tpl: Option<&Tpl>) -> String {
+        self.name.clone().unwrap_or_else(|| {
+            let descr = self.get_args().unwrap().get(tpl).join(" ");
+            if descr.len() > 30 {
+                format!("{} ...", &descr[0..30])
+            } else {
+                descr
+            }
+        })
+    }
+}
+
+/// Execute actions that are invoked at different stage of the package integration
+/// For argument specification please see [`ExecutionContext`]
 #[derive(Debug, Clone, Deserialize)]
 // #[allow(non_camel_case_types)]
 pub enum Execute {
+    /// Executed in the project folder after cleanup operations, before the build proceses. 
+    /// This stage can be used to prepare external dependencies.
     #[serde(rename = "build")]
-    Build { 
-        cmd : String,
-        folder : Option<String>,
-        platform: Option<String>,
-        arch: Option<String>,
-        env : Option<Vec<String>>,
-    },
-    #[serde(rename = "build")]
-    Pack {
-        cmd : String,
-        folder : Option<String>,
-        platform: Option<String>,
-        arch: Option<String>,
-        env : Option<Vec<String>>,
-    },
+    Build(ExecutionContext),
+    /// Executed after the application data has been copied into the target
+    /// folder.
+    #[serde(rename = "pack")]
+    Pack(ExecutionContext),
+    /// Executed after the installation package integration is complete. This stage
+    /// can be used to execute an external script that uploads resulting builds.
+    /// 
+    /// For example: 
+    /// ```
+    /// scp $OUTPUT/$NAME-$VERSION* user@server:path/
+    /// ```
+    /// 
     #[serde(rename = "deploy")]
-    Deploy {
-        cmd : String,
-        folder : Option<String>,
-        platform: Option<String>,
-        arch: Option<String>,
-        env : Option<Vec<String>>,
-    },
+    Deploy(ExecutionContext),
+    /// Executed only when `cargo nw` is executed with `publish` action:
+    /// 
+    /// ```
+    /// cargo nw publish
+    /// ```
+    /// 
     #[serde(rename = "publish")]
-    /// Esecution invoked when running `cargo nw publish`
-    Publish {
-        cmd : String,
-        folder : Option<String>,
-        platform: Option<String>,
-        arch: Option<String>,
-        env : Option<Vec<String>>,
-    },
+    Publish(ExecutionContext),
 }
 
 /// Build directives.
@@ -167,9 +204,9 @@ pub enum Build {
         purge : Option<bool>,
         /// Enable `wasmpack` development build.
         dev : Option<bool>,
-        /// Specify a custom folder (current working directory) 
+        /// Specify a custom output directory (default `root/wasm`) 
         /// when running the build command.
-        folder : Option<String>,
+        outdir : Option<String>,
         /// Shell arguments for the build command.
         args : Option<String>,
         /// Environment variables for the build command in the
@@ -180,6 +217,9 @@ pub enum Build {
     NPM {
         /// Deletes `node_modules` folder before running `npm`.
         clean : Option<bool>,
+        /// Deletes `package-lock.json` folder before running `npm`.
+        #[serde(rename = "clean-package-lock")]
+        clean_package_lock : Option<bool>,
         /// Enables `npm` development build. By default the build
         /// process will include `--omit dev` argument, causing
         /// NPM to produce a release build.
@@ -191,10 +231,7 @@ pub enum Build {
     },
     /// Run a custom script/command before the integration
     #[serde(rename = "custom")]
-    Custom {
-        cmd : String,
-        env : Option<Vec<String>>,
-    },
+    Custom(ExecutionContext),
 }
 
 /// Package directives
@@ -243,19 +280,24 @@ pub struct Package {
 /// Node Webkit Directives
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename = "node-webkit")]
-pub struct NW {
+pub struct NodeWebkit {
     ///
     /// Node Webkit version. This version must be downloadable
     /// from https://nwjs.io/downloads
     /// 
     /// WARNING: If using FFMPEG builds, the available FFMPEG version
-    /// must match Node Webkit version. FFMPEG downloads are available
+    /// must match the Node Webkit version. FFMPEG downloads are available
     /// at: https://github.com/nwjs-ffmpeg-prebuilt/nwjs-ffmpeg-prebuilt/releases/
     /// 
     pub version: String,
     /// Enable automatic  inregration of FFMPEG libraries.
     pub ffmpeg: Option<bool>,
-    /// Use Node Webkit SDK edition.
+    /// Use Node Webkit SDK edition. Please note that an SDK-including build cane also be
+    /// produced via a command line argument as follows:
+    /// ```
+    /// cargo nw build all --sdk
+    /// ```
+    /// Be aware that SDK builds allow users access to your application environment
     pub sdk: Option<bool>,
 }
 
@@ -286,7 +328,7 @@ pub struct Windows {
     pub resources : Option<Vec<WindowsResourceString>>
 }
 
-/// Windows resource strings
+/// Windows resource strings: https://learn.microsoft.com/en-us/windows/win32/menurc/string-str
 #[derive(Debug, Clone, Deserialize)]
 pub enum WindowsResourceString {
     ProductName(String),

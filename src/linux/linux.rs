@@ -1,5 +1,6 @@
 use async_std::path::{PathBuf, Path};
 use fs_extra::dir;
+use async_std::fs;
 use crate::prelude::*;
 
 pub struct Linux {
@@ -25,6 +26,22 @@ impl Installer for Linux {
 
         self.copy_nwjs_folder().await?;
         self.copy_app_data().await?;
+
+        let tpl = create_installer_tpl(
+            &self.ctx,
+            &self.ctx.app_root_folder,
+            &self.nwjs_root_folder
+        )?;
+
+        if let Some(actions) = &self.ctx.manifest.package.execute {
+            for action in actions {
+                log_info!("Build","executing pack action");
+                if let Execute::Pack(ec) = action {
+                    log_info!("Linux","executing `{}`",ec.display(Some(&tpl)));
+                    self.ctx.execute_with_context(ec, None).await?;
+                }
+            }
+        }
 
         let mut files = Vec::new();
 
@@ -66,10 +83,19 @@ impl Linux {
         
         log_info!("Integrating","NW binaries");
         dir::copy(
-            Path::new(&self.ctx.deps.nwjs.source),
+            Path::new(&self.ctx.deps.nwjs.target()),
             &self.nwjs_root_folder, 
             &options
         )?;
+
+        if self.ctx.manifest.node_webkit.ffmpeg.unwrap_or(false) {
+            log_info!("Integrating","FFMPEG binaries");
+            fs::create_dir_all(self.nwjs_root_folder.join("lib")).await?;
+            fs::copy(
+                Path::new(&self.ctx.deps.ffmpeg.as_ref().unwrap().target()).join("ffmpeg.dll"),
+                self.nwjs_root_folder.join("lib").join("ffmpeg.dll")
+            ).await?;
+        }
 
         Ok(())
     }

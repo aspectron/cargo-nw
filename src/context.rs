@@ -1,4 +1,5 @@
 use std::sync::Mutex;
+use std::sync::MutexGuard;
 
 use async_std::path::Path;
 use async_std::path::PathBuf;
@@ -183,9 +184,73 @@ impl Context {
         Ok(())
     }
 
-    pub fn tpl(&self, text : &str) -> String {
-        let tpl = self.tpl.lock().unwrap();
-        tpl.transform(text)
+    // pub fn tpl(&self, text : &str) -> String {
+    //     let tpl = self.tpl.lock().unwrap();
+    //     tpl.transform(text)
+    // }
+
+    pub fn tpl(&self) -> MutexGuard<Tpl> {
+        self.tpl.lock().unwrap()
     }
 
+    pub async fn execute_with_context(
+        // ctx: &Context,
+        &self,
+        ec: &ExecutionContext,
+        tpl: Option<&Tpl>,
+    ) -> Result<()> {
+        self.execute(
+            // ctx,
+            &ec.get_args()?,
+            &ec.env,
+            &ec.folder,
+            &ec.platform,
+            &ec.arch,
+            tpl,
+        ).await
+    }
+
+    pub async fn execute(
+        &self,
+        // ctx: &Context,
+        args : &ExecArgs,
+        env: &Option<Vec<String>>,
+        cwd: &Option<String>,
+        platform: &Option<Platform>,
+        arch: &Option<Architecture>,
+        tpl: Option<&Tpl>,
+    ) -> Result<()> {
+
+        if arch.as_ref() != Some(&self.arch) {
+            return Ok(())
+        }
+        
+        if platform.as_ref() != Some(&self.platform) {
+            return Ok(())
+        }
+
+        let cwd = cwd
+            .as_ref()
+            .map(|f|self.app_root_folder.join(f))
+            .unwrap_or(self.app_root_folder.clone());
+
+        let argv = args.get(tpl.or(Some(&self.tpl.lock().unwrap().clone())));
+        let program = argv.first().expect("missing program (frist argument) in the execution config");
+        let args = argv[1..].to_vec();
+
+        let mut proc = duct::cmd(program,args).dir(&cwd);
+        if let Some(env) = env {
+            let defs = get_env_defs(env)?;
+            for (k,v) in defs.iter() {
+                proc = proc.env(k,v);
+            }
+        }
+
+        if let Err(e) = proc.run() {
+            println!("Error executing: {:?}", argv);
+            Err(e.into())
+        } else {
+            Ok(())
+        }
+    }
 }

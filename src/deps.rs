@@ -17,20 +17,26 @@ pub struct Meta {
     pub file : String,
     pub folder : String,
     pub url : String,
-    // pub extract_to_subfolder : bool,
     target: PathBuf,
-    pub source: PathBuf,
+    has_folder : bool,
 }
 
 impl Meta {
-    pub fn new(file: &str, folder: &str, url: &str, target: &PathBuf, source: &PathBuf) -> Self {
+    pub fn new(file: &str, folder: &str, url: &str, target: &PathBuf, has_folder: bool) -> Self {
         Meta {
             file: file.to_string(),
             folder: folder.to_string(),
             url: url.to_string(),
-            // extract_to_subfolder: false,
-            target: target.as_path().join(folder), //to_target(target,folder),
-            source: source.as_path().join(folder), //to_target(target,folder),
+            target: target.as_path().join(folder),
+            has_folder,
+        }
+    }
+
+    pub fn target(&self) -> PathBuf {
+        if self.has_folder {
+            self.target.as_path().join(&self.folder)
+        } else {
+            self.target.clone()
         }
     }
 }
@@ -62,7 +68,7 @@ pub fn get_nwjs_ffmpeg_meta(
     let folder = format!("ffmpeg-{version}-{suffix}-x64");
     let file = format!("{version}-{suffix}-x64.zip");
     let url = format!("https://github.com/iteufel/nwjs-ffmpeg-prebuilt/releases/download/{version}/{file}");
-    Meta::new(&file,&folder,&url,&target,&target)
+    Meta::new(&file,&folder,&url,&target,false)
 }
 
 pub fn get_nwjs_sdk_meta(
@@ -76,11 +82,7 @@ pub fn get_nwjs_sdk_meta(
     let archive_extension = get_nwjs_archive_extension(platform);
     let file = format!("{folder}.{archive_extension}");
     let url = format!("https://dl.nwjs.io/{version}/{file}");
-    if archive_extension == "zip" {
-        Meta::new(&file,&folder,&url,&target,&target.join(&folder))
-    } else {
-        Meta::new(&file,&folder,&url,&target,&target)
-    }
+    Meta::new(&file,&folder,&url,&target,archive_extension == "zip")
 }
 
 pub fn get_nwjs_meta(
@@ -94,11 +96,7 @@ pub fn get_nwjs_meta(
     let archive_extension = get_nwjs_archive_extension(platform);
     let file = format!("{folder}.{archive_extension}");
     let url = format!("https://dl.nwjs.io/{version}/{file}");
-    if archive_extension == "zip" {
-        Meta::new(&file,&folder,&url,&target,&target.join(&folder))
-    } else {
-        Meta::new(&file,&folder,&url,&target,&target)
-    }
+    Meta::new(&file,&folder,&url,&target,archive_extension == "zip")
 }
 
 #[derive(Debug)]

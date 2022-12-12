@@ -40,17 +40,12 @@ impl Installer for MacOS {
         if let Some(actions) = &self.ctx.manifest.package.execute {
             for action in actions {
                 log_info!("Build","executing pack action");
-                if let Execute::Pack { cmd, env, folder, platform, arch } = action {
-                    let cmd = &tpl.transform(cmd);
-                    let argv = cmd.split(" ").map(|s|s.to_string()).collect();
-                    execute(&self.ctx,argv,env,folder,platform,arch).await?;
+                if let Execute::Pack(ec) = action {
+                    log_info!("MacOS","executing `{}`",ec.display(Some(&tpl)));
+                    self.ctx.execute_with_context(ec, None).await?;
                 }
             }
         }
-
-
-
-        // log!("MacOS","creating {:?} installer",installer_type);
 
         let mut files = Vec::new();
         if targets.contains(&Target::Archive) {
@@ -106,6 +101,15 @@ impl MacOS {
         }
     }
 
+    fn get_current_framework_folder(&self) -> Result<PathBuf> {
+        let frameworks = self.app_contents_folder
+            .join("Frameworks")
+            .join("nwjs Framework.framework")
+            .join("Versions");
+        let version = std::fs::read_to_string(frameworks.join("Current"))?;
+        Ok(frameworks.join(version))
+    }
+
     async fn copy_nwjs_bundle(&self) -> Result<()>{
         let mut options = dir::CopyOptions::new();
         options.content_only = true;
@@ -114,10 +118,18 @@ impl MacOS {
         log_info!("Integrating","NW binaries");
         dir::copy(
             // &nwjs_deps,
-            Path::new(&self.ctx.deps.nwjs.source).join("nwjs.app"), 
+            Path::new(&self.ctx.deps.nwjs.target()).join("nwjs.app"), 
             &self.nwjs_root_folder, 
             &options
         )?;
+
+        if self.ctx.manifest.node_webkit.ffmpeg.unwrap_or(false) {
+            log_info!("Integrating","FFMPEG binaries");
+            fs::copy(
+                Path::new(&self.ctx.deps.ffmpeg.as_ref().unwrap().target()).join("libffmpeg.dylib"),
+                self.get_current_framework_folder()?.join("libffmpeg.dylib")
+            ).await?;
+        }
 
         Ok(())
     }
@@ -138,14 +150,13 @@ impl MacOS {
 
         log_info!("MacOS","generating icons");
         
-        // TODO - refactor to use https://crates.io/crates/icns
+        // in the future, refactor to use https://crates.io/crates/icns
+        // currently, this crate doesn't support all formats
 
         let app_icon = find_file(&self.ctx.setup_resources_folder, &["macos-application.png","application.png"]).await?;
-        // let app_icon = self.ctx.setup_resources_folder.join("macos-application.png");
         // self._generate_icns_sips(&app_icon, &self.app_resources_folder.join("app.icns")).await?;
         self.generate_icns_internal(&app_icon, &self.app_resources_folder.join("app.icns")).await?;
         let document_icon = find_file(&self.ctx.setup_resources_folder, &["macos-document.png","document.png"]).await?;
-        // let document_icon = self.ctx.setup_resources_folder.join("macos-document.png");
         // self._generate_icns_sips(&document_icon, &self.app_resources_folder.join("document.icns")).await?;
         self.generate_icns_internal(&document_icon, &self.app_resources_folder.join("document.icns")).await?;
 
@@ -307,43 +318,6 @@ impl MacOS {
             Some(&self.ctx.manifest.application.version)
         ).await?;
 
-    /* 
-
-        log!("MacOS","renaming framework helpers");
-
-        let frameworks_folder = app_contents_folder
-            .join("Frameworks")
-            .join("nwjs Framework.framework")
-            .join("Versions");
-        let framework_version = fs::read_to_string(frameworks_folder.join("Current")).await?;
-
-        let helpers_root = app_contents_folder
-            .join("Frameworks")
-            .join("nwjs Framework.framework")
-            .join("Versions")
-            .join(framework_version)
-            .join("Helpers");
-
-        let helpers = ["Helper", "Helper (GPU)", "Helper (Plugin)", "Helper (Renderer)", "Helper (Alerts)"];
-
-        for helper in helpers {
-            let src = format!("nwjs {helper}");
-            let dest = format!("{app_name} {helper}");
-            let src_app = format!("{src}.app");
-            let dest_app = format!("{dest}.app");
-                
-            let plist_file = helpers_root.join(&src_app).join("Contents").join("info.plist");
-            // println!("plist: {:?}", plist_file);
-            plist_bundle_rename(&plist_file, &app_name, None).await?;
-
-            let helper_path = helpers_root.join(&src_app).join("Contents").join("MacOS");
-
-            // println!("\nrenaming: {:?} to {:?}", helper_path.join(&src),helper_path.join(&dest));
-            fs::rename(helper_path.join(&src),helper_path.join(&dest)).await?;
-            // println!("\nrenaming: {:?} to {:?}", helpers_root.join(&src_app),helpers_root.join(&dest_app));
-            fs::rename(helpers_root.join(&src_app),helpers_root.join(&dest_app)).await?;
-        }
-    */    
         Ok(())
     }
 

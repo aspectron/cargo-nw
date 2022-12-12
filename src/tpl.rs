@@ -3,7 +3,7 @@ use async_std::path::PathBuf;
 
 use crate::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Tpl {
     map : HashMap<String,String>,
 }
@@ -34,6 +34,12 @@ impl Tpl {
     pub fn new() -> Tpl {
         Tpl {
             map : HashMap::new(),
+        }
+    }
+
+    pub fn extend(&self, tpl: &Tpl) -> Tpl {
+        Tpl {
+            map : self.map.clone().into_iter().chain(tpl.map.clone().into_iter()).collect()
         }
     }
 

@@ -232,15 +232,14 @@ pub async fn async_main() -> Result<()> {
             if let Some(actions) = &ctx.manifest.package.execute {
                 log_info!("Build","executing publish actions");
                 for action in actions {
-                    if let Execute::Publish { 
-                        cmd,
-                        env,
-                        folder,
-                        platform,
-                        arch
-                    } = action {
-                        let argv = cmd.split(" ").map(|s|s.to_string()).collect();
-                        execute(&ctx,argv,env,folder,platform,arch).await?;
+                    if let Execute::Publish(ec) = action {
+                        log_info!("Build","executing `{}`",ec.display(Some(&ctx.tpl())));
+                        ctx.execute_with_context(ec, None).await?;
+                        //     log_info!("Publish","executing action '{}'",ec.display(Some(&self.ctx.tpl())));
+                        // self.ctx.execute_with_context(ec, None).await?;
+                        //     ctx.execute_with_context(ec, tpl)
+                        // let argv = cmd.split(" ").map(|s|s.to_string()).collect();
+                        // execute(&ctx,argv,env,folder,platform,arch).await?;
                     }
                 }
             }
@@ -268,12 +267,18 @@ pub async fn async_main() -> Result<()> {
 // #[async_std::main]
 #[tokio::main]
 async fn main() -> Result<()> {
-    match async_main().await {
+    let result = async_main().await;
+    match &result {
         // Err(Error::String(s)) => println!("\n{}", style(s).red()),
         Err(Error::Warning(warn)) => println!("\nWarning: {}\n",style(format!("{}", warn)).yellow()),
         Err(err) => println!("\n{}\n",style(format!("{}", err)).red()),
         Ok(_) => { }
     };
+
+    if result.is_err() {
+        std::process::exit(1);
+    }
+    
     Ok(())
 }
 

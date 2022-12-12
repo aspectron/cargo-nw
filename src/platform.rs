@@ -1,8 +1,9 @@
 use cfg_if::cfg_if;
 use std::{fmt, str::FromStr};
 use crate::error::Error;
+use serde::{Serialize,Deserialize};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Platform {
     Windows,
     Linux,
@@ -35,7 +36,7 @@ impl fmt::Display for Platform {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 pub enum Architecture {
     x64,
