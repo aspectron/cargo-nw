@@ -39,6 +39,8 @@ pub struct Context {
     pub cache_folder : PathBuf,
     pub build_folder : PathBuf,
     pub output_folder : PathBuf,
+    pub temp_folder: PathBuf,
+    pub dependencies_folder : PathBuf,
     
     pub app_snake_name : String,
 
@@ -46,7 +48,7 @@ pub struct Context {
     pub exclude : Vec<String>,
 
     pub sdk : bool,
-    pub deps : Dependencies,
+    pub deps : Deps,
     pub tpl : Arc<Mutex<Tpl>>,
 }
 
@@ -93,6 +95,9 @@ impl Context {
             Path::new(&cargo_nw_target_folder).join("setup")
         };
 
+        let temp_folder = Path::new(&home_folder).join(".cargo-nw").join("temp").join(&app_snake_name);
+        let dependencies_folder = temp_folder.join("deps");
+
         let project_root_folder = project_root.to_path_buf();
         let app_root_folder = manifest.package.root.as_ref()
             .map(|root|project_root_folder.to_path_buf().join(root))
@@ -101,7 +106,7 @@ impl Context {
 
         let setup_resources_folder = manifest_folder.join(&manifest.package.resources.as_ref().unwrap_or(&"resources".to_string())).into();
         let sdk = manifest.node_webkit.sdk.unwrap_or(options.sdk);
-        let deps = Dependencies::new(&platform,&manifest,sdk);
+        let deps = Deps::new(&platform,&manifest,sdk);
 
         let include = manifest.package.include.clone().unwrap_or(vec![]);
         let mut exclude = manifest.package.exclude.clone().unwrap_or(vec![]);
@@ -126,7 +131,7 @@ impl Context {
             }
         }
 
-        let tpl : Tpl = [
+        let mut tpl : Tpl = [
             ("$ROOT",app_root_folder.to_str().unwrap().to_string()),
             ("$NAME",manifest.application.name.clone()),
             ("$VERSION",manifest.application.version.clone()),
@@ -134,6 +139,13 @@ impl Context {
             ("$PLATFORM",platform.to_string()),
             ("$ARCH",arch.to_string()),
         ].as_slice().try_into()?;
+        cfg_if! {
+            if #[cfg(target_os = "windows")] {
+                tpl.set("$EXE",".exe");
+            } else {
+                tpl.set("$EXE","");
+            }
+        }
 
         let ctx = Context {
             manifest,
@@ -148,6 +160,8 @@ impl Context {
             setup_resources_folder,
 
             cache_folder,
+            temp_folder,
+            dependencies_folder,
             output_folder,
 
             include,
@@ -194,16 +208,29 @@ impl Context {
     }
 
     pub async fn execute_with_context(
-        // ctx: &Context,
         &self,
         ec: &ExecutionContext,
+        cwd : Option<&Path>,
         tpl: Option<&Tpl>,
     ) -> Result<()> {
+
+        let cwd = cwd.unwrap_or(&self.app_root_folder);
+        let cwd = ec.folder
+            .as_ref()
+            .map(|folder|{
+                let folder = Path::new(folder);
+                if folder.is_absolute() {
+                    folder.to_path_buf()
+                } else {
+                    cwd.join(folder)
+                }
+            })
+            .unwrap_or(cwd.to_path_buf());
+
         self.execute(
-            // ctx,
             &ec.get_args()?,
+            &cwd,
             &ec.env,
-            &ec.folder,
             &ec.platform,
             &ec.arch,
             tpl,
@@ -214,27 +241,29 @@ impl Context {
         &self,
         // ctx: &Context,
         args : &ExecArgs,
+        cwd: &Path,
+        // cwd: &Option<String>,
         env: &Option<Vec<String>>,
-        cwd: &Option<String>,
         platform: &Option<Platform>,
         arch: &Option<Architecture>,
         tpl: Option<&Tpl>,
     ) -> Result<()> {
 
-        if arch.as_ref() != Some(&self.arch) {
+        if arch.is_some() && arch.as_ref() != Some(&self.arch) {
             return Ok(())
         }
         
-        if platform.as_ref() != Some(&self.platform) {
+        if platform.is_some() && platform.as_ref() != Some(&self.platform) {
             return Ok(())
         }
 
-        let cwd = cwd
-            .as_ref()
-            .map(|f|self.app_root_folder.join(f))
-            .unwrap_or(self.app_root_folder.clone());
-
         let argv = args.get(tpl.or(Some(&self.tpl.lock().unwrap().clone())));
+        if !cwd.is_dir().await {
+            return Err(format!("unable to locate folder: `{}` while running `{:?}`",cwd.display(),argv).into());
+        }
+
+        // println!("argv: {:?}", argv);
+        // println!("cwd: {:?}", cwd);
         let program = argv.first().expect("missing program (frist argument) in the execution config");
         let args = argv[1..].to_vec();
 

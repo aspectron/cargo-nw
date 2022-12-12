@@ -230,16 +230,11 @@ pub async fn async_main() -> Result<()> {
             ).await?);
 
             if let Some(actions) = &ctx.manifest.package.execute {
-                log_info!("Build","executing publish actions");
+                log_info!("Publish","executing actions");
                 for action in actions {
                     if let Execute::Publish(ec) = action {
-                        log_info!("Build","executing `{}`",ec.display(Some(&ctx.tpl())));
-                        ctx.execute_with_context(ec, None).await?;
-                        //     log_info!("Publish","executing action '{}'",ec.display(Some(&self.ctx.tpl())));
-                        // self.ctx.execute_with_context(ec, None).await?;
-                        //     ctx.execute_with_context(ec, tpl)
-                        // let argv = cmd.split(" ").map(|s|s.to_string()).collect();
-                        // execute(&ctx,argv,env,folder,platform,arch).await?;
+                        log_info!("Publish","executing `{}`",ec.display(Some(&ctx.tpl())));
+                        ctx.execute_with_context(ec, None,None).await?;
                     }
                 }
             }

@@ -42,7 +42,7 @@ impl Installer for MacOS {
                 log_info!("Build","executing pack action");
                 if let Execute::Pack(ec) = action {
                     log_info!("MacOS","executing `{}`",ec.display(Some(&tpl)));
-                    self.ctx.execute_with_context(ec, None).await?;
+                    self.ctx.execute_with_context(ec,Some(&self.app_nw_folder),None).await?;
                 }
             }
         }

@@ -12,6 +12,9 @@ pub struct Manifest {
     pub description : Description,
     /// Package build directives
     pub package : Package,
+    /// Script for building application dependencies
+    #[serde(rename = "dependency")]
+    pub dependencies : Vec<Dependency>,
     /// Node Webkit directives
     #[serde(rename = "node-webkit")]
     pub node_webkit : NodeWebkit,
@@ -275,6 +278,29 @@ pub struct Package {
     pub execute: Option<Vec<Execute>>,
     /// Customm output folder (default: `target/setup`).
     pub output: Option<String>,
+}
+
+
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename = "copy")]
+pub struct Copy {
+    pub from : Vec<String>,
+    pub to : String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Git {
+    pub url : String,
+    pub branch : Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Dependency {
+    pub name : Option<String>,
+    pub git : Option<Git>,
+    pub run : Vec<ExecutionContext>,
+    pub copy : Vec<Copy>,
 }
 
 /// Node Webkit Directives

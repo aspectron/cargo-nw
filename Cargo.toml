@@ -13,9 +13,9 @@ Cargo subcommand for building Node Webkit application deployment packages
 
 [features]
 test = []
-# default = ["test"]
-multiplatform = []
-default = ["test","multiplatform"]
+default = ["test"]
+# multiplatform = []
+# default = ["test","multiplatform"]
 
 [dependencies]
 clap = { version = "3.2.17", features = ["derive"] }

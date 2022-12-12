@@ -37,6 +37,10 @@ impl Tpl {
         }
     }
 
+    pub fn set(&mut self, key: &str, val: &str) {
+        self.map.insert(key.to_string(),val.to_string());
+    }
+
     pub fn extend(&self, tpl: &Tpl) -> Tpl {
         Tpl {
             map : self.map.clone().into_iter().chain(tpl.map.clone().into_iter()).collect()

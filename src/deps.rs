@@ -100,18 +100,18 @@ pub fn get_nwjs_meta(
 }
 
 #[derive(Debug)]
-pub struct Dependencies {
+pub struct Deps {
     pub ffmpeg : Option<Meta>,
     pub nwjs : Meta,
     pub dir : PathBuf,
 }
 
-impl Dependencies {
+impl Deps {
     pub fn new(
         platform: &Platform,
         manifest: &Manifest,
         sdk: bool,
-    ) -> Dependencies {
+    ) -> Deps {
         let home_dir: PathBuf = home::home_dir().unwrap().into();
         let dir: PathBuf = Path::new(&home_dir).join(".cargo-nw");
 
@@ -127,7 +127,7 @@ impl Dependencies {
             None
         };
 
-        Dependencies {
+        Deps {
             dir,
             nwjs,
             ffmpeg,
