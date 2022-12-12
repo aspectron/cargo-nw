@@ -1,6 +1,6 @@
 use async_std::{fs, path::Path};
 use console::style;
-use std::{time::Instant, collections::HashSet};
+use std::{time::Instant};
 use crate::prelude::*;
 
 pub struct Builder {
@@ -71,7 +71,8 @@ impl Builder {
                         }
 
                         log_info!("WasmPack","building WASM target");
-                        self.ctx.execute(
+                        execute(
+                            &self.ctx,
                             &argv.into(),
                             &self.ctx.app_root_folder,
                             env,
@@ -108,7 +109,8 @@ impl Builder {
                         }
                         log_info!("NPM","installing");
                         // let argv = argv.iter().map(|s|s.to_string()).collect();
-                        self.ctx.execute(
+                        execute(
+                            &self.ctx,
                             &argv.into(),
                             &self.ctx.app_root_folder,
                             env,
@@ -182,10 +184,6 @@ impl Builder {
                 if let Execute::Deploy(ec) = action {
                     log_info!("Deploy","executing `{}`",ec.display(Some(&self.ctx.tpl())));
                     self.ctx.execute_with_context(ec,None, None).await?;
-
-                    // let argv: Vec<String> = cmd.split(" ").map(|s|s.to_string()).collect();
-                    // log_info!("Build","executing deploy action '{}'",argv.first().unwrap());
-                    // execute(&self.ctx,argv,env,folder,platform,arch).await?;
                 }
             }
         }
@@ -196,31 +194,20 @@ impl Builder {
     }
 
     async fn process_dependencies(&self) -> Result<()> {
-        fs::create_dir_all(&self.ctx.dependencies_folder).await?;
-        for dep in self.ctx.manifest.dependencies.iter() {
-            self.process_dependency(dep).await?;
+        if let Some(deps) = &self.ctx.manifest.dependencies {
+            fs::create_dir_all(&self.ctx.dependencies_folder).await?;
+            for dep in deps.iter() {
+                self.process_dependency(dep).await?;
+            }
         }
 
         Ok(())
     }
 
     async fn process_dependency(&self, dep : &Dependency) -> Result<()> {
-
-        // let cwd = &self.ctx.dependencies_folder;
-
-        // ^ TODO
-        // ^  GIT CLONE OR PULL
-        // ^  CHECK IF SUMMARY MATCHES
-        // ^  CHECK IF FILES EXIST
-        // ^  RUN BUILD IF NOT
-        // ^  COPY FILES
-
-        // let files = dep.copy.from.map()
-
         let mut name = dep.name.clone();
 
-        let (mut rebuild, dep_build_folder, status) = if let Some(git) = &dep.git {
-
+        let (rebuild, dep_build_folder, status) = if let Some(git) = &dep.git {
             let repo = Path::new(&git.url).file_name().unwrap().to_str().unwrap();
             let repo_folder = self.ctx.dependencies_folder.join(repo);
             let status_file = self.ctx.dependencies_folder.join(format!("{repo}.status"));
@@ -252,30 +239,6 @@ impl Builder {
             (true, self.ctx.dependencies_folder.clone(), None)
         };
 
-        let mut files = Vec::new();
-
-        // if !rebuild {
-        //     'outer: 
-        let mut to_folders = HashSet::new();
-        if let Ok(tpl) = self.ctx.tpl.lock() {
-            for copy in dep.copy.iter() {
-                for file in &copy.from {
-                    let from = dep_build_folder.join(tpl.transform(file));
-                    let to_folder = self.ctx.app_root_folder.join(tpl.transform(&copy.to));
-                    to_folders.insert(to_folder.clone());
-                    let to = to_folder.join(from.file_name().unwrap());
-                    files.push((from,to));
-                }
-            }
-        }
-
-        for (file,_) in files.iter() {
-            if !file.exists().await {
-                rebuild = true;    
-                break;
-            }
-        }
-
         let name = name.map(|s| s.to_string()).unwrap_or_else(|| "...".into());
         if rebuild {
             log_info!("Dependency", "building `{}`",name);
@@ -286,29 +249,25 @@ impl Builder {
             log_info!("Dependency", "skipping `{}` (build is up to date)",name);
         }
 
-        for folder in to_folders.iter() {
-            fs::create_dir_all(folder).await?;
-        }
+        let tpl = self.ctx.tpl_clone();
 
-        for (from,to) in files.iter() {
-            fs::copy(from,to)
-                .await?;
-                // .expect(&format!(
-                //     "error copying `{}` to `{}`",
-                //     from.display(),
-                //     to.display()
-                // ));
+        for copy in dep.copy.iter() {
+            let to_folder = self.ctx.app_root_folder.join(tpl.transform(&copy.to));
+            let mut options = CopyOptions::default();
+            options.hidden = copy.hidden.unwrap_or(false);
+            options.flatten = true;
+            copy_folder_with_filters(
+                &dep_build_folder,
+                &to_folder,
+                (&tpl,copy).try_into()?,
+                options,
+            ).await?;
         }
 
         if let Some((status_file,status_data)) = status {
             fs::write(status_file, status_data).await?;
         }
 
-
         Ok(())
     }
 }
-
-// enum Status {
-//     Rebuild
-// }

@@ -14,7 +14,7 @@ pub struct Manifest {
     pub package : Package,
     /// Script for building application dependencies
     #[serde(rename = "dependency")]
-    pub dependencies : Vec<Dependency>,
+    pub dependencies : Option<Vec<Dependency>>,
     /// Node Webkit directives
     #[serde(rename = "node-webkit")]
     pub node_webkit : NodeWebkit,
@@ -264,12 +264,12 @@ pub struct Package {
     /// integration (default `**/*` - all files).  If you
     /// specify entries in this list, you have to cover all
     /// files that need to be copied.
-    pub include: Option<Vec<String>>,
+    pub include: Option<Vec<CopyFilter>>,
     /// List of exclusion globs used during project integration
     /// NOTE: if `gitignore` is true, list of `.gitignore` entries
     /// is copied into this exclusion list at the start of the 
     /// build process.
-    pub exclude: Option<Vec<String>>,
+    pub exclude: Option<Vec<CopyFilter>>,
     /// Copy hidden files (default: false).
     pub hidden: Option<bool>,
     /// Execute actions during different stages of the build process
@@ -280,13 +280,25 @@ pub struct Package {
     pub output: Option<String>,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub enum CopyFilter {
+    #[serde(rename = "glob")]
+    Glob(Vec<String>),
+    #[serde(rename = "regex")]
+    Regex(Vec<String>),
+}
+
 
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename = "copy")]
 pub struct Copy {
-    pub from : Vec<String>,
+    pub glob : Option<Vec<String>>,
+    pub regex : Option<Vec<String>>,
+    // pub exclude : Option<Vec<CopyFilter>>,
     pub to : String,
+    pub hidden : Option<bool>,
+    pub flatten : Option<bool>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

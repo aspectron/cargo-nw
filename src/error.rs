@@ -28,7 +28,7 @@ pub enum Error {
     InvalidArchitecture(String),
     
     #[error("I/O error: {0}")]
-    IoError(#[from] std::io::Error),
+    IO(#[from] std::io::Error),
 
     #[error("OsString error: {0}")]
     OsString(String),
@@ -42,17 +42,21 @@ pub enum Error {
     WinRes(#[from] winres_edit::Error),
     
     #[error("Glob error: {0}")]
-    GlobError(#[from] GlobError),
+    Glob(#[from] GlobError),
     
     #[error("YAML error: {0}")]
-    SerdeYamlError(#[from] serde_yaml::Error),
+    SerdeYaml(#[from] serde_yaml::Error),
     
     #[error("JSON error: {0}")]
-    JsonError(#[from] serde_json::Error),
+    Json(#[from] serde_json::Error),
     
     
     #[error("ZIP error: {0}")]
-    ZipError(#[from] zip::result::ZipError),
+    Zip(#[from] zip::result::ZipError),
+    
+    
+    #[error("Regex error: {0}")]
+    Regex(#[from] regex::Error),
     
     // #[error("Error: {0}")]
     // TryFromSliceError(#[from] TryFromSliceError),

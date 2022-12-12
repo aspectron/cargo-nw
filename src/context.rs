@@ -44,8 +44,8 @@ pub struct Context {
     
     pub app_snake_name : String,
 
-    pub include : Vec<String>,
-    pub exclude : Vec<String>,
+    pub include : Option<Vec<CopyFilter>>,
+    pub exclude : Option<Vec<CopyFilter>>,
 
     pub sdk : bool,
     pub deps : Deps,
@@ -108,28 +108,34 @@ impl Context {
         let sdk = manifest.node_webkit.sdk.unwrap_or(options.sdk);
         let deps = Deps::new(&platform,&manifest,sdk);
 
-        let include = manifest.package.include.clone().unwrap_or(vec![]);
-        let mut exclude = manifest.package.exclude.clone().unwrap_or(vec![]);
+        let include = manifest.package.include.clone();//.unwrap_or(vec![]);
+        let exclude = manifest.package.exclude.clone();//.unwrap_or(vec![]);
 
         log_info!("Target","`{}`",output_folder.to_str().unwrap());
 
-        if manifest.package.gitignore.unwrap_or(true) {
-            let gitignore = app_root_folder.join(".gitignore");
-            if gitignore.exists().await {
-                let gitignore = match std::fs::read_to_string(&gitignore) {
-                    Ok(gitignore) => gitignore,
-                    Err(e) => {
-                        return Err(format!("Unable to open '{}' - {}",gitignore.display(),e).into());
-                    }
-                };
-                let list = gitignore
-                    .split("\n")
-                    .filter(|s|!s.is_empty())
-                    .map(|s|s.to_string())
-                    .collect::<Vec<_>>();
-                exclude.extend(list);
-            }
-        }
+        // let gitignore = if manifest.package.gitignore.unwrap_or(true) {
+        //     let gitignore = app_root_folder.join(".gitignore");
+        //     if gitignore.exists().await {
+        //         let gitignore = match std::fs::read_to_string(&gitignore) {
+        //             Ok(gitignore) => gitignore,
+        //             Err(e) => {
+        //                 return Err(format!("Unable to open '{}' - {}",gitignore.display(),e).into());
+        //             }
+        //         };
+        //         // let list = 
+        //         let list = gitignore
+        //             .split("\n")
+        //             .filter(|s|!s.is_empty())
+        //             .map(|s|s.to_string())
+        //             .collect::<Vec<_>>();
+        //         Some(list)
+        //         // exclude.extend(list);
+        //     } else {
+        //         None
+        //     }
+        // } else {
+        //     None
+        // };
 
         let mut tpl : Tpl = [
             ("$ROOT",app_root_folder.to_str().unwrap().to_string()),
@@ -182,11 +188,7 @@ impl Context {
                 std::fs::create_dir_all(folder)?;
             }
         }
-        // if !std::path::Path::new(&self.build_folder).exists() {
-        // }
-        // if !std::path::Path::new(&self.build_folder).exists() {
-        //     std::fs::create_dir_all(&self.build_folder)?;
-        // }
+
         Ok(())
     }
 
@@ -198,13 +200,12 @@ impl Context {
         Ok(())
     }
 
-    // pub fn tpl(&self, text : &str) -> String {
-    //     let tpl = self.tpl.lock().unwrap();
-    //     tpl.transform(text)
-    // }
-
     pub fn tpl(&self) -> MutexGuard<Tpl> {
         self.tpl.lock().unwrap()
+    }
+
+    pub fn tpl_clone(&self) -> Tpl {
+        self.tpl.lock().unwrap().clone()
     }
 
     pub async fn execute_with_context(
@@ -213,73 +214,7 @@ impl Context {
         cwd : Option<&Path>,
         tpl: Option<&Tpl>,
     ) -> Result<()> {
-
-        let cwd = cwd.unwrap_or(&self.app_root_folder);
-        let cwd = ec.folder
-            .as_ref()
-            .map(|folder|{
-                let folder = Path::new(folder);
-                if folder.is_absolute() {
-                    folder.to_path_buf()
-                } else {
-                    cwd.join(folder)
-                }
-            })
-            .unwrap_or(cwd.to_path_buf());
-
-        self.execute(
-            &ec.get_args()?,
-            &cwd,
-            &ec.env,
-            &ec.platform,
-            &ec.arch,
-            tpl,
-        ).await
+        execute_with_context(self,ec,cwd,tpl).await
     }
 
-    pub async fn execute(
-        &self,
-        // ctx: &Context,
-        args : &ExecArgs,
-        cwd: &Path,
-        // cwd: &Option<String>,
-        env: &Option<Vec<String>>,
-        platform: &Option<Platform>,
-        arch: &Option<Architecture>,
-        tpl: Option<&Tpl>,
-    ) -> Result<()> {
-
-        if arch.is_some() && arch.as_ref() != Some(&self.arch) {
-            return Ok(())
-        }
-        
-        if platform.is_some() && platform.as_ref() != Some(&self.platform) {
-            return Ok(())
-        }
-
-        let argv = args.get(tpl.or(Some(&self.tpl.lock().unwrap().clone())));
-        if !cwd.is_dir().await {
-            return Err(format!("unable to locate folder: `{}` while running `{:?}`",cwd.display(),argv).into());
-        }
-
-        // println!("argv: {:?}", argv);
-        // println!("cwd: {:?}", cwd);
-        let program = argv.first().expect("missing program (frist argument) in the execution config");
-        let args = argv[1..].to_vec();
-
-        let mut proc = duct::cmd(program,args).dir(&cwd);
-        if let Some(env) = env {
-            let defs = get_env_defs(env)?;
-            for (k,v) in defs.iter() {
-                proc = proc.env(k,v);
-            }
-        }
-
-        if let Err(e) = proc.run() {
-            println!("Error executing: {:?}", argv);
-            Err(e.into())
-        } else {
-            Ok(())
-        }
-    }
 }

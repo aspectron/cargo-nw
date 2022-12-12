@@ -18,6 +18,8 @@ pub mod log;
 pub mod init;
 pub mod signatures;
 pub mod tpl;
+pub mod copy;
+pub mod exec;
 
 cfg_if! {
     if #[cfg(feature = "multiplatform")] {

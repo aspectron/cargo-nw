@@ -38,7 +38,7 @@ impl Installer for Linux {
                 log_info!("Build","executing pack action");
                 if let Execute::Pack(ec) = action {
                     log_info!("Linux","executing `{}`",ec.display(Some(&tpl)));
-                    self.ctx.execute_with_context(ec, None).await?;
+                    self.ctx.execute_with_context(ec, Some(&self.nwjs_root_folder), None).await?;
                 }
             }
         }
@@ -102,12 +102,13 @@ impl Linux {
 
     async fn copy_app_data(&self) -> Result<()> {
         log_info!("Integrating","application data");
-        copy_folder_with_glob_filters(
+
+        let tpl = self.ctx.tpl_clone();
+        copy_folder_with_filters(
             &self.ctx.app_root_folder,
             &self.nwjs_root_folder,
-            self.ctx.include.clone(),
-            self.ctx.exclude.clone(),
-            self.ctx.manifest.package.hidden.unwrap_or(false),
+            (&tpl,&self.ctx.include,&self.ctx.exclude).try_into()?,
+            CopyOptions::new(self.ctx.manifest.package.hidden.unwrap_or(false)),
         ).await?;
         Ok(())
     }

@@ -14,6 +14,8 @@ pub use crate:: {
     utils::*,
     signatures::*,
     tpl::*,
+    copy::*,
+    exec::*,
 };
 
 pub use cfg_if::cfg_if;
