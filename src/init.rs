@@ -11,9 +11,9 @@ use uuid::Uuid;
 
 const INDEX_JS: &str = r###"
 (async()=>{
-    window.$$SNAKE = await import('./wasm/$NAME.js');
+    window.$$SNAKE = await import('/root/wasm/$NAME.js');
     // window.$$SNAKE = $$NAME;
-    const wasm = await window.$$SNAKE.default('/wasm/$NAME_bg.wasm');
+    const wasm = await window.$$SNAKE.default('/root/wasm/$NAME_bg.wasm');
     //console.log("wasm", wasm, workflow)
     //$$SNAKE.init_console_panic_hook();
     //$$SNAKE.show_panic_hook_logs();
@@ -55,9 +55,9 @@ const INDEX_HTML: &str = r###"
       //console.log("nw", nw);
 
       (async()=>{
-        window.$$SNAKE = await import('./wasm/$NAME.js');
+        window.$$SNAKE = await import('/root/wasm/$NAME.js');
         // window.$$SNAKE = $$NAME;
-        const wasm = await window.$$SNAKE.default('/wasm/$NAME_bg.wasm');
+        const wasm = await window.$$SNAKE.default('/root/wasm/$NAME_bg.wasm');
         window.$$SNAKE.initialize_app();
         console.log("create_context_menu", window.$$SNAKE.create_context_menu())
       })();
@@ -219,9 +219,9 @@ impl ExampleApp{
             Ok(())
         });
 
-        nw::Window::open_with_options_and_callback("page2.html", &options, listener.into_js());
+        nw::Window::open_with_options_and_callback("/root/page2.html", &options, listener.into_js());
 
-        log_trace!("nw.Window.open(\"page2.html\", {})", options);
+        log_trace!("nw.Window.open(\"/root/page2.html\", {})", options);
 
         self.win_listeners.lock()?.push(listener);
 
@@ -408,8 +408,8 @@ pub fn initialize()->Result<()>{
     });
     let options = nw::window::Options::new()
         .new_instance(false);
-    nw::Window::open_with_options_and_callback("index.html", &options, listener.into_js());
-    log_trace!("nw.Window.open(\"index.html\")");
+    nw::Window::open_with_options_and_callback("/root/index.html", &options, listener.into_js());
+    log_trace!("nw.Window.open(\"/root/index.html\")");
 
     app.win_listeners.lock()?.push(listener);
 
@@ -547,14 +547,14 @@ impl Project {
 
                 let package = PackageJson {
                     name : self.title.clone(),
-                    main : "index.js".to_string(),
+                    main : "root/index.js".to_string(),
                     version: Some("0.0.1".to_string()),
                     description: Some("".to_string()),
                 };
                 let package_json = serde_json::to_string_pretty(&package).unwrap();
     
                 [
-                    ("root/package.json",tpl.transform(&package_json)),
+                    ("package.json",tpl.transform(&package_json)),
                     ("root/index.js", tpl.transform(INDEX_JS)),
                     ("root/index.html", tpl.transform(INDEX_HTML)),
                     ("root/page2.html", tpl.transform(PAGE2_HTML)),
