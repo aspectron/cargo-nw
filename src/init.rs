@@ -316,7 +316,7 @@ impl ExampleApp{
         let mac_options = nw::menu::MacOptions::new()
             .hide_edit(true)
             .hide_window(true);
-        menubar.create_mac_builtin_with_options("Example App", &mac_options);
+        menubar.create_mac_builtin_with_options("$TITLE", &mac_options);
         menubar.append(&nw::MenuItem::new(&menu_options));
         
         let window = nw::Window::get();
@@ -548,7 +548,7 @@ impl Project {
                 let package = PackageJson {
                     name : self.title.clone(),
                     main : "root/index.js".to_string(),
-                    version: Some("0.0.1".to_string()),
+                    version: Some(self.version.clone()),
                     description: Some("".to_string()),
                 };
                 let package_json = serde_json::to_string_pretty(&package).unwrap();
