@@ -40,7 +40,7 @@ const NW_TOML: &str = r###"
 name = "$NAME"
 version = "$VERSION"
 title = "$TITLE"
-# organization = "Your Organization Name"
+organization = "Your Organization Name"
 
 [description]
 short = "..."
@@ -53,7 +53,7 @@ $DESCRIPTION
 # resources = "resources/setup"
 exclude = ["resources/setup"]
 
-[nwjs]
+[node-webkit]
 version = "0.71.0"
 ffmpeg = false
 
