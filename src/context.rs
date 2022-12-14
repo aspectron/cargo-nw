@@ -107,7 +107,7 @@ impl Context {
             .unwrap_or(project_root_folder.clone());
         let app_root_folder: PathBuf = std::path::PathBuf::from(&app_root_folder).parse_dot()?.to_path_buf().into();
 
-        let setup_resources_folder = root_folder.join(&manifest.package.resources.as_ref().unwrap_or(&"resources".to_string())).into();
+        let setup_resources_folder = root_folder.join(&manifest.package.resources.as_ref().unwrap_or(&"resources/setup".to_string())).into();
         let sdk = manifest.node_webkit.sdk.unwrap_or(options.sdk);
         let deps = Deps::new(&platform,&manifest,sdk);
 
