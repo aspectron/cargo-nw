@@ -174,6 +174,7 @@ impl Builder {
 
         for (_file,path) in files.iter() {
             let package_size = (std::fs::metadata(&path)?.len() as f64) / 1024.0 / 1024.0;
+            let path = path.strip_prefix(&self.ctx.root_folder)?;
             log_info!("Package","{} - {}", style(path.to_str().unwrap()).cyan(),style(format!("{:.2}Mb", package_size)).cyan());
         }
 

@@ -225,7 +225,7 @@ pub async fn copy_folder_with_filters(
 
         for file in files {
             let to_file = dest_folder.join(&file.file_name().unwrap());
-            println!("{}",to_file.display());
+            log_trace!("Copy","`{}` to `{}`",to_file.display(), dest_folder.display());
             std::fs::copy(
                 src_folder.join(&file),
                 to_file
@@ -246,6 +246,8 @@ pub async fn copy_folder_with_filters(
     
         for file in list {
             // println!("+{}",file.display());
+            log_trace!("Copy","`{}` to `{}`",file.display(), dest_folder.display());
+
             std::fs::copy(src_folder.join(&file),dest_folder.join(&file))?;
         }
     }

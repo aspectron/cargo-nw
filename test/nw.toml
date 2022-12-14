@@ -29,7 +29,7 @@ resources = "resources"
 include = [{ glob = ["bin/*","test/*"]}]
 # exclude = [{ regex = ["(js|exe)$"]}]
 
-exclude = [{ glob = ["{src/*,target/*,test/*,*.lock,*.toml,.git*}"] }]
+exclude = [{ glob = ["{bin/*,src/*,target/*,test/*,*.lock,*.toml,.git*}"] }]
 
 execute = [
     { publish = { cmd = "bash publish $OUTPUT/$NAME-$VERSION" } },

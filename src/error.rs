@@ -58,6 +58,10 @@ pub enum Error {
     #[error("Regex error: {0}")]
     Regex(#[from] regex::Error),
     
+    #[error("StripPrefixError: {0}")]
+    StripPrefixError(#[from] std::path::StripPrefixError),
+    
+    // StripPrefixError
     // #[error("Error: {0}")]
     // TryFromSliceError(#[from] TryFromSliceError),
 }

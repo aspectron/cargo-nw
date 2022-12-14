@@ -37,6 +37,7 @@ pub struct Context {
     pub setup_resources_folder : PathBuf,
     // pub app_snake_name : PathBuf,
     pub cache_folder : PathBuf,
+    pub root_folder : PathBuf,
     pub build_folder : PathBuf,
     pub output_folder : PathBuf,
     pub temp_folder: PathBuf,
@@ -46,6 +47,8 @@ pub struct Context {
 
     pub include : Option<Vec<CopyFilter>>,
     pub exclude : Option<Vec<CopyFilter>>,
+
+    pub images : Images,
 
     pub sdk : bool,
     pub deps : Deps,
@@ -76,10 +79,10 @@ impl Context {
             arch
         );
 
-        let cargo_toml_folder = search_upwards(&manifest_folder,"Cargo.toml").await
+        let root_folder = search_upwards(&manifest_folder,"Cargo.toml").await
             .map(|location|location.parent().unwrap().to_path_buf())
             .unwrap_or(manifest_folder.clone());
-        let cargo_target_folder = cargo_toml_folder.join("target");
+        let cargo_target_folder = root_folder.join("target");
         let cargo_nw_target_folder = cargo_target_folder.join("nw");
         let build_folder = Path::new(&cargo_nw_target_folder).join("build").join(&app_snake_name);
         let cache_folder = Path::new(&cargo_nw_target_folder).join("cache").join(&app_snake_name);
@@ -104,12 +107,14 @@ impl Context {
             .unwrap_or(project_root_folder.clone());
         let app_root_folder: PathBuf = std::path::PathBuf::from(&app_root_folder).parse_dot()?.to_path_buf().into();
 
-        let setup_resources_folder = manifest_folder.join(&manifest.package.resources.as_ref().unwrap_or(&"resources".to_string())).into();
+        let setup_resources_folder = root_folder.join(&manifest.package.resources.as_ref().unwrap_or(&"resources".to_string())).into();
         let sdk = manifest.node_webkit.sdk.unwrap_or(options.sdk);
         let deps = Deps::new(&platform,&manifest,sdk);
 
         let include = manifest.package.include.clone();//.unwrap_or(vec![]);
         let exclude = manifest.package.exclude.clone();//.unwrap_or(vec![]);
+
+        let images = manifest.package.images.clone().unwrap_or_default();
 
         log_info!("Target","`{}`",output_folder.to_str().unwrap());
 
@@ -158,13 +163,14 @@ impl Context {
             platform,
             arch,
             home_folder,
-            cargo_target_folder,
-            build_folder,
             app_snake_name,
             app_root_folder,
             project_root_folder,
             setup_resources_folder,
 
+            root_folder,
+            cargo_target_folder,
+            build_folder,
             cache_folder,
             temp_folder,
             dependencies_folder,
@@ -172,6 +178,8 @@ impl Context {
 
             include,
             exclude,
+
+            images,
             // app_root_folder,
             sdk,
             deps,

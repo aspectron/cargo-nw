@@ -6,6 +6,7 @@ use console::style;
 pub mod error;
 pub mod result;
 pub mod manifest;
+pub mod images;
 pub mod builder;
 pub mod utils;
 pub mod archive;
@@ -67,6 +68,9 @@ struct Args {
     /// Action to execute (build,clean,init)
     #[clap(subcommand)]
     action : Action,
+    /// Enable verbose mode
+    #[clap(short, long)]
+    verbose : bool,
 }
 
 #[derive(Subcommand, Debug)]
@@ -130,17 +134,22 @@ enum Action {
 pub async fn async_main() -> Result<()> {
     
     let args = Cmd::parse();
-    let Cmd::Args(Args { action, location }) = args;
+    let Cmd::Args(Args { action, location, verbose }) = args;
     let platform = Platform::default();
     
     match action {
         Action::Build {
-            arch,
+            // verbose,
             sdk,
+            arch,
             target,
             default,
             output,
         } => {
+
+            if verbose {
+                log::enable_verbose();
+            }
 
             let mut targets = TargetSet::new();
             if let Some(target) = target {

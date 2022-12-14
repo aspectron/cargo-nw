@@ -66,32 +66,22 @@ impl DMG {
     async fn configure_finder(&self) -> Result<()> {
 
         let options = self.options.clone().unwrap_or_default();
-        let window_caption_height = options.window_caption_height.unwrap_or_default();
-        let window_position = options.window_position.unwrap_or_default();
-        let window_size = options.window_size.unwrap_or_default();
-        let icon_size = options.icon_size.unwrap_or_default();
-        let application_icon_position = options.application_icon_position.unwrap_or_default();
-        let system_applications_folder_position = options.system_applications_folder_position.unwrap_or_default();
+        let window_caption_height = options.window_caption_height();
+        let window_position = options.window_position();
+        let window_size = options.window_size();
+        let icon_size = options.icon_size();
+        let application_icon_position = options.application_icon_position();
+        let system_applications_folder_position = options.system_applications_folder_position();
         
-        
-        // let size = if let Some(MacOsDiskImage{ size : Some(size), .. }) = self.options {
-        //     size
-        // } else {
-        //     [485,330]
-        // };
-
-        // let caption_bar_height = 48;
-        // let caption_bar_height = window_caption_height;//59;
+        // let caption_bar_height = 59;
         let window_width = window_size[0];
-        let window_height = window_size[1]+window_caption_height;//+400;
+        let window_height = window_size[1]+window_caption_height;
         let window_l = window_position[0];
         let window_t = window_position[1];
         let window_r = window_l + window_width;
         let window_b = window_t + window_height;
-        // let icon_size = icon_size;
-        let icon_t = application_icon_position[0]; // Math.round(150 - iconSize / 2);
+        let icon_t = application_icon_position[0];
         let icon_l = application_icon_position[1];
-
         let apps_icon_t = system_applications_folder_position[0];
         let apps_icon_l = system_applications_folder_position[1];
         // let apps_icon_t = icon_t;

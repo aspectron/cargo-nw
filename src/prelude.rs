@@ -3,6 +3,7 @@ pub use crate:: {
     error::*,
     result::*,
     manifest::*,
+    images::*,
     context::*,
     platform::*,
     deps::*,

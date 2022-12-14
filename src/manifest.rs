@@ -239,20 +239,6 @@ pub enum Build {
     Custom(ExecutionContext),
 }
 
-/// Application image and icon locations (overrides)
-#[derive(Debug, Clone, Deserialize)]
-pub struct Images {
-    /// Application document icon (should be 1024x1024)
-    pub document : Option<String>,
-    /// Windows application icon (should be 256x256)
-    pub windows : Option<String>,
-    /// MacOS application icon (should be 1024x1024)
-    pub macos : Option<String>,
-    /// MacOS DMG location (can be custom size)
-    pub dmg : Option<String>,
-    /// Linux application icon
-    pub linux : Option<String>,
-}
 
 /// Package directives
 #[derive(Debug, Clone, Deserialize)]
@@ -516,7 +502,7 @@ impl Default for MacOsDiskImage {
 }
 
 impl MacOsDiskImage {
-    pub fn caption_height(&self) -> i32 { self.window_caption_height.unwrap_or(60) }
+    pub fn window_caption_height(&self) -> i32 { self.window_caption_height.unwrap_or(60) }
     pub fn window_position(&self) -> [i32;2] { self.window_position.unwrap_or([200,200]) }
     pub fn window_size(&self) -> [i32;2] { self.window_size.unwrap_or([485,330]) }
     pub fn icon_size(&self) -> i32 { self.icon_size.unwrap_or(72) }

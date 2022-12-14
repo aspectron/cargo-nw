@@ -24,7 +24,8 @@ pub async fn current_dir() -> PathBuf {
     std::env::current_dir().unwrap().into()
 }
 
-pub async fn find_file(folder: &Path,files: &[&str]) -> Result<PathBuf> {
+// pub async fn find_file(folder: &Path,files: &[&str]) -> Result<PathBuf> {
+pub async fn find_file(folder: &Path,files: &[String]) -> Result<PathBuf> {
     for file in files {
         let path = folder.join(file);
         if path.exists().await {
