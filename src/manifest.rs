@@ -280,6 +280,7 @@ pub struct Package {
     pub output: Option<String>,
 }
 
+/// Copy filter used in `package.include` and `package.exclude` sections
 #[derive(Debug, Clone, Deserialize)]
 pub enum CopyFilter {
     #[serde(rename = "glob")]
@@ -289,27 +290,48 @@ pub enum CopyFilter {
 }
 
 
-
+/// Copy options used as a part of [`Dependency`] directive
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename = "copy")]
 pub struct Copy {
+    /// Glob filter - allows to specify a list of globs for
+    /// file copy. For example:
+    /// 
+    /// * `["app/*","assets/**/{*.html,*.js}"]`
+    /// 
     pub glob : Option<Vec<String>>,
+    /// Regex filter - allows to specify a list of regular
+    /// expressions for file matching.
+    /// 
+    /// For example:
+    /// *  `["myprogram(.exe|.lib)?$"]` - will match `myprogram`, `myprogram.exe`, `myprogram.lib`
+    /// 
     pub regex : Option<Vec<String>>,
     // pub exclude : Option<Vec<CopyFilter>>,
+    /// Destination folder relative to the project root
     pub to : String,
+    /// Copy hidden files (files that start with `.`) - default: `false`
     pub hidden : Option<bool>,
+    /// Copy all source files into the target folder without preserving
+    /// subfolders (results in all files being placed in the target folder)
     pub flatten : Option<bool>,
 }
 
+/// Git directive used as a part of the [`Dependency`] section
 #[derive(Debug, Clone, Deserialize)]
 pub struct Git {
+    /// Git repository url
     pub url : String,
+    /// Repository branch
     pub branch : Option<String>,
 }
 
+/// Dependency section
 #[derive(Debug, Clone, Deserialize)]
 pub struct Dependency {
+    /// Name of the dependency (will be displayed during the build process)
     pub name : Option<String>,
+    /// Git url of the dependency repository
     pub git : Option<Git>,
     pub run : Vec<ExecutionContext>,
     pub copy : Vec<Copy>,
