@@ -288,6 +288,7 @@ impl MacOS {
     // CFBundleGetInfoString = \"nwjs 107.0.5304.88, Copyright 2022 The Chromium Authors, NW.js contributors, Node.js. All rights reserved.\";\n\
 
     let resource_text = format!("\
+    CFBundleName = \"{app_title}\";\n\
     CFBundleGetInfoString = \"{app_title} {version} {copyright}, The Chromium Authors, NW.js contributors, Node.js. All rights reserved.\";\n\
     NSBluetoothAlwaysUsageDescription = \"Once Chromium has access, websites will be able to ask you for access.\";\n\
     NSBluetoothPeripheralUsageDescription = \"Once Chromium has access, websites will be able to ask you for access.\";\n\
