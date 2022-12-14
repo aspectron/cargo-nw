@@ -278,8 +278,11 @@ impl Windows {
 
         // ~~~
 
-        // let app_icon_png = self.ctx.setup_resources_folder.join("app.png");
-        let app_icon_png = find_file(&self.ctx.setup_resources_folder, &["windows-application.png","application.png"]).await?;
+        let app_icon_png = if let Some(Images{macos : Some(filename),..}) = &self.ctx.manifest.package.images {
+            self.ctx.setup_resources_folder.join(filename)
+        } else {
+            find_file(&self.ctx.setup_resources_folder, &["windows-application.png","application.png"]).await?
+        };
         let mut app_icon_image = image::open(&app_icon_png)
             .expect(&format!("Unable to open {:?}", app_icon_png));
 

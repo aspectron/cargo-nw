@@ -24,6 +24,8 @@ pub struct Manifest {
     pub firewall : Option<Firewall>,
     /// Language settings
     pub languages : Option<Languages>,
+    /// DMG settings
+    pub macos_disk_image: Option<MacOsDiskImage>,
 }
 
 impl Manifest {
@@ -237,6 +239,21 @@ pub enum Build {
     Custom(ExecutionContext),
 }
 
+/// Application image and icon locations (overrides)
+#[derive(Debug, Clone, Deserialize)]
+pub struct Images {
+    /// Application document icon (should be 1024x1024)
+    pub document : Option<String>,
+    /// Windows application icon (should be 256x256)
+    pub windows : Option<String>,
+    /// MacOS application icon (should be 1024x1024)
+    pub macos : Option<String>,
+    /// MacOS DMG location (can be custom size)
+    pub dmg : Option<String>,
+    /// Linux application icon
+    pub linux : Option<String>,
+}
+
 /// Package directives
 #[derive(Debug, Clone, Deserialize)]
 pub struct Package {
@@ -257,6 +274,8 @@ pub struct Package {
     /// This folder should contain the application icon
     /// as well as images and icons needed by setup generators.
     pub resources: Option<String>,
+    /// Custom overrides of default icon paths
+    pub images : Option<Images>,
     /// Project root relative to the manifest file. All 
     /// integration operations will occur from this folder.
     pub root: Option<String>,
@@ -472,3 +491,36 @@ impl ToString for Archive {
         }.into()
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MacOsDiskImage {
+    pub window_caption_height : Option<i32>,
+    pub window_position : Option<[i32;2]>,
+    pub window_size : Option<[i32;2]>,
+    pub icon_size : Option<i32>,
+    pub application_icon_position : Option<[i32;2]>,
+    pub system_applications_folder_position : Option<[i32;2]>
+}
+
+impl Default for MacOsDiskImage {
+    fn default() -> Self {
+        MacOsDiskImage {
+            window_caption_height : None, 
+            window_position : None,
+            window_size : None,
+            icon_size : None,
+            application_icon_position : None,
+            system_applications_folder_position : None
+        }
+    }
+}
+
+impl MacOsDiskImage {
+    pub fn caption_height(&self) -> i32 { self.window_caption_height.unwrap_or(60) }
+    pub fn window_position(&self) -> [i32;2] { self.window_position.unwrap_or([200,200]) }
+    pub fn window_size(&self) -> [i32;2] { self.window_size.unwrap_or([485,330]) }
+    pub fn icon_size(&self) -> i32 { self.icon_size.unwrap_or(72) }
+    pub fn application_icon_position(&self) -> [i32;2] { self.application_icon_position.unwrap_or([100,158]) }
+    pub fn system_applications_folder_position(&self) -> [i32;2] { self.system_applications_folder_position.unwrap_or([100,385]) }
+}
+

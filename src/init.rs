@@ -8,6 +8,11 @@ use question::{Answer, Question};
 use console::style;
 use uuid::Uuid;
 
+const DEFAULT_APPLICATION_ICON: &[u8] = include_bytes!("../resources/default-application-icon.png");
+const MACOS_DMG_BACKGROUND: &[u8] = include_bytes!("../resources/macos-dmg-background.png");
+const INNOSETUP_55X58_IMAGE: &[u8] = include_bytes!("../resources/innosetup-55x58.bmp");
+const INNOSETUP_164X314_IMAGE: &[u8] = include_bytes!("../resources/innosetup-164x314.bmp");
+
 
 const INDEX_JS: &str = r###"
 (async()=>{
@@ -566,9 +571,24 @@ impl Project {
                 ].to_vec()
             };
 
+//             const MACOS_DMG_BACKGROUND: &[u8] = include_bytes!("../resources/macos-dmg-background.png");
+// const INNOSETUP_55x58_IMAGE: &[u8] = include_bytes!("../resources/innosetup-55x58.bmp");
+// const INNOSETUP_164x314_IMAGE: &[u8] = include_bytes!("../resources/innosetup-164x314.bmp");
+
+        let images = [
+            ("resources/application.png",DEFAULT_APPLICATION_ICON),
+            ("resources/document.png",DEFAULT_APPLICATION_ICON),
+            ("resources/macos-application.png",DEFAULT_APPLICATION_ICON),
+            ("resources/macos-dmg-background.png",MACOS_DMG_BACKGROUND),
+            ("resources/innosetup-55x58.png",INNOSETUP_55X58_IMAGE),
+            ("resources/innosetup-164x314.png",INNOSETUP_164X314_IMAGE),
+        ];
+
         let folders: HashSet<&Path> = files
             .iter()
-            .map(|(file,_)|Path::new(file).parent())
+            .map(|(f,_)|f)
+            .chain(images.iter().map(|(f,_)|f))
+            .map(|path|Path::new(path).parent())
             .flatten()
             .collect();
 
@@ -578,6 +598,10 @@ impl Project {
 
         for (filename, content) in files.iter() {
             fs::write(filename,&content).await?;
+        }
+
+        for (filename,data) in images.iter() {
+            fs::write(filename,data).await?;
         }
 
         cfg_if! {

@@ -66,6 +66,13 @@ impl Installer for MacOS {
         if targets.contains(&Target::DMG) {
             log_info!("MacOS","creating DMG build");
 
+            let background_image = if let Some(Images{macos : Some(filename),..}) = &self.ctx.manifest.package.images {
+                self.ctx.setup_resources_folder.join(filename)
+            } else {
+                self.ctx.setup_resources_folder.join("macos-dmg-background.png")
+                // find_file(&self.ctx.setup_resources_folder, &["macos-application.png","application.png"]).await?
+            };
+
             let dmg = DMG::new(
                 &self.ctx.manifest.application.name,
                 &self.ctx.manifest.application.title,
@@ -74,7 +81,9 @@ impl Installer for MacOS {
                 &self.ctx.arch.to_string(),
                 &self.nwjs_root_folder,
                 &self.app_resources_folder.join("app.icns"),
-                &self.ctx.setup_resources_folder.join("macos-background.png"),
+                &background_image,
+                // &self.ctx.setup_resources_folder.join("macos-dmg-background.png"),
+                &self.ctx.manifest.macos_disk_image,
                 &self.ctx.build_folder,//.join(&self.ctx.app_snake_name),
                 &self.ctx.output_folder
             );
@@ -155,11 +164,19 @@ impl MacOS {
         // in the future, refactor to use https://crates.io/crates/icns
         // currently, this crate doesn't support all formats
 
-        let app_icon = find_file(&self.ctx.setup_resources_folder, &["macos-application.png","application.png"]).await?;
-        // self._generate_icns_sips(&app_icon, &self.app_resources_folder.join("app.icns")).await?;
+        let app_icon = if let Some(Images{macos : Some(filename),..}) = &self.ctx.manifest.package.images {
+            self.ctx.setup_resources_folder.join(filename)
+        } else {
+            find_file(&self.ctx.setup_resources_folder, &["macos-application.png","application.png"]).await?
+        };
+        
+        let document_icon = if let Some(Images{document : Some(filename),..}) = &self.ctx.manifest.package.images {
+            self.ctx.setup_resources_folder.join(filename)
+        } else {
+            find_file(&self.ctx.setup_resources_folder, &["macos-document.png","document.png"]).await?
+        };
+
         self.generate_icns_internal(&app_icon, &self.app_resources_folder.join("app.icns")).await?;
-        let document_icon = find_file(&self.ctx.setup_resources_folder, &["macos-document.png","document.png"]).await?;
-        // self._generate_icns_sips(&document_icon, &self.app_resources_folder.join("document.icns")).await?;
         self.generate_icns_internal(&document_icon, &self.app_resources_folder.join("document.icns")).await?;
 
         Ok(())

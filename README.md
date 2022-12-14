@@ -19,7 +19,8 @@ This tool was created to build Node Webkit Rust WASM applications, but it can be
 * No external dependencies for basic functionality
 * Automatic download of Node Webkit distribution binaries
 * Automatic handling of application icons
-* Automatic handling of DMG and Windows resource manifests
+* Automatic handling of MacOS and Windows resource manifests
+* Automatic handling of DMG resources
 * Custom strings for Windows resource manifests
 * Creation of firewall rules during Windows installs
 * Optional inclusion of FFMPEG libraries
