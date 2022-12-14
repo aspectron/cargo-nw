@@ -198,7 +198,7 @@ impl Windows {
             }
         }
     
-        list.into_iter().map(|(k,v)|(k.to_string(),v.to_string())).collect()
+        list.into_iter().map(|(k,v)|(k.to_string(),self.ctx.tpl.transform(v))).collect()
     }
 
     async fn create_innosetup_icon(&self, ico_file : &PathBuf) -> Result<()> {
