@@ -106,6 +106,7 @@ $DESCRIPTION
 # root = ""
 # resources = "resources/setup"
 # exclude = ["resources/setup"]
+exclude = [{ glob = ["{src/*,target/*,test/*,resources/setup/*,*.lock,*.toml,.git*}"] }]
 
 [node-webkit]
 version = "0.71.0"
@@ -576,12 +577,12 @@ impl Project {
 // const INNOSETUP_164x314_IMAGE: &[u8] = include_bytes!("../resources/innosetup-164x314.bmp");
 
         let images = [
-            ("resources/application.png",DEFAULT_APPLICATION_ICON),
-            ("resources/document.png",DEFAULT_APPLICATION_ICON),
-            ("resources/macos-application.png",DEFAULT_APPLICATION_ICON),
-            ("resources/macos-dmg-background.png",MACOS_DMG_BACKGROUND),
-            ("resources/innosetup-55x58.png",INNOSETUP_55X58_IMAGE),
-            ("resources/innosetup-164x314.png",INNOSETUP_164X314_IMAGE),
+            ("resources/setup/application.png",DEFAULT_APPLICATION_ICON),
+            ("resources/setup/document.png",DEFAULT_APPLICATION_ICON),
+            ("resources/setup/macos-application.png",DEFAULT_APPLICATION_ICON),
+            ("resources/setup/macos-dmg-background.png",MACOS_DMG_BACKGROUND),
+            ("resources/setup/innosetup-55x58.png",INNOSETUP_55X58_IMAGE),
+            ("resources/setup/innosetup-164x314.png",INNOSETUP_164X314_IMAGE),
         ];
 
         let folders: HashSet<&Path> = files
