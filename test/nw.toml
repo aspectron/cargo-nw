@@ -72,8 +72,8 @@ caption_height = 60
 window_position = [200,200]
 window_size = [485,330]
 icon_size = 72
-application_icon_position = [0,0]
-system_applications_folder_position = [0,0]
+application_icon_position = [100,152]
+system_applications_folder_position = [385,152]
 
 [windows]
 uuid = "95ba9908-ff97-4281-8dca-7461bc9ee058"
