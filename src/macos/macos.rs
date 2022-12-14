@@ -243,9 +243,14 @@ impl MacOS {
     async fn plist_bundle_rename(&self, plist_file: &PathBuf, name: &str, version : Option<&str>) -> Result<()> {
 
         let mut text = fs::read_to_string(plist_file).await?;
+        //let name = name.replace("-", " ");
 
         let regex = Regex::new(r"<key>CFBundleDisplayName</key>([^<]*)<string>([^<]*)</string>").unwrap();
         let replace = format!("<key>CFBundleDisplayName</key>$1<string>{name}</string>");
+        text = regex.replace(&text,replace).to_string();
+
+        let regex = Regex::new(r"<key>CFBundleName</key>([^<]*)<string>([^<]*)</string>").unwrap();
+        let replace = format!("<key>CFBundleName</key>$1<string>{name}</string>");
         text = regex.replace(&text,replace).to_string();
         
         if let Some(version) = version {
@@ -283,6 +288,7 @@ impl MacOS {
     // CFBundleGetInfoString = \"nwjs 107.0.5304.88, Copyright 2022 The Chromium Authors, NW.js contributors, Node.js. All rights reserved.\";\n\
 
     let resource_text = format!("\
+    CFBundleName = \"{app_title}\";\n\
     CFBundleGetInfoString = \"{app_title} {version} {copyright}, The Chromium Authors, NW.js contributors, Node.js. All rights reserved.\";\n\
     NSBluetoothAlwaysUsageDescription = \"Once Chromium has access, websites will be able to ask you for access.\";\n\
     NSBluetoothPeripheralUsageDescription = \"Once Chromium has access, websites will be able to ask you for access.\";\n\

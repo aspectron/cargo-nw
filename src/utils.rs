@@ -25,14 +25,13 @@ pub async fn current_dir() -> PathBuf {
 }
 
 pub async fn find_file(folder: &Path,files: &[&str]) -> Result<PathBuf> {
-
     for file in files {
         let path = folder.join(file);
         if path.exists().await {
             return Ok(path);
         }
     }
-    return Err(format!("Unable to locate any of the files: {}", files.join(", ")).into())
+    return Err(format!("Unable to locate any of the files: {} \nfrom {:?} directory", files.join(", "), folder.to_str().unwrap_or("")).into())
 }
 
 pub fn get_env_defs(strings: &Vec<String>) -> Result<Vec<(String, String)>> {
