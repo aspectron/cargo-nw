@@ -168,7 +168,7 @@ const LIB_RS: &str = r###"
 
 
 use wasm_bindgen::prelude::*;
-use workflow_log::log_trace;
+use workflow_log::{log_trace, log_info};
 use workflow_dom::utils::window;
 use nw_sys::result::Result;
 use nw_sys::prelude::*;
@@ -293,7 +293,11 @@ pub fn create_context_menu()->Result<()>{
     if let Some(app) = app(){
         app.create_context_menu()?;
     }else{
-        initialize_app()?;
+        let is_nw = initialize_app()?;
+        if !is_nw{
+            log_info!("TODO: initialize web-app");
+            return Ok(());
+        }
         let app = app().expect("Unable to create app");
         app.create_context_menu()?;
     }
@@ -301,17 +305,20 @@ pub fn create_context_menu()->Result<()>{
 }
 
 #[wasm_bindgen]
-pub fn initialize_app()->Result<()>{
-    let nw = nw::try_nw().expect("NW Object not found");
-    log_trace!("nw: {:?}", nw);
+pub fn initialize_app()->Result<bool>{
+    let is_nw = nw::is_nw();
 
     let _app = ExampleApp::new()?;
-    Ok(())
+    Ok(is_nw)
 }
 
 #[wasm_bindgen]
 pub fn initialize()->Result<()>{
-    initialize_app()?;
+    let is_nw = initialize_app()?;
+    if !is_nw{
+        log_info!("TODO: initialize web-app");
+        return Ok(());
+    }
 
     let app = app().expect("Unable to create app");
 
