@@ -12,7 +12,7 @@ const DEFAULT_APPLICATION_ICON: &[u8] = include_bytes!("../resources/default-app
 const MACOS_DMG_BACKGROUND: &[u8] = include_bytes!("../resources/macos-dmg-background.png");
 const INNOSETUP_55X58_IMAGE: &[u8] = include_bytes!("../resources/innosetup-55x58.bmp");
 const INNOSETUP_164X314_IMAGE: &[u8] = include_bytes!("../resources/innosetup-164x314.bmp");
-
+const TRAY_ICON: &[u8] = include_bytes!("../resources/tray-icon@2x.png");
 
 const INDEX_JS: &str = r###"
 (async()=>{
@@ -165,8 +165,6 @@ features = [
 "###;
 
 const LIB_RS: &str = r###"
-
-
 use wasm_bindgen::prelude::*;
 use workflow_log::{log_trace, log_info};
 use workflow_dom::utils::window;
@@ -261,6 +259,45 @@ impl ExampleApp{
         Ok(())
     }
 
+    pub fn create_tray_icon(&self)->Result<()>{
+        let _tray = TrayIconBuilder::new()
+            .icon("resources/icons/tray-icon@2x.png")
+            .icons_are_templates(false)
+            .callback(|_|{
+                window().alert_with_message("Tray Icon click")?;
+                Ok(())
+            })
+            .build()?;
+        Ok(())
+    }
+
+    pub fn create_tray_icon_with_menu(&self)->Result<()>{
+
+        let submenu_1 = MenuItemBuilder::new()
+            .label("Say hi")
+            .key("6")
+            .modifiers("ctrl")
+            .callback(move |_|->std::result::Result<(), JsValue>{
+                window().alert_with_message("hi")?;
+                Ok(())
+            }).build()?;
+
+        let exit_menu = MenuItemBuilder::new()
+            .label("Exit")
+            .callback(move |_|->std::result::Result<(), JsValue>{
+                window().alert_with_message("TODO: Exit")?;
+                Ok(())
+            }).build()?;
+
+        let _tray = TrayIconBuilder::new()
+            .icon("resources/icons/tray-icon@2x.png")
+            .icons_are_templates(false)
+            .submenus(vec![submenu_1, menu_separator(), exit_menu])
+            .build()?;
+
+        Ok(())
+    }
+
     pub fn create_context_menu(self:Arc<Self>)->Result<()>{
 
         let item_1 = MenuItemBuilder::new()
@@ -335,9 +372,12 @@ pub fn initialize()->Result<()>{
     log_trace!("nw.Window.get(): {:?}", window);
 
     app.create_menu()?;
+    app.create_tray_icon()?;
+    app.create_tray_icon_with_menu()?;
     
     Ok(())
 }
+
 "###;
 
 
@@ -495,6 +535,7 @@ impl Project {
             ("resources/setup/macos-dmg-background.png",MACOS_DMG_BACKGROUND),
             ("resources/setup/innosetup-55x58.png",INNOSETUP_55X58_IMAGE),
             ("resources/setup/innosetup-164x314.png",INNOSETUP_164X314_IMAGE),
+            ("resources/icons/tray-icon@2x.png",TRAY_ICON),
         ];
 
         let folders: HashSet<&Path> = files
