@@ -14,6 +14,11 @@ const INNOSETUP_55X58_IMAGE: &[u8] = include_bytes!("../resources/innosetup-55x5
 const INNOSETUP_164X314_IMAGE: &[u8] = include_bytes!("../resources/innosetup-164x314.bmp");
 const TRAY_ICON: &[u8] = include_bytes!("../resources/tray-icon@2x.png");
 
+const GITIGNORE: &str = r###"
+target
+Cargo.lock
+"###;
+
 const INDEX_JS: &str = r###"
 (async()=>{
     window.$$SNAKE = await import('/root/wasm/$NAME.js');
@@ -512,6 +517,7 @@ impl Project {
                 let package_json = serde_json::to_string_pretty(&package).unwrap();
     
                 [
+                    (".gitignore",GITIGNORE.to_string()),
                     ("package.json",tpl.transform(&package_json)),
                     ("root/index.js", tpl.transform(INDEX_JS)),
                     ("root/index.html", tpl.transform(INDEX_HTML)),
@@ -551,6 +557,9 @@ impl Project {
         }
 
         for (filename, content) in files.iter() {
+            if !options.force && Path::new(filename).exists().await {
+                log_warn!("Init","WARNING: file already exists! `{}` (use --force to overwrite) skipping...",filename);
+            }
             fs::write(filename,&content).await?;
         }
 
