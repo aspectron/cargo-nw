@@ -15,9 +15,6 @@ cfg_if::cfg_if!{
 #[derive(Error, Debug)]
 pub enum Error {
 
-    #[error("abc ")]
-    Exit,
-
     #[error("Error: {0}")]
     String(String),
 

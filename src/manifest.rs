@@ -26,7 +26,16 @@ pub struct Manifest {
     pub languages : Option<Languages>,
     /// DMG settings
     pub macos_disk_image: Option<MacOsDiskImage>,
+
+    // pub test : std::collections::HashMap<String, Test>,
 }
+
+// #[derive(Debug, Clone, Deserialize)]
+// pub struct Test {
+//     // dependencies: HashMap<String, String>,
+//     // name : String,
+//     version : Option<String>,
+// }
 
 impl Manifest {
 
