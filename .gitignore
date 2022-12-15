@@ -1,5 +1,6 @@
 .DS_Store
 /target
+/analyzer-target
 /Cargo.lock
 /test/target
 /src/windows/templates

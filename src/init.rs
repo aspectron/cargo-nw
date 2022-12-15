@@ -12,7 +12,7 @@ const DEFAULT_APPLICATION_ICON: &[u8] = include_bytes!("../resources/default-app
 const MACOS_DMG_BACKGROUND: &[u8] = include_bytes!("../resources/macos-dmg-background.png");
 const INNOSETUP_55X58_IMAGE: &[u8] = include_bytes!("../resources/innosetup-55x58.bmp");
 const INNOSETUP_164X314_IMAGE: &[u8] = include_bytes!("../resources/innosetup-164x314.bmp");
-
+const TRAY_ICON: &[u8] = include_bytes!("../resources/tray-icon@2x.png");
 
 const INDEX_JS: &str = r###"
 (async()=>{
@@ -57,14 +57,10 @@ const INDEX_HTML: &str = r###"
   <body>
     <h1>Hello World!</h1>
     <script>
-      //console.log("nw", nw);
-
       (async()=>{
         window.$$SNAKE = await import('/root/wasm/$NAME.js');
-        // window.$$SNAKE = $$NAME;
         const wasm = await window.$$SNAKE.default('/root/wasm/$NAME_bg.wasm');
-        window.$$SNAKE.initialize_app();
-        console.log("create_context_menu", window.$$SNAKE.create_context_menu())
+        window.$$SNAKE.create_context_menu();
       })();
     </script>
   </body>
@@ -153,6 +149,7 @@ nw-sys={path="../nw-sys"}
 workflow-log="*"
 workflow-wasm = {path="../workflow-wasm"}
 workflow-dom ={path="../workflow-dom"}
+workflow-nw ={path="../workflow-nw"}
 
 [dependencies.web-sys]
 version = "0.3.60"
@@ -168,39 +165,32 @@ features = [
 "###;
 
 const LIB_RS: &str = r###"
-
 use wasm_bindgen::prelude::*;
-use workflow_log::log_trace;
-use workflow_wasm::listener::Listener;
+use workflow_log::{log_trace, log_info};
 use workflow_dom::utils::window;
 use nw_sys::result::Result;
 use nw_sys::prelude::*;
-use nw_sys::utils;
+use workflow_nw::prelude::*;
 
 static mut APP:Option<Arc<ExampleApp>> = None;
 
-
 #[derive(Clone)]
 pub struct ExampleApp{
-    pub win_listeners:Arc<Mutex<Vec<Listener<nw::Window>>>>,
-    pub menu_listeners:Arc<Mutex<Vec<Listener<JsValue>>>>,
-    pub listeners:Arc<Mutex<Vec<Listener<web_sys::MouseEvent>>>>
+    pub inner:Arc<App>
 }
 
 
 impl ExampleApp{
-    fn new()->Arc<Self>{
+    fn new()->Result<Arc<Self>>{
         let app = Arc::new(Self{
-            win_listeners:Arc::new(Mutex::new(vec![])),
-            menu_listeners:Arc::new(Mutex::new(vec![])),
-            listeners:Arc::new(Mutex::new(vec![]))
+            inner: App::new()?
         });
 
         unsafe{
             APP = Some(app.clone());
         };
 
-        app
+        Ok(app)
     }
 
     fn create_window(&self)->Result<()>{
@@ -210,222 +200,184 @@ impl ExampleApp{
             .height(200)
             .left(0);
 
-        let listener = Listener::new(|win:nw::Window|->std::result::Result<(), JsValue>{
-            log_trace!("win: {:?}", win);
-            log_trace!("win.x: {:?}", win.x());
-            win.move_by(300, 0);
-            win.set_x(100);
-            win.set_y(100);
+        self.inner.create_window_with_callback(
+            "/root/page2.html", 
+            &options,
+            |win:nw::Window|->std::result::Result<(), JsValue>{
+                log_trace!("win: {:?}", win);
+                log_trace!("win.x: {:?}", win.x());
+                win.move_by(300, 0);
+                win.set_x(100);
+                win.set_y(100);
 
-            log_trace!("win.title: {}", win.title());
-            win.set_title("Another Window");
-            log_trace!("win.set_title(\"Another Window\")");
-            log_trace!("win.title: {}", win.title());
+                log_trace!("win.title: {}", win.title());
+                win.set_title("Another Window");
+                log_trace!("win.set_title(\"Another Window\")");
+                log_trace!("win.title: {}", win.title());
 
-            Ok(())
-        });
-
-        nw::Window::open_with_options_and_callback("/root/page2.html", &options, listener.into_js());
-
-        log_trace!("nw.Window.open(\"/root/page2.html\", {})", options);
-
-        self.win_listeners.lock()?.push(listener);
+                Ok(())
+            }
+        )?;
 
         Ok(())
     }
 
     fn create_menu(&self)->Result<()>{
-        let submenus = nw::Menu::new();
+
         let this = self.clone();
-        let listener = Listener::new(move |_|->std::result::Result<(), JsValue>{
-            log_trace!("Create window : menu clicked");
-            this.create_window()?;
-            Ok(())
-        });
-
-        
-        let submenus_clone = submenus.clone();
-        let listener3 = Listener::new(move |_|->std::result::Result<(), JsValue>{
-            log_trace!("Menu 5 clicked");
-            Ok(())
-        });
-        let listener3_clone = listener3.clone();
-        let listener2 = Listener::new(move |_|->std::result::Result<(), JsValue>{
-            let menu_item = &submenus_clone.items()[2];
-            let menu_item_4 = &submenus_clone.items()[3];
-            let menu_item_5 = &submenus_clone.items()[4];
-            log_trace!("Menu 3 is checked: {:?}", menu_item.checked());
-            log_trace!("Menu 3 key: {:?}", menu_item.key());
-            menu_item.set_key("0");
-            log_trace!("Menu 3 key after set_key(0): {:?}", menu_item.key());
-            log_trace!("Menu 4 key: {:?}", menu_item_4.key());
-            log_trace!("Menu 4 is enabled: {:?}", menu_item_4.enabled());
-            menu_item_4.set_enabled(false);
-            log_trace!("Menu 4 is enabled after set_enabled(false): {:?}", menu_item_4.enabled());
-            menu_item_5.set_click(listener3_clone.into_js());
-
-            log_trace!("Menu 5 submenu: {:?}", menu_item_5.submenu());
-            let menu_options = nw::menu_item::Options::new()
-                .label("Sub Menu 1");
-            let sub_menu_item_1 = nw::MenuItem::new(&menu_options);
-            let submenu = nw::Menu::new();
-            submenu.append(&sub_menu_item_1);
-            menu_item_5.set_submenu(&submenu);
-            log_trace!("Menu 5 submenu: {:?}", menu_item_5.submenu());
-            Ok(())
-        });
-
-        let menu_options = nw::menu_item::Options::new()
+        let submenu_1 = MenuItemBuilder::new()
             .label("Create window")
             .key("8")
             .modifiers("ctrl")
-            .click(listener.into_js());
-        let menu_item_1 = nw::MenuItem::new(&menu_options);
-
-        let menu_item_2 = nw::MenuItem::new(&nw::menu_item::Type::Separator.into());
+            .callback(move |_|->std::result::Result<(), JsValue>{
+                log_trace!("Create window : menu clicked");
+                this.create_window()?;
+                Ok(())
+            }).build()?;
         
-        let menu_options:nw::menu_item::Options = nw::menu_item::Options::new()
-            .set_type(nw::menu_item::Type::Checkbox)    
-            .label("Menu 3: Update menus")
+        let submenu_2 = MenuItemBuilder::new()
+            .label("Say hello")
             .key("9")
-            .modifiers("cmd+shift")
-            .click(listener2.into_js());
-        let menu_item_3 = nw::MenuItem::new(&menu_options);
-
-        let menu_options = nw::menu_item::Options::new()
-            .set_type(nw::menu_item::Type::Checkbox)
-            .label("Menu 4")
-            .click(listener2.into_js());
-        let menu_item_4 = nw::MenuItem::new(&menu_options);
-
-        let menu_options = nw::menu_item::Options::new()
-            .label("Menu 5");
-        let menu_item_5 = nw::MenuItem::new(&menu_options);
-
-
-        self.menu_listeners.lock()?.push(listener);
-        self.menu_listeners.lock()?.push(listener2);
-        self.menu_listeners.lock()?.push(listener3);
+            .modifiers("ctrl")
+            .callback(move |_|->std::result::Result<(), JsValue>{
+                window().alert_with_message("Hello")?;
+                Ok(())
+            }).build()?;
         
-        submenus.append(&menu_item_1);
-        submenus.append(&menu_item_2);
-        submenus.append(&menu_item_3);
-        submenus.append(&menu_item_4);
-        submenus.append(&menu_item_5);
-
-        
-        let menu_options = nw::menu_item::Options::new()
+        let item = MenuItemBuilder::new()
             .label("Top Menu")
-            .submenu(&submenus);
+            .submenus(vec![submenu_1, menu_separator(), submenu_2])
+            .build()?;
 
-        let menubar = nw::Menu::new_with_options(&nw::menu::Type::Menubar.into());
-        let mac_options = nw::menu::MacOptions::new()
-            .hide_edit(true)
-            .hide_window(true);
-        menubar.create_mac_builtin_with_options("$TITLE", &mac_options);
-        menubar.append(&nw::MenuItem::new(&menu_options));
         
-        let window = nw::Window::get();
-        window.set_menu(&menubar);
-        //window.remove_menu();
+        MenubarBuilder::new("$TITLE")
+            .mac_hide_edit(true)
+            .mac_hide_window(true)
+            .append(item)
+            .build(true)?;
+        
+        Ok(())
+    }
+
+    pub fn create_tray_icon(&self)->Result<()>{
+        let _tray = TrayIconBuilder::new()
+            .icon("resources/icons/tray-icon@2x.png")
+            .icons_are_templates(false)
+            .callback(|_|{
+                window().alert_with_message("Tray Icon click")?;
+                Ok(())
+            })
+            .build()?;
+        Ok(())
+    }
+
+    pub fn create_tray_icon_with_menu(&self)->Result<()>{
+
+        let submenu_1 = MenuItemBuilder::new()
+            .label("Say hi")
+            .key("6")
+            .modifiers("ctrl")
+            .callback(move |_|->std::result::Result<(), JsValue>{
+                window().alert_with_message("hi")?;
+                Ok(())
+            }).build()?;
+
+        let exit_menu = MenuItemBuilder::new()
+            .label("Exit")
+            .callback(move |_|->std::result::Result<(), JsValue>{
+                window().alert_with_message("TODO: Exit")?;
+                Ok(())
+            }).build()?;
+
+        let _tray = TrayIconBuilder::new()
+            .icon("resources/icons/tray-icon@2x.png")
+            .icons_are_templates(false)
+            .submenus(vec![submenu_1, menu_separator(), exit_menu])
+            .build()?;
 
         Ok(())
     }
 
     pub fn create_context_menu(self:Arc<Self>)->Result<()>{
-        let win = nw::Window::get();
-        let dom_win = win.window();
-        //log_trace!("dom_win: {}, {:?}", win.title(), dom_win);
 
-        let body = utils::body(Some(dom_win));
-        //log_trace!("body.inner_html: {:?}", body.inner_html());
-        let this = self.clone();
-        let listener = Listener::new(move |ev:web_sys::MouseEvent|->std::result::Result<(), JsValue>{
-            ev.prevent_default();
-            //let x = win.x() + ev.x();
-            //let y = win.y() + ev.y();
-            log_trace!("win :::: x:{}, y:{}", win.x(), win.y());
-            log_trace!("contextmenu :::: x:{}, y:{}", ev.x(), ev.y());
-
-            let menu_listener = Listener::new(move |_|->std::result::Result<(), JsValue>{
-                log_trace!("Context menu clicked");
-                window().alert_with_message("Context menu clicked")?;
+        let item_1 = MenuItemBuilder::new()
+            .label("Sub Menu 1")
+            .callback(move |_|->std::result::Result<(), JsValue>{
+                window().alert_with_message("Context menu 1 clicked")?;
                 Ok(())
-            });
-            
-            let menu_options = nw::menu_item::Options::new()
-                .label("Sub Menu 1")
-                .click(menu_listener.into_js());
-            let sub_menu_item_1 = nw::MenuItem::new(&menu_options);
+            }).build()?;
 
-            let menu_options = nw::menu_item::Options::new()
-                .label("Sub Menu 2")
-                .click(menu_listener.into_js());
+        let item_2 = MenuItemBuilder::new()
+            .label("Sub Menu 2")
+            .callback(move |_|->std::result::Result<(), JsValue>{
+                window().alert_with_message("Context menu 2 clicked")?;
+                Ok(())
+            }).build()?;
 
-            let sub_menu_item_2 = nw::MenuItem::new(&menu_options);
-            let popup_menu = nw::Menu::new();
-            popup_menu.append(&sub_menu_item_1);
-            popup_menu.append(&sub_menu_item_2);
-            popup_menu.popup(ev.x(), ev.y());
 
-            this.menu_listeners.lock().unwrap().push(menu_listener);
-
-            
-            Ok(())
-        });
-
-        body.add_event_listener_with_callback("contextmenu", listener.into_js())?;
-        self.listeners.lock()?.push(listener);
-        
+        self.inner.create_context_menu(vec![item_1, item_2])?;
 
         Ok(())
     }
 }
 
-fn app()->Arc<ExampleApp>{
-    unsafe{APP.clone().unwrap()}
+fn app()->Option<Arc<ExampleApp>>{
+    unsafe{APP.clone()}
 }
 
 #[wasm_bindgen]
 pub fn create_context_menu()->Result<()>{
-    app().create_context_menu()?;
+    if let Some(app) = app(){
+        app.create_context_menu()?;
+    }else{
+        let is_nw = initialize_app()?;
+        if !is_nw{
+            log_info!("TODO: initialize web-app");
+            return Ok(());
+        }
+        let app = app().expect("Unable to create app");
+        app.create_context_menu()?;
+    }
     Ok(())
 }
 
 #[wasm_bindgen]
-pub fn initialize_app()->Result<()>{
-    let nw = nw::try_nw().expect("NW Object not found");
-    log_trace!("nw: {:?}", nw);
+pub fn initialize_app()->Result<bool>{
+    let is_nw = nw::is_nw();
 
-    let _app = ExampleApp::new();
-    Ok(())
+    let _app = ExampleApp::new()?;
+    Ok(is_nw)
 }
 
 #[wasm_bindgen]
 pub fn initialize()->Result<()>{
-    let nw = nw::try_nw().expect("NW Object not found");
-    log_trace!("nw: {:?}", nw);
+    let is_nw = initialize_app()?;
+    if !is_nw{
+        log_info!("TODO: initialize web-app");
+        return Ok(());
+    }
 
-    let app = ExampleApp::new();
+    let app = app().expect("Unable to create app");
 
-    let listener = Listener::new(|_win:nw::Window|->std::result::Result<(), JsValue>{
-        //app.create_context_menu()?;
-        Ok(())
-    });
-    let options = nw::window::Options::new()
-        .new_instance(false);
-    nw::Window::open_with_options_and_callback("/root/index.html", &options, listener.into_js());
-    log_trace!("nw.Window.open(\"/root/index.html\")");
-
-    app.win_listeners.lock()?.push(listener);
+    app.inner.create_window_with_callback(
+        "/root/index.html",
+        &nw::window::Options::new().new_instance(false),
+        |_win:nw::Window|->std::result::Result<(), JsValue>{
+            //app.create_context_menu()?;
+            Ok(())
+        }
+    )?;
 
     let window = nw::Window::get();
     log_trace!("nw.Window.get(): {:?}", window);
 
     app.create_menu()?;
+    app.create_tray_icon()?;
+    app.create_tray_icon_with_menu()?;
     
     Ok(())
 }
+
 "###;
 
 
@@ -583,6 +535,7 @@ impl Project {
             ("resources/setup/macos-dmg-background.png",MACOS_DMG_BACKGROUND),
             ("resources/setup/innosetup-55x58.png",INNOSETUP_55X58_IMAGE),
             ("resources/setup/innosetup-164x314.png",INNOSETUP_164X314_IMAGE),
+            ("resources/icons/tray-icon@2x.png",TRAY_ICON),
         ];
 
         let folders: HashSet<&Path> = files
