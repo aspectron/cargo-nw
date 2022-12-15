@@ -14,9 +14,10 @@ pub enum Platform {
 impl Default for Platform {
     fn default() -> Platform {
         cfg_if! {
-            if #[cfg(any(target_os = "linux", feature = "unix"))] {
+            // if #[cfg(any(target_os = "linux", feature = "unix"))] {
+            if #[cfg(target_os = "linux")] {
                 Platform::Linux
-            } else if #[cfg(any(target_os = "macos", feature = "unix"))] {
+            } else if #[cfg(target_os = "macos")] {
                 Platform::MacOS
             } else if #[cfg(target_os = "windows")] {
                 Platform::Windows

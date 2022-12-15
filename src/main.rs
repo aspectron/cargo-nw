@@ -75,7 +75,7 @@ struct Args {
     #[cfg(feature = "unix")]
     #[clap(short, long)]
     #[cfg(feature = "unix")]
-    platform : Platform,
+    platform : Option<Platform>,
 }
 
 #[derive(Subcommand, Debug)]
@@ -165,6 +165,8 @@ pub async fn async_main() -> Result<()> {
     cfg_if! {
         if #[cfg(not(feature = "unix"))] {
             let platform = Platform::default();
+        } else {
+            let platform = platform.unwrap_or_default();
         }
     }
     
