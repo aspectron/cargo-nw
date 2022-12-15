@@ -29,7 +29,7 @@ impl ToString for Target {
         match self {
             Target::All => "all",
             Target::Archive => "Archive",
-            #[cfg(target_os = "macos")]
+            #[cfg(any(target_os = "macos", feature = "unix"))]
             Target::DMG => "DMG",
             #[cfg(target_os = "windows")]
             Target::InnoSetup => "InnoSetup",
