@@ -23,6 +23,19 @@ impl Linux {
 
 #[async_trait]
 impl Installer for Linux {
+
+    async fn check(&self, targets: TargetSet) -> Result<()> {
+
+        if targets.contains(&Target::Snap) {
+            if let Err(err) = cmd("snapcraft",["--version"]).run() {
+                println!("{}",err);
+                return Err("Unable to run `snapcraft`, please install using `sudo apt install snapcraft`".into());
+            }
+        }
+
+        Ok(())
+    }
+
     async fn create(&self, targets: TargetSet) -> Result<Vec<PathBuf>> {
 
         self.copy_nwjs_folder().await?;

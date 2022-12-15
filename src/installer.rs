@@ -161,6 +161,7 @@ impl FromStr for Confinement {
 #[async_trait]
 pub trait Installer {
     async fn create(&self, targets: TargetSet) -> Result<Vec<PathBuf>>;
+    async fn check(&self, targets: TargetSet) -> Result<()>;
     fn target_folder(&self) -> PathBuf;
 }
 

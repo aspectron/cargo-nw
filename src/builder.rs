@@ -28,6 +28,8 @@ impl Builder {
             return Err("no build targets selected".into());
         }
 
+
+
         self.ctx.clean().await?;
         self.ctx.deps.ensure().await?;
         self.ctx.ensure_folders().await?;
@@ -55,6 +57,7 @@ impl Builder {
                 let installer = Box::new(crate::linux::Linux::new(self.ctx.clone()));
             }
         }
+
 
         self.process_dependencies(installer.target_folder()).await?;
 

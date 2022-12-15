@@ -23,6 +23,12 @@ pub struct MacOS {
 
 #[async_trait]
 impl Installer for MacOS {
+
+    async fn check(&self, targets: TargetSet) -> Result<()> {
+        
+        Ok(())
+    }
+
     async fn create(&self, targets: TargetSet) -> Result<Vec<PathBuf>> {
 
         self.copy_nwjs_bundle().await?;
