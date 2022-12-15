@@ -85,19 +85,32 @@ enum Action {
         /// Package using Node Webkit SDK edition
         #[clap(short, long)]
         sdk : Option<bool>,
+
+        #[cfg(any(target_os = "linux", feature = "unix"))]
+        #[clap(short, long, help = "Snap distribution channel (linux only)")]
+        #[cfg(any(target_os = "linux", feature = "unix"))]
+        channel : Option<Channel>,
+        
+        #[cfg(any(target_os = "linux", feature = "unix"))]
+        #[clap(short, long, help = "Snap package confinement (linux only)")]
+        #[cfg(any(target_os = "linux", feature = "unix"))]
+        confinement : Option<Confinement>,
+        
         /// Target platform architecture (x64,ia32,aarch64)
         #[clap(short, long)]
         arch : Option<Architecture>,
+        
         /// Output folder
         #[clap(short, long)]
         output : Option<String>,
+        
         /// Package target (for multi-target output)
         #[clap(short, long)]
         target : Option<Vec<Target>>,
+        
         /// Package target
         #[clap(subcommand)]
         default: Option<Target>,
-        // default: Option<Target>,
     },
     /// Clean intermediate build folders
     Clean { 
@@ -150,9 +163,7 @@ pub async fn async_main() -> Result<()> {
     }) = args;
 
     cfg_if! {
-        if #[cfg(feature = "unix")] {
-
-        } else {
+        if #[cfg(not(feature = "unix"))] {
             let platform = Platform::default();
         }
     }
@@ -165,6 +176,10 @@ pub async fn async_main() -> Result<()> {
             target,
             default,
             output,
+            #[cfg(any(target_os = "linux", feature = "unix"))]
+            channel,
+            #[cfg(any(target_os = "linux", feature = "unix"))]
+            confinement,
         } => {
 
             if verbose {
@@ -184,8 +199,17 @@ pub async fn async_main() -> Result<()> {
                 targets = Target::get_all_targets();
             }
 
+            cfg_if! {
+                if #[cfg(not(any(target_os = "linux", feature = "unix")))] {
+                    let channel = Channel::default();
+                    let confinement = Confinement::default();
+                }
+            }
+            
             let options = Options {
                 sdk : sdk.unwrap_or(false),
+                channel,
+                confinement,
             };
 
             let arch = arch.unwrap_or_default();

@@ -26,6 +26,8 @@ pub struct Manifest {
     pub languages : Option<Languages>,
     /// DMG settings
     pub macos_disk_image: Option<MacOsDiskImage>,
+    /// Snap settings
+    pub snap : Option<Snap>,
 
     // pub test : std::collections::HashMap<String, Test>,
 }
@@ -415,6 +417,26 @@ pub enum WindowsResourceString {
     InternalName(String),
     Custom { name : String, value : String },
 
+}
+
+/// 
+/// Snap directives
+/// 
+#[derive(Debug, Clone, Deserialize)]
+pub struct Snap {
+    /// Snap channel: 'stable', 'devel'; default 'stable'
+    pub channel : Option<Channel>,
+    /// Snap confinement: 'strict', 'classic', 'devmode'; default: 'classic'
+    pub confinement : Option<Confinement>,
+}
+
+impl Default for Snap {
+    fn default() -> Snap {
+        Snap {
+            channel : None,
+            confinement : None,
+        }
+    }
 }
 
 ///

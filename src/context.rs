@@ -8,13 +8,17 @@ use path_dedot::*;
 
 #[derive(Debug)]
 pub struct Options {
-    pub sdk : bool
+    pub sdk : bool,
+    pub channel: Option<Channel>,
+    pub confinement: Option<Confinement>,
 }
 
 impl Default for Options {
     fn default() -> Self {
         Options {
-            sdk: false
+            sdk: false,
+            channel : None,
+            confinement: None,
         }
     }
 }
@@ -51,6 +55,8 @@ pub struct Context {
     pub images : Images,
 
     pub sdk : bool,
+    pub channel : Channel,
+    pub confinement : Confinement,
     pub deps : Deps,
     pub tpl : Arc<Mutex<Tpl>>,
 }
@@ -109,12 +115,19 @@ impl Context {
 
         let setup_resources_folder = root_folder.join(&manifest.package.resources.as_ref().unwrap_or(&"resources/setup".to_string())).into();
         let sdk = manifest.node_webkit.sdk.unwrap_or(options.sdk);
+        let snap = manifest.snap.clone().unwrap_or_default();
+        let channel = options.channel.or(snap.channel).unwrap_or_default();
+        let confinement = options.confinement.or(snap.confinement).unwrap_or_default();
         let deps = Deps::new(&platform,&manifest,sdk);
 
         let include = manifest.package.include.clone();//.unwrap_or(vec![]);
         let exclude = manifest.package.exclude.clone();//.unwrap_or(vec![]);
 
         let images = manifest.package.images.clone().unwrap_or_default();
+
+        if manifest.description.short.len() > 78 {
+            return Err(Error::ShortDescriptionIsTooLong);
+        }
 
         log_info!("Target","`{}`",output_folder.to_str().unwrap());
 
@@ -182,6 +195,8 @@ impl Context {
             images,
             // app_root_folder,
             sdk,
+            channel,
+            confinement,
             deps,
             tpl : Arc::new(Mutex::new(tpl)),
         };

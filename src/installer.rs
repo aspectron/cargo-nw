@@ -20,7 +20,7 @@ pub enum Target {
     #[cfg(target_os = "windows")]
     #[clap(name = "innosetup")]
     InnoSetup,
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", feature = "unix"))]
     Snap,
 }
 
@@ -33,7 +33,7 @@ impl ToString for Target {
             Target::DMG => "DMG",
             #[cfg(target_os = "windows")]
             Target::InnoSetup => "InnoSetup",
-            #[cfg(target_os = "linux")]
+            #[cfg(any(target_os = "linux", feature = "unix"))]
             Target::Snap => "Snap",
         }.to_string()
     }
@@ -50,7 +50,7 @@ impl FromStr for Target {
             "dmg" => Ok(Target::DMG),
             #[cfg(target_os = "windows")]
             "innosetup" => Ok(Target::InnoSetup),
-            #[cfg(target_os = "linux")]
+            #[cfg(any(target_os = "linux", feature = "unix"))]
             "snap" => Ok(Target::Snap),
             _ => Err(format!("Unsupported target: {}", s).into()),
         }
@@ -82,6 +82,81 @@ impl Target {
 }
 
 pub type TargetSet = HashSet<Target>;
+
+
+#[derive(Debug, Clone, Subcommand, Serialize, Deserialize, Hash, PartialEq, Eq)]
+pub enum Channel {
+    #[serde(rename = "stable")]
+    Stable,
+    #[serde(rename = "devel")]
+    Devel
+}
+
+impl Default for Channel {
+    fn default() -> Self {
+        Channel::Stable
+    }
+}
+
+impl ToString for Channel {
+    fn to_string(&self) -> String {
+        match self {
+            Channel::Stable => "stable",
+            Channel::Devel => "devel",
+        }.to_string()
+    }
+}
+
+impl FromStr for Channel {
+    type Err = Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err>
+    {
+        match s {
+            "stable" => Ok(Channel::Stable),
+            "devel" => Ok(Channel::Devel),
+            _ => Err(format!("unsupported channel: {} (must be 'stable' or 'devel')", s).into()),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Subcommand, Serialize, Deserialize, Hash, PartialEq, Eq)]
+pub enum Confinement {
+    #[serde(rename = "strict")]
+    Strict,
+    #[serde(rename = "classic")]
+    Classic,
+    #[serde(rename = "devmode")]
+    Devmode,
+}
+
+impl Default for Confinement {
+    fn default() -> Self {
+        Confinement::Classic
+    }
+}
+
+impl ToString for Confinement {
+    fn to_string(&self) -> String {
+        match self {
+            Confinement::Strict => "strict",
+            Confinement::Classic => "classic",
+            Confinement::Devmode => "devmode",
+        }.to_string()
+    }
+}
+
+impl FromStr for Confinement {
+    type Err = Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err>
+    {
+        match s {
+            "strict" => Ok(Confinement::Strict),
+            "classic" => Ok(Confinement::Classic),
+            "devmode" => Ok(Confinement::Devmode),
+            _ => Err(format!("unsupported confinement: {} (must be one of: 'strict','classic','devmode')", s).into()),
+        }
+    }
+}
 
 #[async_trait]
 pub trait Installer {

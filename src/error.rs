@@ -61,6 +61,11 @@ pub enum Error {
     #[error("unknown platform: {0}")]
     UnknownPlatform(String),
     
+    #[error("'description.short' length must be less than 78 characters")]
+    ShortDescriptionIsTooLong,
+    
+
+
     // #[error("Error: {0}")]
     // TryFromSliceError(#[from] TryFromSliceError),
 }
