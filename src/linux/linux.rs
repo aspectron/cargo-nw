@@ -1,6 +1,7 @@
 use async_std::path::{PathBuf, Path};
 use fs_extra::dir;
 use async_std::fs;
+use super::desktop::*;
 use crate::prelude::*;
 
 pub struct Linux {
@@ -25,7 +26,10 @@ impl Installer for Linux {
     async fn create(&self, targets: TargetSet) -> Result<Vec<PathBuf>> {
 
         self.copy_nwjs_folder().await?;
+        self.rename_app_binary().await?;
         self.copy_app_data().await?;
+        self.copy_icons().await?;
+        self.create_desktop_file().await?;
 
         let tpl = create_installer_tpl(
             &self.ctx,
@@ -97,11 +101,19 @@ impl Linux {
             log_info!("Integrating","FFMPEG binaries");
             fs::create_dir_all(self.nwjs_root_folder.join("lib")).await?;
             fs::copy(
-                Path::new(&self.ctx.deps.ffmpeg.as_ref().unwrap().target()).join("ffmpeg.dll"),
-                self.nwjs_root_folder.join("lib").join("ffmpeg.dll")
+                Path::new(&self.ctx.deps.ffmpeg.as_ref().unwrap().target()).join("libffmpeg.so"),
+                self.nwjs_root_folder.join("lib").join("libffmpeg.so")
             ).await?;
         }
 
+        Ok(())
+    }
+
+    async fn rename_app_binary(&self) -> Result<()> {
+        fs::rename(
+            self.nwjs_root_folder.join("nw"), 
+            self.nwjs_root_folder.join(&self.ctx.manifest.application.name)
+        ).await?;
         Ok(())
     }
 
@@ -115,8 +127,55 @@ impl Linux {
             (&tpl,&self.ctx.include,&self.ctx.exclude).try_into()?,
             CopyOptions::new(self.ctx.manifest.package.hidden.unwrap_or(false)),
         ).await?;
+
         Ok(())
     }
 
+    async fn copy_icons(&self) -> Result<()> {
+        let app_icon = find_file(
+            &self.ctx.setup_resources_folder, 
+            &self.ctx.images.linux_application()
+        ).await?;
+
+        let filename = format!("{}.png",self.ctx.manifest.application.name);
+        fs::copy(&app_icon, self.nwjs_root_folder.join(filename)).await?;
+
+        Ok(())
+    }
+
+    async fn create_desktop_file(&self) -> Result<()> {
+        let application = &self.ctx.manifest.application;
+
+        // TODO where should this be located?
+        let desktop_file = self.nwjs_root_folder.join(format!("{}.desktop",application.name));
+        let mut df = DesktopFile::new(desktop_file);
+
+        let iconfile = format!("{}.png",application.name);
+
+        df
+        .entry("Type","Application")
+        .entry("Version",&application.version)
+        .entry("Name",&application.title)
+        .entry("Comment",&self.ctx.manifest.description.short)
+        // .entry("Path","")
+        .entry("Exec",&application.name)
+        .entry("Icon",&iconfile)
+        .entry("Terminal","false")
+        // .entry("Categories","")
+        ;
+
+        df.store().await?;
+
+        // TODO - not tested!
+        let df_install_script_text = format!("\
+desktop-file-install --dir=$HOME/.local/share/applications {}.desktop\n\
+update-desktop-database $HOME/.local/share/applications\n\
+", application.name);
+        let dfinstall_script_file = self.nwjs_root_folder.join(format!("{}.sh",application.name));
+        fs::write(&dfinstall_script_file, df_install_script_text).await?;
+        fs::set_permissions(dfinstall_script_file, std::os::unix::fs::PermissionsExt::from_mode(0o755)).await?;
+
+        Ok(())
+    }
 
 }

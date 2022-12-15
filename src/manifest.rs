@@ -461,7 +461,8 @@ pub enum Archive {
 
 impl Default for Archive {
     fn default() -> Self {
-        Archive::ZSTD
+        Archive::DEFLATE
+        // Archive::BZIP2
     }
 }
 

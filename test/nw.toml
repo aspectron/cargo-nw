@@ -1,6 +1,6 @@
 [application]
-name = "nwjs-example"
-title = "NWJS Example"
+name = "nw-example"
+title = "NW Example"
 version = "0.1.0"
 description = "Example project demonstrating cargo-nw functionality"
 organization = "ASPECTRON Inc"

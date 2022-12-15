@@ -82,7 +82,7 @@ pub fn get_nwjs_sdk_meta(
     let archive_extension = get_nwjs_archive_extension(platform);
     let file = format!("{folder}.{archive_extension}");
     let url = format!("https://dl.nwjs.io/{version}/{file}");
-    Meta::new(&file,&folder,&url,&target,archive_extension == "zip")
+    Meta::new(&file,&folder,&url,&target,true)
 }
 
 pub fn get_nwjs_meta(
@@ -96,7 +96,7 @@ pub fn get_nwjs_meta(
     let archive_extension = get_nwjs_archive_extension(platform);
     let file = format!("{folder}.{archive_extension}");
     let url = format!("https://dl.nwjs.io/{version}/{file}");
-    Meta::new(&file,&folder,&url,&target,archive_extension == "zip")
+    Meta::new(&file,&folder,&url,&target,true)
 }
 
 #[derive(Debug)]
