@@ -58,7 +58,9 @@ pub enum Error {
     #[error("StripPrefixError: {0}")]
     StripPrefixError(#[from] std::path::StripPrefixError),
     
-    // StripPrefixError
+    #[error("unknown platform: {0}")]
+    UnknownPlatform(String),
+    
     // #[error("Error: {0}")]
     // TryFromSliceError(#[from] TryFromSliceError),
 }

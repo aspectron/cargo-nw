@@ -109,6 +109,11 @@ impl Installer for Windows {
 
         Ok(files)
     }
+
+    fn target_folder(&self) -> PathBuf {
+        self.nwjs_root_folder.clone()
+    }
+
 }
 
 impl Windows {

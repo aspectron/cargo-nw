@@ -1,16 +1,20 @@
-use async_std::{fs, path::Path};
+use async_std::{fs, path::{Path, PathBuf}};
 use console::style;
 use std::{time::Instant};
 use crate::prelude::*;
 
 pub struct Builder {
-    pub ctx : Arc<Context>
+    pub ctx : Arc<Context>,
+    // #[cfg(feature = "unix")]
+    // platform : Platform,
 }
 
 impl Builder {
+    // pub fn new(ctx: Arc<Context>, platform : Platform) -> Self {
     pub fn new(ctx: Arc<Context>) -> Self {
         Builder {
-            ctx
+            ctx,
+            // platform
         }
     }
 
@@ -27,7 +31,32 @@ impl Builder {
         self.ctx.clean().await?;
         self.ctx.deps.ensure().await?;
         self.ctx.ensure_folders().await?;
-        self.process_dependencies().await?;
+
+        cfg_if! {
+            if #[cfg(feature = "unix")] {
+                let installer: Box<dyn Installer> = match &self.ctx.platform {
+                    Platform::Linux => {
+                        Box::new(crate::linux::Linux::new(self.ctx.clone()))
+                    },
+                    Platform::MacOS => {
+                        Box::new(crate::macos::MacOS::new(self.ctx.clone()))
+                    },
+                    Platform::Windows => {
+                        panic!("Windows platform can not be used in *nix environment");
+                    }
+                };
+            } else
+            if #[cfg(target_os = "windows")] {
+                let installer = Box::new(crate::windows::Windows::new(self.ctx.clone()));
+            } else if #[cfg(target_os = "macos")] {
+                let installer = Box::new(crate::macos::MacOS::new(self.ctx.clone()));
+                // Box::new(windows::Windows::new(self.ctx.clone()))
+            } else if #[cfg(target_os = "linux")] {
+                let installer = Box::new(crate::linux::Linux::new(self.ctx.clone()));
+            }
+        }
+
+        self.process_dependencies(installer.target_folder()).await?;
 
         // return Ok(());
 
@@ -144,16 +173,7 @@ impl Builder {
             }
         }
 
-        cfg_if! {
-            if #[cfg(target_os = "windows")] {
-                let installer = Box::new(crate::windows::Windows::new(self.ctx.clone()));
-            } else if #[cfg(target_os = "macos")] {
-                let installer = Box::new(crate::macos::MacOS::new(self.ctx.clone()));
-                // Box::new(windows::Windows::new(self.ctx.clone()))
-            } else if #[cfg(target_os = "linux")] {
-                let installer = Box::new(crate::linux::Linux::new(self.ctx.clone()));
-            }
-        }
+        // installer execution
 
         let files = installer.create(targets).await?;
 
@@ -194,18 +214,18 @@ impl Builder {
         Ok(())
     }
 
-    async fn process_dependencies(&self) -> Result<()> {
+    async fn process_dependencies(&self, target_folder: PathBuf) -> Result<()> {
         if let Some(deps) = &self.ctx.manifest.dependencies {
             fs::create_dir_all(&self.ctx.dependencies_folder).await?;
             for dep in deps.iter() {
-                self.process_dependency(dep).await?;
+                self.process_dependency(dep, &target_folder).await?;
             }
         }
 
         Ok(())
     }
 
-    async fn process_dependency(&self, dep : &Dependency) -> Result<()> {
+    async fn process_dependency(&self, dep : &Dependency, target_folder: &Path) -> Result<()> {
         let mut name = dep.name.clone();
 
         let (rebuild, dep_build_folder, status) = if let Some(git) = &dep.git {
@@ -253,7 +273,7 @@ impl Builder {
         let tpl = self.ctx.tpl_clone();
 
         for copy in dep.copy.iter() {
-            let to_folder = self.ctx.app_root_folder.join(tpl.transform(&copy.to));
+            let to_folder = target_folder.join(tpl.transform(&copy.to));
             let mut options = CopyOptions::default();
             options.hidden = copy.hidden.unwrap_or(false);
             options.flatten = true;

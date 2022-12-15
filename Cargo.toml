@@ -13,8 +13,9 @@ Cargo subcommand for building Node Webkit application deployment packages
 
 [features]
 test = []
+unix = []
 multiplatform = []
-default = ["test"]
+default = ["test","unix"]
 # default = ["test","multiplatform"]
 
 [dependencies]

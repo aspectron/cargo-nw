@@ -28,9 +28,9 @@ cfg_if! {
         pub mod linux;
         pub mod windows;
     } else {
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", feature = "unix"))]
         pub mod macos;
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", feature = "unix"))]
         pub mod linux;
         #[cfg(target_os = "windows")]
         pub mod windows;
@@ -71,6 +71,11 @@ struct Args {
     /// Enable verbose mode
     #[clap(short, long)]
     verbose : bool,
+    
+    #[cfg(feature = "unix")]
+    #[clap(short, long)]
+    #[cfg(feature = "unix")]
+    platform : Platform,
 }
 
 #[derive(Subcommand, Debug)]
@@ -134,8 +139,23 @@ enum Action {
 pub async fn async_main() -> Result<()> {
     
     let args = Cmd::parse();
-    let Cmd::Args(Args { action, location, verbose }) = args;
-    let platform = Platform::default();
+    let Cmd::Args(Args {
+        action,
+        location,
+        verbose,
+
+        #[cfg(feature = "unix")]
+        platform
+
+    }) = args;
+
+    cfg_if! {
+        if #[cfg(feature = "unix")] {
+
+        } else {
+            let platform = Platform::default();
+        }
+    }
     
     match action {
         Action::Build {

@@ -86,6 +86,7 @@ pub type TargetSet = HashSet<Target>;
 #[async_trait]
 pub trait Installer {
     async fn create(&self, targets: TargetSet) -> Result<Vec<PathBuf>>;
+    fn target_folder(&self) -> PathBuf;
 }
 
 pub fn create_installer_tpl(ctx: &Context, source: &PathBuf, output: &PathBuf) -> Result<Tpl> {

@@ -72,6 +72,11 @@ impl Installer for Linux {
 
         Ok(files)
     }
+
+    fn target_folder(&self) -> PathBuf {
+        self.nwjs_root_folder.clone()
+    }
+
 }
 
 impl Linux {

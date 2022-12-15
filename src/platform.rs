@@ -1,9 +1,10 @@
 use cfg_if::cfg_if;
 use std::{fmt, str::FromStr};
+use clap::Subcommand;
 use crate::error::Error;
 use serde::{Serialize,Deserialize};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Subcommand, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Platform {
     Windows,
     Linux,
@@ -13,9 +14,9 @@ pub enum Platform {
 impl Default for Platform {
     fn default() -> Platform {
         cfg_if! {
-            if #[cfg(target_os = "linux")] {
+            if #[cfg(any(target_os = "linux", feature = "unix"))] {
                 Platform::Linux
-            } else if #[cfg(target_os = "macos")] {
+            } else if #[cfg(any(target_os = "macos", feature = "unix"))] {
                 Platform::MacOS
             } else if #[cfg(target_os = "windows")] {
                 Platform::Windows
@@ -35,6 +36,21 @@ impl fmt::Display for Platform {
         }
     }
 }
+
+impl FromStr for Platform {
+    type Err = Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err>
+    {
+        match s {
+            "windows" => Ok(Platform::Windows),
+            "macos" => Ok(Platform::MacOS),
+            "linux" => Ok(Platform::Linux),
+            _ => Err(Error::UnknownPlatform(s.to_string())),
+        }
+    }
+}
+
+
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]

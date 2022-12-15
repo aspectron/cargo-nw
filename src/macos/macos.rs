@@ -91,6 +91,10 @@ impl Installer for MacOS {
 
         Ok(files)
     }
+
+    fn target_folder(&self) -> PathBuf {
+        self.app_nw_folder.clone()
+    }
 }
 
 impl MacOS {
