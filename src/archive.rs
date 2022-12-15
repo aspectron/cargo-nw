@@ -94,7 +94,6 @@ async fn extract_zip(file: &PathBuf, dir: &PathBuf) -> Result<()> {
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
-
             if let Some(mode) = file.unix_mode() {
                 std::fs::set_permissions(&outpath, std::fs::Permissions::from_mode(mode)).unwrap();
             }
@@ -111,7 +110,8 @@ fn zip_folder<T>(
     filename : &str,
     _path: &Path,
     it: &mut dyn Iterator<Item = DirEntry>,
-    prefix: &str,
+    // prefix: &str,
+    prefix : &Path,
     writer: T,
     method: zip::CompressionMethod,
 ) -> Result<()>
@@ -130,7 +130,7 @@ where
     let mut buffer = Vec::new();
     for entry in it {
         let path = entry.path();
-        let name = path.strip_prefix(Path::new(prefix)).unwrap();
+        let name = path.strip_prefix(prefix).unwrap();
 
         // Write file or directory explicitly
         // Some unzip tools unzip files with directory paths correctly, some do not!
@@ -203,7 +203,8 @@ pub fn compress_folder(
         dst_file.file_name().unwrap().to_str().unwrap(),
         path,
         &mut it.filter_map(|e| e.ok()), 
-        src_dir.to_str().unwrap(), 
+        //src_dir.to_str().unwrap(), 
+        src_dir.parent().unwrap().into(),
         file,
         method
     )?;
