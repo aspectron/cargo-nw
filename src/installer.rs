@@ -15,7 +15,7 @@ use std::{collections::HashSet, str::FromStr};
 pub enum Target {
     All,
     Archive,
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", feature = "unix"))]
     DMG,
     #[cfg(target_os = "windows")]
     #[clap(name = "innosetup")]
