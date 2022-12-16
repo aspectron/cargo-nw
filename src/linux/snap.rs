@@ -8,14 +8,14 @@ use serde::{Serialize,Deserialize};
 #[allow(non_camel_case_types)]
 pub enum SnapArchitecture {
     amd64,
-    x86,
+    i386,
     aarch64,
 }
 
 impl From<Architecture> for SnapArchitecture {
     fn from(arch: Architecture) -> Self {
         match arch {
-            Architecture::ia32 => SnapArchitecture::x86,
+            Architecture::ia32 => SnapArchitecture::i386,
             Architecture::x64 => SnapArchitecture::amd64,
             Architecture::aarch64 => SnapArchitecture::aarch64,
         }
@@ -26,7 +26,7 @@ impl ToString for SnapArchitecture {
     fn to_string(&self) -> String {
         match self {
             SnapArchitecture::amd64 => "amd64",
-            SnapArchitecture::x86 => "x86",
+            SnapArchitecture::i386 => "i386",
             SnapArchitecture::aarch64 => "aarch64",
         }.to_string()
     }
