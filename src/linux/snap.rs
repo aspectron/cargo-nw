@@ -44,7 +44,9 @@ pub struct SnapData {
     pub architectures: Vec<SnapArchitecture>,
     // apps: Vec<App>,
     // plugs: Vec<Plug>,
+    pub apps: Apps,
     pub parts: Parts,
+
 }
 
 
@@ -95,30 +97,59 @@ impl Part {
 }
 
 #[derive(Serialize, Deserialize)]
+pub struct Apps(HashMap<String,App>);
+
+impl Apps {
+    pub fn new(apps: &[(&str, App)]) -> Self {
+        let mut list = HashMap::new();
+        for (name,app) in apps.iter() {
+            list.insert(name.to_string(), app.clone());
+        }
+
+        Apps(list)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename = "app")]
 pub struct App {
-    name: String,
+    // name: String,
     command: String,
-    plugs: Vec<String>,
+    // plugs: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct Plug {
-    name: String,
-    interface: String,
-    attrs: Vec<Attr>,
+impl App {
+    pub fn new(command: &str) -> App {
+        App {
+            // name: name.to_string(),
+            command: command.to_string(),
+        }
+    }
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct Attr {
-    key: String,
-    value: String,
-}
+// #[derive(Serialize, Deserialize)]
+// pub struct Plug {
+//     name: String,
+//     interface: String,
+//     attrs: Vec<Attr>,
+// }
+
+// #[derive(Serialize, Deserialize)]
+// pub struct Attr {
+//     key: String,
+//     value: String,
+// }
 
 impl SnapData {
     pub fn new(ctx: &Context, target_file: &str) -> SnapData {
 
         let name = ctx.manifest.application.name.clone();
-        let parts = Parts::new(&[(name.as_str(), Part::new(target_file, Plugin::Nil))]);
+        let parts = Parts::new(&[
+            (name.as_str(), Part::new(target_file, Plugin::Nil))
+        ]);
+        let apps = Apps::new(&[
+            (name.as_str(), App::new(&format!("./{}",name)))
+        ]);
 
         let snap = SnapData {
             name,//ctx.manifest.application.name.clone(), 
@@ -130,6 +161,7 @@ impl SnapData {
             confinement: ctx.confinement.clone(),
             // TODO
             architectures: vec![ctx.arch.clone().into()],
+            apps,
             parts,
             // apps: Vec::new(),
             // plugs: Vec::new(),
