@@ -106,29 +106,29 @@ impl Part {
     pub fn nwjs_support() -> Part {
         let list = vec![
 
-        "libX11",
-        "libXext",
-        "libwayland-client",
-        "libxcb",
-        "libatomic",
-        "libX11",
-        "libXcomposite",
-        "libXdamage",
-        "libXext",
-        "libXfixes",
-        "libXrandr",
-        "libasound",
-        "libatk-1.0",
-        "libatspi",
-        "libcairo",
-        "libcups",
-        "libgbm",
+        // "libX11",
+        // "libXext",
+        // "libwayland-client",
+        // "libxcb",
+        // "libatomic",
+        // "libX11",
+        // "libXcomposite",
+        // "libXdamage",
+        // "libXext",
+        // "libXfixes",
+        // "libXrandr",
+        // "libasound",
+        // "libatk-1.0",
+        // "libatspi",
+        // "libcairo",
+        // "libcups",
+        // "libgbm",
         "libnspr4",
         "libnss3",
-        "libnssutil3",
-        "libpango-1.0",
-        "libxcb",
-        "libxkbcommon",
+        // "libnssutil3",
+        // "libpango-1.0",
+        // "libxcb",
+        // "libxkbcommon",
 
 
             // "gconf2",
@@ -174,14 +174,23 @@ impl Apps {
 pub struct App {
     // name: String,
     command: String,
-    // plugs: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    plugs: Option<Vec<String>>,
 }
 
 impl App {
     pub fn new(command: &str) -> App {
+
+        let plugs = vec![
+            "browser-support",
+            "network",
+            "network-bind",
+        ].iter().map(|s|s.to_string()).collect::<Vec<String>>();
+
         App {
             // name: name.to_string(),
             command: command.to_string(),
+            plugs : Some(plugs)
         }
     }
 }
