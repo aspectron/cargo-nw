@@ -224,6 +224,33 @@ impl Windows {
 
     async fn create_innosetup_icon(&self, ico_file : &PathBuf) -> Result<()> {
         log_info!("Innosetup","generating icons");
+/*
+
+100%	55x55
+125%	64x68
+150%	83x80
+175%	92x97
+200%	110x106
+225%	119x123
+250%	138x140
+
+---
+
+
+100%	164x314
+125%	192x386
+150%	246x459
+175%	273x556
+200%	328x604
+225%	355x700
+250%	410x797
+
+
+
+
+*/
+
+
 
         if Path::new(ico_file).exists().await {
             return Ok(());
