@@ -106,6 +106,7 @@ impl Part {
             "libgbm1",
             "libpango1.0-0",
             "libxkbcommon0",
+            "libx11-xcb1",
         ].iter().map(|s|s.to_string()).collect::<HashSet<String>>();
         
         if let Some(packages) = packages {
@@ -151,6 +152,15 @@ impl App {
             "browser-support",
             "network",
             "network-bind",
+            // ~
+            "opengl",
+            "x11",
+            // ~
+            // "removable-media",
+            // "personal-files",
+            // "optical-drive",
+            // "personal-files",
+            // "home",
         ].iter().map(|s|s.to_string()).collect::<HashSet<String>>();
 
         if let Some(interfaces) = interfaces {
