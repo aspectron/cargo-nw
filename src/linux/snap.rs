@@ -159,7 +159,7 @@ impl App {
 
         App {
             command: format!("./{}",name.to_string()),
-            desktop: format!("{}.desktop",name.to_string()),
+            desktop: format!("./{}.desktop",name.to_string()),
             plugs : Some(plugs)
         }
     }
@@ -174,8 +174,8 @@ pub struct SnapData {
     pub description: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub website: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub icon: Option<String>,
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    pub icon: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub license: Option<String>,
     pub base : String,
@@ -203,13 +203,13 @@ impl SnapData {
         ]);
 
         let snap = SnapData {
-            name,
+            name : name.clone(),
             title : ctx.manifest.application.title.clone(), 
             version: ctx.manifest.application.version.clone(),
             summary: ctx.manifest.description.short.clone(),
             description: ctx.manifest.description.long.clone(),
             website: ctx.manifest.application.url.clone(),
-            icon: Some(format!("{}.png",ctx.manifest.application.name)),
+            icon: ctx.build_folder.join(format!("{}.png",name)).to_str().unwrap().to_string(),
             license : ctx.manifest.application.license.clone(),
             base: user_snap.base.unwrap_or("core22".to_string()),
             grade: ctx.channel.clone(),
