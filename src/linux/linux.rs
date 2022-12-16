@@ -52,8 +52,8 @@ impl Installer for Linux {
 
         if let Some(actions) = &self.ctx.manifest.package.execute {
             for action in actions {
-                log_info!("Build","executing pack action");
                 if let Execute::Pack(ec) = action {
+                    // log_info!("Build","executing pack action");
                     log_info!("Linux","executing `{}`",ec.display(Some(&tpl)));
                     self.ctx.execute_with_context(ec, Some(&self.nwjs_root_folder), None).await?;
                 }
