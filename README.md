@@ -29,6 +29,7 @@ This tool was created to build Node Webkit Rust WASM applications, but it can be
 * [Rust](https://www.rust-lang.org/tools/install)
 * [InnoSetup for Windows](https://jrsoftware.org/isdl.php) for creation of interactive Windows installers
 * [Wasmpack](https://rustwasm.github.io/wasm-pack/installer/) if building Rust WASM applications
+* [SnapCraft](https://snapcraft.io/install/snapcraft/ubuntu) `sudo snap install snapcraft` + [LXD](https://linuxcontainers.org/lxd/getting-started-cli/) (used by *snapcraft*) `sudo snap install lxd` 
 
 ### Installation
 ```bash
@@ -49,6 +50,10 @@ cargo install cargo-nw
 Linux
 ```bash
 sudo apt install libssl-dev
+sudo snap install snapcraft
+sudo snap install lxd
+sudo adduser <username> lxd
+sudo service snap.lxd.daemon restart
 ```
 
 ### Manifest
