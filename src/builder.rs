@@ -164,7 +164,7 @@ impl Builder {
         let ts_start = Instant::now();
         log_info!("Build","building {} version {}",style(&self.ctx.manifest.application.title).cyan(),style(&self.ctx.manifest.application.version).cyan());
         let target_list = targets.iter().map(|v|v.to_string()).collect::<Vec<String>>().join(", ");
-        log_info!("Build","installer type: {}",style(format!("{}", target_list)).cyan());
+        log_info!("Build","redistributable type: {}",style(format!("{}", target_list)).cyan());
 
 
         if let Some(actions) = &self.ctx.manifest.package.execute {
