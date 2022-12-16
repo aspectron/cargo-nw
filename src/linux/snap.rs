@@ -4,6 +4,34 @@ use crate::prelude::*;
 use async_std::{path::{Path, PathBuf}, fs};
 use serde::{Serialize,Deserialize};
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[allow(non_camel_case_types)]
+pub enum SnapArchitecture {
+    amd64,
+    x86,
+    aarch64,
+}
+
+impl From<Architecture> for SnapArchitecture {
+    fn from(arch: Architecture) -> Self {
+        match arch {
+            Architecture::ia32 => SnapArchitecture::x86,
+            Architecture::x64 => SnapArchitecture::amd64,
+            Architecture::aarch64 => SnapArchitecture::aarch64,
+        }
+    }
+}
+
+impl ToString for SnapArchitecture {
+    fn to_string(&self) -> String {
+        match self {
+            SnapArchitecture::amd64 => "amd64",
+            SnapArchitecture::x86 => "x86",
+            SnapArchitecture::aarch64 => "aarch64",
+        }.to_string()
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct SnapData {
     pub name: String,
@@ -13,7 +41,7 @@ pub struct SnapData {
     pub base : String,
     pub grade: Channel,
     pub confinement: Confinement,
-    pub architectures: Vec<String>,
+    pub architectures: Vec<SnapArchitecture>,
     // apps: Vec<App>,
     // plugs: Vec<Plug>,
     pub parts: Parts,
@@ -101,7 +129,7 @@ impl SnapData {
             grade: ctx.channel.clone(),
             confinement: ctx.confinement.clone(),
             // TODO
-            architectures: vec!["amd64".to_string()],
+            architectures: vec![ctx.arch.clone().into()],
             parts,
             // apps: Vec::new(),
             // plugs: Vec::new(),
@@ -121,49 +149,47 @@ impl SnapData {
 pub struct Snap {
     pub data: SnapData,
     pub ctx: Arc<Context>,
+    pub archive_filepath : PathBuf,
+    pub archive_filename : String,
 }
 
 impl Snap {
-    pub fn new(ctx: &Arc<Context>, target_file : &str) -> Snap {
-        Snap {
-            data: SnapData::new(&ctx, target_file),
+    pub fn try_new(ctx: &Arc<Context>, archive_filepath : &Path) -> Result<Snap> {
+
+        let archive_filename = archive_filepath.file_name().unwrap().to_str().unwrap();
+
+        // let archive_filename = 
+        let snap = Snap {
+            data: SnapData::new(&ctx, archive_filename),
+            archive_filepath : archive_filepath.to_path_buf(),
+            archive_filename : archive_filename.to_string(),
             ctx : ctx.clone(),
-        }
+        };
+
+        Ok(snap)
     }
 
     pub async fn create(&self) -> Result<()> {
         self.data.store(&self.ctx.build_folder.join("snapcraft.yaml")).await?;
         Ok(())
     }
-    pub async fn build(&self) -> Result<()> {
+    pub async fn build(&self) -> Result<PathBuf> {
 
-        // let snap_file = format!("{}_{}_amd64",self.ctx.manifest.application.name,self.ctx.manifest.application.version);
-        // let snap_target_file = format!("{}-{}-amd64.zip",self.ctx.manifest.application.name,self.ctx.manifest.application.version);
-        // let snap_target_file = format!("{}_{}_amd64.zip",self.ctx.manifest.application.name,self.ctx.manifest.application.version);
+        std::fs::copy(&self.archive_filepath, self.ctx.build_folder.join(&self.archive_filename))?;
 
-        // fs::copy(
-        //     self.ctx.output_folder.join(format!("{}.zip",self.ctx.app_snake_name)),
-        //     self.ctx.build_folder.join(&snap_target_file)
-        // ).await?;
-
-        // let tar_filename = format!("{}.tar.gz",snap_file);
-        // let tar_path = self.ctx.build_folder.join(tar_filename);
-        // cmd("tar",["-czf",tar_path.to_str().unwrap(),self.ctx.output_folder.to_str().unwrap()]).run()?;
-        // log_info!("Archiving","`{}`",tar_path.display());
+        log_info!("SNAP","generating ...");
 
         cmd!("snapcraft").dir(&self.ctx.build_folder).run()?;
-        Ok(())
-    }
-    pub fn file_name(&self) -> Result<PathBuf> {
 
-        let filename = format!("{}_{}_{}",
+        let snap_filename = format!("{}_{}_{}.snap",
         // let filename = format!("{}-{}-{}",
             self.data.name,
             self.data.version,
             "amd64"
         );
 
-        Ok(self.ctx.build_folder.join(filename))
+        Ok(self.ctx.build_folder.join(snap_filename))
+
     }
 }
 

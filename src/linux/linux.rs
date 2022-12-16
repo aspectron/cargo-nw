@@ -81,13 +81,12 @@ impl Installer for Linux {
         #[cfg(any(target_os = "linux", feature = "unix"))]
         if targets.contains(&Target::Snap) {
             // let target_file = target_archive.file_name().unwrap().to_str().unwrap();
-            fs::copy(&archive_path, self.ctx.build_folder.join(&archive_filename)).await?;
 
-            let snap = crate::linux::snap::Snap::new(&self.ctx, &archive_filename.to_str().unwrap());
+            let snap = crate::linux::snap::Snap::try_new(&self.ctx, &archive_path)?;
             log_info!("Linux","creating SNAP package for '{}' channel", snap.data.grade.to_string());
             snap.create().await?;
-            snap.build().await?;
-            files.push(snap.file_name()?);
+            let snap_file = snap.build().await?;
+            files.push(snap_file);
         }
 
         Ok(files)
