@@ -66,22 +66,24 @@ impl Installer for Linux {
 
         // archive is needed for both archive target and for snap
         let level = self.ctx.manifest.package.archive.clone().unwrap_or_default();
-        let filename = Path::new(&format!("{}.zip",self.ctx.app_snake_name)).to_path_buf();
-        let target_file = self.ctx.output_folder.join(&filename);
+        let archive_filename = Path::new(&format!("{}.zip",self.ctx.app_snake_name)).to_path_buf();
+        let archive_path = self.ctx.output_folder.join(&archive_filename);
         compress_folder(
             &self.nwjs_root_folder,
-            &target_file,
+            &archive_path,
             level
         )?;
 
         if targets.contains(&Target::Archive) {
-            files.push(target_file.clone());
+            files.push(archive_path.clone());
         }
 
         #[cfg(any(target_os = "linux", feature = "unix"))]
         if targets.contains(&Target::Snap) {
-            
-            let snap = crate::linux::snap::Snap::new(&self.ctx, &target_file);
+            // let target_file = target_archive.file_name().unwrap().to_str().unwrap();
+            fs::copy(&archive_path, self.ctx.build_folder.join(&archive_filename)).await?;
+
+            let snap = crate::linux::snap::Snap::new(&self.ctx, &archive_filename.to_str().unwrap());
             log_info!("Linux","creating SNAP package for '{}' channel", snap.data.grade.to_string());
             snap.create().await?;
             snap.build().await?;

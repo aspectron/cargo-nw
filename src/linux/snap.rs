@@ -87,10 +87,10 @@ pub struct Attr {
 }
 
 impl SnapData {
-    pub fn new(ctx: &Context, target_file: &Path) -> SnapData {
+    pub fn new(ctx: &Context, target_file: &str) -> SnapData {
 
         let name = ctx.manifest.application.name.clone();
-        let parts = Parts::new(&[(name.as_str(), Part::new(target_file.to_str().unwrap(), Plugin::Nil))]);
+        let parts = Parts::new(&[(name.as_str(), Part::new(target_file, Plugin::Nil))]);
 
         let snap = SnapData {
             name,//ctx.manifest.application.name.clone(), 
@@ -124,7 +124,7 @@ pub struct Snap {
 }
 
 impl Snap {
-    pub fn new(ctx: &Arc<Context>, target_file : &Path) -> Snap {
+    pub fn new(ctx: &Arc<Context>, target_file : &str) -> Snap {
         Snap {
             data: SnapData::new(&ctx, target_file),
             ctx : ctx.clone(),
