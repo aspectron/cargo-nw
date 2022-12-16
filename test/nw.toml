@@ -42,26 +42,26 @@ execute = [
 #     "publish $OUTPUT/$NAME-$VERSION"
 # ]
 
-[[dependency]]
-git = { url = "https://github.com/kaspanet/kaspad", branch = "master" }
-run = [
-    { cmd = "go build" },
-    { cmd = "go build", folder = "cmd/genkeypair" },
-    { cmd = "go build", folder = "cmd/kaspactl" },
-    { cmd = "go build", folder = "cmd/kaspawallet" },
-]
-# copy = [
-#     { glob = [""], to = "", flatten = true },
-#     { regex = [""], to = "", flatten = true },
+# [[dependency]]
+# git = { url = "https://github.com/kaspanet/kaspad", branch = "master" }
+# run = [
+#     { cmd = "go build" },
+#     { cmd = "go build", folder = "cmd/genkeypair" },
+#     { cmd = "go build", folder = "cmd/kaspactl" },
+#     { cmd = "go build", folder = "cmd/kaspawallet" },
 # ]
+# # copy = [
+# #     { glob = [""], to = "", flatten = true },
+# #     { regex = [""], to = "", flatten = true },
+# # ]
 
-copy = [
-    { regex = [
-        "kaspad(.exe)?$",
-        "genkeypair(.exe)?$",
-        "kaspactl(.exe)?$"
-    ], to = "bin/$PLATFORM-$ARCH", flatten = true },
-]
+# copy = [
+#     { regex = [
+#         "kaspad(.exe)?$",
+#         "genkeypair(.exe)?$",
+#         "kaspactl(.exe)?$"
+#     ], to = "bin/$PLATFORM-$ARCH", flatten = true },
+# ]
 
 [node-webkit]
 version = "0.70.1"

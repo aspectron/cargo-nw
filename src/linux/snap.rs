@@ -86,15 +86,43 @@ impl ToString for Plugin {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Part {
-    source : String,
     plugin : Plugin,
+    source : Option<String>,
+    #[serde(rename = "stage-packages")]
+    stage_packages : Option<Vec<String>>,
 }
 
 impl Part {
-    pub fn new(source : &str, plugin : Plugin) -> Part {
+    pub fn new_with_source(source : &str, plugin : Plugin) -> Part {
         Part {
-            source : source.to_string(),
+            source : Some(source.to_string()),
             plugin : plugin,
+            stage_packages : None,
+        }
+    }
+
+    pub fn nwjs_support() -> Part {
+        let list = vec![
+            "gconf2",
+            "libasound2",
+            "libcurl3",
+            "libexif12",
+            "libgl1-mesa-glx",
+            "libglu1-mesa",
+            "libnotify4",
+            "libnss3",
+            "libpulse0",
+            "libssl1.0.0",
+            "libxss1",
+            "libxtst6",
+            "libmirclient9",
+            "xdg-utils",
+        ].iter().map(|s|s.to_string()).collect::<Vec<String>>();
+
+        Part {
+            plugin : Plugin::Nil,
+            source : None,
+            stage_packages : Some(list),
         }
     }
 }
@@ -148,7 +176,8 @@ impl SnapData {
 
         let name = ctx.manifest.application.name.clone();
         let parts = Parts::new(&[
-            (name.as_str(), Part::new(target_file, Plugin::Dump))
+            (name.as_str(), Part::new_with_source(target_file, Plugin::Dump)),
+            ("nwjs-support", Part::nwjs_support())
         ]);
         let apps = Apps::new(&[
             (name.as_str(), App::new(&format!("./{}",name)))
