@@ -65,8 +65,10 @@ impl Parts {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Plugin {
+    #[serde(rename = "dump")]
+    Dump,
     #[serde(rename = "nil")]
-    Nil
+    Nil,
 }
 impl Default for Plugin {
     fn default() -> Plugin {
@@ -76,6 +78,7 @@ impl Default for Plugin {
 impl ToString for Plugin {
     fn to_string(&self) -> String {
         match self {
+            Plugin::Dump => "dump".to_string(),
             Plugin::Nil => "nil".to_string(),
         }
     }
@@ -145,7 +148,7 @@ impl SnapData {
 
         let name = ctx.manifest.application.name.clone();
         let parts = Parts::new(&[
-            (name.as_str(), Part::new(target_file, Plugin::Nil))
+            (name.as_str(), Part::new(target_file, Plugin::Dump))
         ]);
         let apps = Apps::new(&[
             (name.as_str(), App::new(&format!("./{}",name)))
