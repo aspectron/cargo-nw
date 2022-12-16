@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::prelude::*;
 use async_std::{path::{Path, PathBuf}, fs};
@@ -30,23 +30,6 @@ impl ToString for SnapArchitecture {
             SnapArchitecture::aarch64 => "aarch64",
         }.to_string()
     }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct SnapData {
-    pub name: String,
-    pub version: String,
-    pub summary: String,
-    pub description: String,
-    pub base : String,
-    pub grade: Channel,
-    pub confinement: Confinement,
-    pub architectures: Vec<SnapArchitecture>,
-    // apps: Vec<App>,
-    // plugs: Vec<Plug>,
-    pub apps: Apps,
-    pub parts: Parts,
-
 }
 
 
@@ -91,7 +74,7 @@ pub struct Part {
     source : Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "stage-packages")]
-    stage_packages : Option<Vec<String>>,
+    stage_packages : Option<HashSet<String>>,
 }
 
 impl Part {
@@ -103,68 +86,31 @@ impl Part {
         }
     }
 
-    pub fn nwjs_support() -> Part {
-        let list = vec![
-
-        "libnspr4",
-        "libnss3",
-        "libx11-6",
-        "libxext6",
-        "libwayland-client0",
-        "libatomic1-amd64-cross",
-        "libxcomposite1",
-        "libxdamage1",
-        "libxfixes3",
-        "libxrandr2",
-        "libasound2",
-        "libatk1.0-0",
-        "libatspi2.0-0",
-        "libcairo2",
-        "libcups2",
-        "libgbm1",
-        "libpango1.0-0",
-        "libxkbcommon0",
-
-        // "libX11-6",
-        // "libXext6",
-        // "libwayland-client",
-        // "libxcb",
-        // "libatomic",
-        // "libX11",
-        // "libXcomposite",
-        // "libXdamage",
-        // "libXext",
-        // "libXfixes",
-        // "libXrandr",
-        // "libasound",
-        // "libatk-1.0",
-        // "libatspi",
-        // "libcairo",
-        // "libcups",
-        // "libgbm",
-        // "libnspr4",
-        // "libnss3",
-        // "libnssutil3",
-        // "libpango-1.0",
-        // "libxcb",
-        // "libxkbcommon",
-
-
-            // "gconf2",
-            // "libasound2",
-            // "libcurl3",
-            // "libexif12",
-            // "libgl1-mesa-glx",
-            // "libglu1-mesa",
-            // "libnotify4",
-            // "libnss3",
-            // "libpulse0",
-            // "libssl1.0.0",
-            // "libxss1",
-            // "libxtst6",
-            // "libmirclient9",
-            // "xdg-utils",
-        ].iter().map(|s|s.to_string()).collect::<Vec<String>>();
+    pub fn dependencies(packages: Option<HashSet<String>>) -> Part {
+        let mut list = vec![
+            "libnspr4",
+            "libnss3",
+            "libx11-6",
+            "libxext6",
+            "libwayland-client0",
+            "libatomic1-amd64-cross",
+            "libxcomposite1",
+            "libxdamage1",
+            "libxfixes3",
+            "libxrandr2",
+            "libasound2",
+            "libatk1.0-0",
+            "libatspi2.0-0",
+            "libcairo2",
+            "libcups2",
+            "libgbm1",
+            "libpango1.0-0",
+            "libxkbcommon0",
+        ].iter().map(|s|s.to_string()).collect::<HashSet<String>>();
+        
+        if let Some(packages) = packages {
+            list.extend(packages);
+        }
 
         Part {
             plugin : Plugin::Nil,
@@ -193,66 +139,84 @@ impl Apps {
 pub struct App {
     // name: String,
     command: String,
+    desktop: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    plugs: Option<Vec<String>>,
+    plugs: Option<HashSet<String>>,
 }
 
 impl App {
-    pub fn new(command: &str) -> App {
+    pub fn new(name: &str, interfaces: Option<HashSet<String>>) -> App {
 
-        let plugs = vec![
+        let mut plugs = vec![
             "browser-support",
             "network",
             "network-bind",
-        ].iter().map(|s|s.to_string()).collect::<Vec<String>>();
+        ].iter().map(|s|s.to_string()).collect::<HashSet<String>>();
+
+        if let Some(interfaces) = interfaces {
+            plugs.extend(interfaces);
+        }
 
         App {
-            // name: name.to_string(),
-            command: command.to_string(),
+            command: format!("./{}",name.to_string()),
+            desktop: format!("{}.desktop",name.to_string()),
             plugs : Some(plugs)
         }
     }
 }
 
-// #[derive(Serialize, Deserialize)]
-// pub struct Plug {
-//     name: String,
-//     interface: String,
-//     attrs: Vec<Attr>,
-// }
+#[derive(Serialize, Deserialize)]
+pub struct SnapData {
+    pub name: String,
+    pub title: String,
+    pub version: String,
+    pub summary: String,
+    pub description: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub website: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub icon: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub license: Option<String>,
+    pub base : String,
+    pub grade: Channel,
+    pub confinement: Confinement,
+    pub architectures: Vec<SnapArchitecture>,
+    pub apps: Apps,
+    pub parts: Parts,
 
-// #[derive(Serialize, Deserialize)]
-// pub struct Attr {
-//     key: String,
-//     value: String,
-// }
+}
 
 impl SnapData {
     pub fn new(ctx: &Context, target_file: &str) -> SnapData {
 
+        let user_snap = ctx.manifest.snap.clone().unwrap_or_default();
+
         let name = ctx.manifest.application.name.clone();
         let parts = Parts::new(&[
             (name.as_str(), Part::new_with_source(target_file, Plugin::Dump)),
-            ("nwjs-support", Part::nwjs_support())
+            ("dependencies", Part::dependencies(user_snap.packages.clone()))
         ]);
+
         let apps = Apps::new(&[
-            (name.as_str(), App::new(&format!("./{}",name)))
+            (name.as_str(), App::new(&name, user_snap.interfaces.clone()))
         ]);
 
         let snap = SnapData {
-            name,//ctx.manifest.application.name.clone(), 
-            version: ctx.manifest.application.version.clone(),
+            name,
+            title : ctx.manifest.application.title.clone(), 
+            version: format!("'{}'",ctx.manifest.application.version),
             summary: ctx.manifest.description.short.clone(),
             description: ctx.manifest.description.long.clone(),
-            base: "core22".to_string(),
+            website: ctx.manifest.application.url.clone(),
+            icon: Some(format!("{}.png",ctx.manifest.application.name)),
+            license : ctx.manifest.application.license.clone(),
+            base: user_snap.base.unwrap_or("core22".to_string()),
             grade: ctx.channel.clone(),
             confinement: ctx.confinement.clone(),
-            // TODO
             architectures: vec![ctx.arch.clone().into()],
             apps,
             parts,
-            // apps: Vec::new(),
-            // plugs: Vec::new(),
         };
         
         snap
@@ -304,7 +268,7 @@ impl Snap {
         let snap_filename = format!("{}_{}_{}.snap",
         // let filename = format!("{}-{}-{}",
             self.data.name,
-            self.data.version,
+            self.ctx.manifest.application.version,
             "amd64"
         );
 

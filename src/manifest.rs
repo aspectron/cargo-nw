@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use async_std::fs::*;
 use async_std::path::{PathBuf, Path};
 use crate::prelude::*;
@@ -120,6 +122,10 @@ pub struct Application {
     pub copyright: Option<String>,
     /// Trademarks message (included in Windows resources).
     pub trademarks: Option<String>,
+    /// Application license (Open-Source / Commercial)
+    pub license: Option<String>,
+    /// End User License Agreement (TODO)
+    pub eula: Option<String>,
     /// URL of the application.
     pub url: Option<String>,
 }
@@ -424,10 +430,29 @@ pub enum WindowsResourceString {
 /// 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Snap {
+    ///
     /// Snap channel: 'stable', 'devel'; default 'stable'
+    /// 
     pub channel : Option<Channel>,
+    ///
     /// Snap confinement: 'strict', 'classic', 'devmode'; default: 'classic'
+    /// 
     pub confinement : Option<Confinement>,
+    ///
+    /// Specify additional SNAP interfaces that may be required by your application.
+    /// List of the interfaces can be found here: https://snapcraft.io/docs/supported-interfaces
+    /// Default SNAP interfaces included are: `browser-support`, `network`, `network-bind`.
+    /// 
+    pub interfaces : Option<HashSet<String>>,
+    ///    
+    /// Additional packages (libraries) that should be included for ELF resolution. Packages can be found using
+    /// `apt list | grep <package-substring>`.  This may be needed only if you are including your own additional
+    /// binaries in the SNAP distributable.
+    ///
+    pub packages : Option<HashSet<String>>,
+
+    /// SNAP package base (default: `core22`)
+    pub base : Option<String>,
 }
 
 impl Default for Snap {
@@ -435,6 +460,9 @@ impl Default for Snap {
         Snap {
             channel : None,
             confinement : None,
+            interfaces: None,
+            packages: None,
+            base: None,
         }
     }
 }
