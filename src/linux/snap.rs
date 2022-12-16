@@ -205,7 +205,7 @@ impl SnapData {
         let snap = SnapData {
             name,
             title : ctx.manifest.application.title.clone(), 
-            version: format!("'{}'",ctx.manifest.application.version),
+            version: ctx.manifest.application.version.clone(),
             summary: ctx.manifest.description.short.clone(),
             description: ctx.manifest.description.long.clone(),
             website: ctx.manifest.application.url.clone(),
