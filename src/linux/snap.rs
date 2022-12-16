@@ -209,7 +209,7 @@ impl SnapData {
             summary: ctx.manifest.description.short.clone(),
             description: ctx.manifest.description.long.clone(),
             website: ctx.manifest.application.url.clone(),
-            icon: ctx.build_folder.join(format!("{}.png",name)).to_str().unwrap().to_string(),
+            icon: format!("./{}/{}.png",ctx.app_snake_name, name),
             license : ctx.manifest.application.license.clone(),
             base: user_snap.base.unwrap_or("core22".to_string()),
             grade: ctx.channel.clone(),
