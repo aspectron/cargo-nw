@@ -145,7 +145,7 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(name: &str, interfaces: Option<HashSet<String>>) -> App {
+    pub fn new(folder: &str, name: &str, interfaces: Option<HashSet<String>>) -> App {
 
         let mut plugs = vec![
             "browser-support",
@@ -158,8 +158,8 @@ impl App {
         }
 
         App {
-            command: format!("./{}",name.to_string()),
-            desktop: format!("./{}.desktop",name.to_string()),
+            command: format!("./{}/{}",folder, name),
+            desktop: format!("./{}/{}.desktop",folder, name),
             plugs : Some(plugs)
         }
     }
@@ -199,7 +199,7 @@ impl SnapData {
         ]);
 
         let apps = Apps::new(&[
-            (name.as_str(), App::new(&name, user_snap.interfaces.clone()))
+            (name.as_str(), App::new(&ctx.app_snake_name, &name, user_snap.interfaces.clone()))
         ]);
 
         let snap = SnapData {
