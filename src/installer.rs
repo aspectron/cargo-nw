@@ -131,7 +131,8 @@ pub enum Confinement {
 
 impl Default for Confinement {
     fn default() -> Self {
-        Confinement::Classic
+        Confinement::Strict
+        // Confinement::Classic
     }
 }
 

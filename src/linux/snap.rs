@@ -214,7 +214,7 @@ impl Snap {
 
         log_info!("SNAP","generating ...");
 
-        cmd!("snapcraft").dir(&self.ctx.build_folder).run()?;
+        cmd("snapcraft",["build","--use-libraries"]).dir(&self.ctx.build_folder).run()?;
 
         let snap_filename = format!("{}_{}_{}.snap",
         // let filename = format!("{}-{}-{}",
