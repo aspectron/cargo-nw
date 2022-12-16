@@ -236,12 +236,30 @@ impl ISS {
             );
         }
 
-        let firewall = iss.firewall();
-        firewall.add_rule(
-            &format!("{} App", self.app_title),
-            "{#AppExeName}",
-            "in+out"
-        );
+        if let Some(firewall) = &self.ctx.manifest.firewall {
+
+            let issfw = iss.firewall();
+            if let Some(application) = &firewall.application {
+                issfw.clone().add_rule(
+                    &format!("{} App", self.app_title),
+                    "{#AppExeName}",
+                    //"in+out"
+                    &application.direction.clone().unwrap_or("in+out".to_string())
+                );
+            }
+            
+            if let Some(rules) = &firewall.rules {
+                for rule in rules.iter() {
+                    issfw.clone().add_rule(
+                        &format!("{} App", self.app_title),
+                        &rule.name,
+                        &rule.direction.clone().unwrap_or("in+out".to_string())
+                    );
+                }
+            }
+        }
+
+
 
         if self.run_after_setup.unwrap_or(false) {
             let run = iss.run();

@@ -486,10 +486,24 @@ impl Default for Snap {
 /// after the application installation on the target computer.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Firewall {
-    /// list of ports to open for the main application executable.
-    pub ports: Option<Vec<String>>,
-    /// list of additional firewall rules.
-    pub rules: Option<Vec<String>>,
+    /// Firewall application settings
+    pub application : Option<FirewallApplication>,
+    /// Additional firewall rules
+    /// If you need to define separate ports for in
+    /// and out directions, you need to define separate rules
+    pub rules : Option<Vec<FirewallRule>>
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct FirewallApplication {
+    pub direction : Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct FirewallRule {
+    pub name : String,
+    pub program : String,
+    pub direction : Option<String>,
 }
 
 /// Language directives

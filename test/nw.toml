@@ -102,14 +102,10 @@ resources = [
 languages = ["english","french"]
 
 [firewall]
-application = "in/out"
-in = [
-    "bin\\windows-x64\\test.exe",
+application = { direction = "in+out" }
+rules = [
+    { name = "Test", program = "bin\\windows-x64\\test.exe", direction="in+out" }
 ]
-out = [
-    "bin\\windows-x64\\test.exe",
-]
-
 
 # [innosetup]
 # alpha = [{ k1 = "ab\"cd" }, { "Files:" = "asd"}]
