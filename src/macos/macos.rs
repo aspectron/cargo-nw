@@ -24,7 +24,7 @@ pub struct MacOS {
 #[async_trait]
 impl Installer for MacOS {
 
-    async fn check(&self, targets: TargetSet) -> Result<()> {
+    async fn check(&self, _targets: TargetSet) -> Result<()> {
         
         Ok(())
     }

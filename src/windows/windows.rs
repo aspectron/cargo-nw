@@ -55,6 +55,15 @@ impl Installer for Windows {
 
     async fn check(&self, targets: TargetSet) -> Result<()> {
         
+        if !std::path::Path::new(super::iss::INNO_SETUP_COMPIL32).exists() {
+            println!("");
+            println!("fatal: unable to locate: {}", INNO_SETUP_COMPIL32);
+			println!("please download innosetup 6 at:");
+			println!("https://jrsoftware.org/isdl.php");
+            println!("");
+            return Err("missing InnoSetup compiler".into())
+        }
+
         Ok(())
     }
 
