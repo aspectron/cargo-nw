@@ -364,7 +364,7 @@ impl Windows {
                 .map(|v|(v.0.as_str(),v.1.as_str()))
                 .collect::<Vec<_>>()
             )
-            .remove_string("LastChange")
+            // .remove_string("LastChange")
             .update()?;
 
         resources.close();
