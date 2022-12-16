@@ -103,20 +103,46 @@ impl Part {
 
     pub fn nwjs_support() -> Part {
         let list = vec![
-            "gconf2",
-            "libasound2",
-            "libcurl3",
-            "libexif12",
-            "libgl1-mesa-glx",
-            "libglu1-mesa",
-            "libnotify4",
-            "libnss3",
-            "libpulse0",
-            "libssl1.0.0",
-            "libxss1",
-            "libxtst6",
-            "libmirclient9",
-            "xdg-utils",
+
+        "libX11",
+        "libXext",
+        "libwayland-client",
+        "libxcb",
+        "libatomic",
+        "libX11",
+        "libXcomposite",
+        "libXdamage",
+        "libXext",
+        "libXfixes",
+        "libXrandr",
+        "libasound",
+        "libatk-1.0",
+        "libatspi",
+        "libcairo",
+        "libcups",
+        "libgbm",
+        "libnspr4",
+        "libnss3",
+        "libnssutil3",
+        "libpango-1.0",
+        "libxcb",
+        "libxkbcommon",
+
+
+            // "gconf2",
+            // "libasound2",
+            // "libcurl3",
+            // "libexif12",
+            // "libgl1-mesa-glx",
+            // "libglu1-mesa",
+            // "libnotify4",
+            // "libnss3",
+            // "libpulse0",
+            // "libssl1.0.0",
+            // "libxss1",
+            // "libxtst6",
+            // "libmirclient9",
+            // "xdg-utils",
         ].iter().map(|s|s.to_string()).collect::<Vec<String>>();
 
         Part {
@@ -243,7 +269,7 @@ impl Snap {
 
         log_info!("SNAP","generating ...");
 
-        cmd("snapcraft",["build","--use-libraries"]).dir(&self.ctx.build_folder).run()?;
+        cmd("snapcraft",["build"]).dir(&self.ctx.build_folder).run()?;
 
         let snap_filename = format!("{}_{}_{}.snap",
         // let filename = format!("{}-{}-{}",
