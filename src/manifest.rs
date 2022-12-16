@@ -31,8 +31,16 @@ pub struct Manifest {
     /// Snap settings
     pub snap : Option<Snap>,
 
-    // pub test : std::collections::HashMap<String, Test>,
+    // pub innosetup : HashMap<String, InnoSetupManifest>,
 }
+
+// #[derive(Debug, Clone, Deserialize)]
+// pub struct InnoSetupManifest(Vec<HashMap<String, String>>);
+//  {
+//     // dependencies: HashMap<String, String>,
+//     // name : String,
+//     version : Option<String>,
+// }
 
 // #[derive(Debug, Clone, Deserialize)]
 // pub struct Test {

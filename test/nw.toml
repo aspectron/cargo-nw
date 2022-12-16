@@ -109,3 +109,8 @@ in = [
 out = [
     "bin\\windows-x64\\test.exe",
 ]
+
+
+# [innosetup]
+# alpha = [{ k1 = "ab\"cd" }, { "Files:" = "asd"}]
+# beta = [{ k2 = "def" }]
