@@ -87,7 +87,9 @@ impl ToString for Plugin {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Part {
     plugin : Plugin,
+    #[serde(skip_serializing_if = "Option::is_none")]
     source : Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "stage-packages")]
     stage_packages : Option<Vec<String>>,
 }
