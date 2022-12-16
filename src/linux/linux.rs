@@ -188,6 +188,7 @@ update-desktop-database $HOME/.local/share/applications\n\
 ", application.name);
         let dfinstall_script_file = self.nwjs_root_folder.join(format!("{}.sh",application.name));
         fs::write(&dfinstall_script_file, df_install_script_text).await?;
+        #[cfg(target_family = "unix")]
         fs::set_permissions(dfinstall_script_file, std::os::unix::fs::PermissionsExt::from_mode(0o755)).await?;
 
         Ok(())

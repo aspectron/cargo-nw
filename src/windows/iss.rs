@@ -5,7 +5,7 @@ use std::string::ToString;
 use crate::prelude::*;
 use super::innosetup::*;
 
-const INNO_SETUP_COMPIL32: &str = "C:/Program Files (x86)/Inno Setup 6/compil32.exe";
+pub const INNO_SETUP_COMPIL32: &str = "C:/Program Files (x86)/Inno Setup 6/compil32.exe";
 
 
 

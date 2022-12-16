@@ -47,11 +47,15 @@ impl Manifest {
         let cwd = current_dir().await;
 
         let location = if let Some(location) = location {
-            let location = Path::new(&location).to_path_buf();
-            if location.is_absolute() {
-                location
+            if location.starts_with("~/") {
+                home::home_dir().expect("unable to get home directory").join(&location[2..]).into()
             } else {
-                cwd.join(&location)
+                let location = Path::new(&location).to_path_buf();
+                if location.is_absolute() {
+                    location
+                } else {
+                    cwd.join(&location)
+                }
             }
         } else {
             cwd
