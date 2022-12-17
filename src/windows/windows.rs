@@ -109,10 +109,11 @@ impl Installer for Windows {
             // files.push(filename);
         }
 
-        #[cfg(target_os = "windows")]
+        #[cfg(any(target_os = "windows", feature = "multiplatform"))]
         if targets.contains(&Target::InnoSetup) {
 
             self.create_innosetup_icon(&self.setup_icon_file).await?;
+            self.create_innosetup_images().await?;
 
             let setup_script = super::iss::ISS::new(
                 self.ctx.clone(),
@@ -222,34 +223,24 @@ impl Windows {
         list.into_iter().map(|(k,v)|(k.to_string(),self.ctx.tpl.lock().unwrap().transform(&v))).collect()
     }
 
+    async fn create_innosetup_images(&self) -> Result<()> {
+        // https://jrsoftware.org/ishelp/index.php?topic=setup_wizardsmallimagefile
+        let _small_resolutions = [
+            (138,140),(119,123),(110,106),(92,97),(83,80),(64,68),(55,55)
+        ];
+
+        // https://jrsoftware.org/ishelp/index.php?topic=setup_wizardsmallimagefile
+        let _large_resolutions = [
+            (410,797),(355,700),(328,604),(273,556),(246,459),(192,386),(164,314)
+        ];
+
+
+
+        Ok(())
+    }
+
     async fn create_innosetup_icon(&self, ico_file : &PathBuf) -> Result<()> {
         log_info!("Innosetup","generating icons");
-/*
-
-100%	55x55
-125%	64x68
-150%	83x80
-175%	92x97
-200%	110x106
-225%	119x123
-250%	138x140
-
----
-
-
-100%	164x314
-125%	192x386
-150%	246x459
-175%	273x556
-200%	328x604
-225%	355x700
-250%	410x797
-
-
-
-
-*/
-
 
 
         if Path::new(ico_file).exists().await {

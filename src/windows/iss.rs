@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use async_std::path::Path;
 use async_std::path::PathBuf;
 use duct::cmd;
@@ -6,7 +8,6 @@ use crate::prelude::*;
 use super::innosetup::*;
 
 pub const INNO_SETUP_COMPIL32: &str = "C:/Program Files (x86)/Inno Setup 6/compil32.exe";
-
 
 
 pub struct ISS {
@@ -168,8 +169,8 @@ impl ISS {
                 // ; done in "64-bit mode" on x64, meaning it should use the native
                 // ; 64-bit Program Files directory and the 64-bit view of the registry.
                 ("ArchitecturesInstallIn64BitMode",&self.ctx.arch.to_string()),
-                ("WizardImageFile",quote!(self.ctx.setup_resources_folder.join("innosetup-164x314.bmp").to_str().unwrap().to_string())),
-                ("WizardSmallImageFile",quote!(self.ctx.setup_resources_folder.join("innosetup-55x58.bmp").to_str().unwrap().to_string())),
+                ("WizardImageFile",quote!(self.ctx.setup_resources_folder.join("innosetup-wizard-large.bmp").to_str().unwrap().to_string())),
+                ("WizardSmallImageFile",quote!(self.ctx.setup_resources_folder.join("innosetup-wizard-small.bmp").to_str().unwrap().to_string())),
                 // ("WizardSmallImageFile=<%- path.join(RESOURCES,ident+'-55x58.bmp') %>
             ]);
 

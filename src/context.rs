@@ -74,7 +74,7 @@ impl Context {
         let manifest_toml = Manifest::locate(location).await?;
         log_info!("Manifest","`{}`",manifest_toml.to_str().unwrap());
         let manifest_folder = manifest_toml.parent().unwrap().to_path_buf();
-        let mut manifest = Manifest::load(&manifest_toml).await?;
+        let manifest = Manifest::load(&manifest_toml).await?;
         let project_root = manifest_toml.parent().unwrap();
 
         let root_folder = search_upwards(&manifest_folder,"Cargo.toml").await

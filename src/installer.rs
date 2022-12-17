@@ -18,7 +18,7 @@ pub enum Target {
     Archive,
     #[cfg(any(target_os = "macos", feature = "unix"))]
     DMG,
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", feature = "multiplatform"))]
     #[clap(name = "innosetup")]
     InnoSetup,
     #[cfg(any(target_os = "linux", feature = "unix"))]
@@ -32,7 +32,7 @@ impl ToString for Target {
             Target::Archive => "Archive",
             #[cfg(any(target_os = "macos", feature = "unix"))]
             Target::DMG => "DMG",
-            #[cfg(target_os = "windows")]
+            #[cfg(any(target_os = "windows", feature = "multiplatform"))]
             Target::InnoSetup => "InnoSetup",
             #[cfg(any(target_os = "linux", feature = "unix"))]
             Target::Snap => "Snap",

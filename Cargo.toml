@@ -17,8 +17,8 @@ test = []
 unix = []
 standalone = []
 multiplatform = []
-default = ["test","unix"]
-# default = ["test","multiplatform"]
+# default = ["test","unix"]
+default = ["test","unix","multiplatform"]
 
 [dependencies]
 clap = { version = "3.2.17", features = ["derive"] }

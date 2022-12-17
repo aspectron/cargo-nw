@@ -10,8 +10,8 @@ use uuid::Uuid;
 
 const DEFAULT_APPLICATION_ICON: &[u8] = include_bytes!("../resources/default-application-icon.png");
 const MACOS_DMG_BACKGROUND: &[u8] = include_bytes!("../resources/macos-dmg-background.png");
-const INNOSETUP_55X58_IMAGE: &[u8] = include_bytes!("../resources/innosetup-55x58.bmp");
-const INNOSETUP_164X314_IMAGE: &[u8] = include_bytes!("../resources/innosetup-164x314.bmp");
+const INNOSETUP_WIZARD_SMALL_IMAGE: &[u8] = include_bytes!("../resources/innosetup-wizard-small.bmp");
+const INNOSETUP_WIZARD_LARGE_IMAGE: &[u8] = include_bytes!("../resources/innosetup-wizard-large.bmp");
 const TRAY_ICON: &[u8] = include_bytes!("../resources/tray-icon@2x.png");
 
 const GITIGNORE: &str = r###"
@@ -537,8 +537,8 @@ impl Project {
             ("resources/setup/document.png",DEFAULT_APPLICATION_ICON),
             ("resources/setup/macos-application.png",DEFAULT_APPLICATION_ICON),
             ("resources/setup/macos-dmg-background.png",MACOS_DMG_BACKGROUND),
-            ("resources/setup/innosetup-55x58.png",INNOSETUP_55X58_IMAGE),
-            ("resources/setup/innosetup-164x314.png",INNOSETUP_164X314_IMAGE),
+            ("resources/setup/innosetup-wizard-small.png",INNOSETUP_WIZARD_SMALL_IMAGE),
+            ("resources/setup/innosetup-wizard-large.png",INNOSETUP_WIZARD_LARGE_IMAGE),
             ("resources/icons/tray-icon@2x.png",TRAY_ICON),
         ];
 
