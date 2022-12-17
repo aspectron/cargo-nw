@@ -1,10 +1,8 @@
 use std::collections::HashSet;
-
 use async_std::fs::*;
 use async_std::path::{PathBuf, Path};
 use crate::prelude::*;
 use regex::Regex;
-use path_dedot::*;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Manifest {
@@ -84,7 +82,7 @@ impl Manifest {
         };
 
         if let Some(location) = location {
-            let location = std::path::PathBuf::from(&location).parse_dot()?.to_path_buf();
+            let location = std::path::PathBuf::from(&location).canonicalize()?.to_path_buf();
             Ok(location.into())
         } else {
             Err(format!("Unable to locate 'nw.toml' manifest").into())

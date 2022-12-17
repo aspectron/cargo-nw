@@ -1,10 +1,8 @@
 use std::sync::Mutex;
 use std::sync::MutexGuard;
-
 use async_std::path::Path;
 use async_std::path::PathBuf;
 use crate::prelude::*;
-use path_dedot::*;
 
 #[derive(Debug)]
 pub struct Options {
@@ -134,7 +132,7 @@ impl Context {
         let app_root_folder = manifest.package.root.as_ref()
             .map(|root|project_root_folder.to_path_buf().join(root))
             .unwrap_or(project_root_folder.clone());
-        let app_root_folder: PathBuf = std::path::PathBuf::from(&app_root_folder).parse_dot()?.to_path_buf().into();
+        let app_root_folder: PathBuf = std::path::PathBuf::from(&app_root_folder).canonicalize()?.to_path_buf().into();
 
         let setup_resources_folder = root_folder.join(&manifest.package.resources.as_ref().unwrap_or(&"resources/setup".to_string())).into();
         let sdk = manifest.node_webkit.sdk.unwrap_or(options.sdk);
