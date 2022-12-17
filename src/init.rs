@@ -10,8 +10,8 @@ use uuid::Uuid;
 
 const DEFAULT_APPLICATION_ICON: &[u8] = include_bytes!("../resources/default-application-icon.png");
 const MACOS_DMG_BACKGROUND: &[u8] = include_bytes!("../resources/macos-dmg-background.png");
-const INNOSETUP_WIZARD_SMALL_IMAGE: &[u8] = include_bytes!("../resources/innosetup-wizard-small.bmp");
-const INNOSETUP_WIZARD_LARGE_IMAGE: &[u8] = include_bytes!("../resources/innosetup-wizard-large.bmp");
+const INNOSETUP_WIZARD_SMALL_IMAGE: &[u8] = include_bytes!("../resources/innosetup-wizard-small.png");
+const INNOSETUP_WIZARD_LARGE_IMAGE: &[u8] = include_bytes!("../resources/innosetup-wizard-large.png");
 const TRAY_ICON: &[u8] = include_bytes!("../resources/tray-icon@2x.png");
 
 const GITIGNORE: &str = r###"

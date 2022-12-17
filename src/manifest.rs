@@ -20,6 +20,8 @@ pub struct Manifest {
     pub node_webkit : NodeWebkit,
     /// Windows-specific settings
     pub windows : Option<Windows>,
+    /// InnoSetup-specific settings
+    pub innosetup : Option<InnoSetup>,
     /// Firewall settings
     pub firewall : Option<Firewall>,
     /// Language settings
@@ -406,6 +408,12 @@ pub struct NodeWebkit {
     /// ```
     /// Be aware that SDK builds allow users access to your application environment
     pub sdk: Option<bool>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct InnoSetup {
+    /// Wizard file resizing (default: true)
+    pub resize_wizard_files : Option<bool>
 }
 
 #[allow(non_snake_case)]

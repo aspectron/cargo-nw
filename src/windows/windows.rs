@@ -84,7 +84,7 @@ impl Installer for Windows {
             for action in actions {
                 log_info!("Build","executing pack action");
                 if let Execute::Pack(ec) = action {
-                    log_info!("MacOS","executing `{}`",ec.display(Some(&tpl)));
+                    log_info!("Windows","executing `{}`",ec.display(Some(&tpl)));
                     self.ctx.execute_with_context(ec, Some(&self.nwjs_root_folder), None).await?;
                 }
             }
@@ -113,11 +113,12 @@ impl Installer for Windows {
         if targets.contains(&Target::InnoSetup) {
 
             self.create_innosetup_icon(&self.setup_icon_file).await?;
-            self.create_innosetup_images().await?;
+            let wizard_image_files = self.create_innosetup_images().await?;
 
             let setup_script = super::iss::ISS::new(
                 self.ctx.clone(),
                 self.setup_icon_file.clone(),
+                wizard_image_files,
             );
 
             let filename = setup_script.create().await?;
@@ -223,24 +224,85 @@ impl Windows {
         list.into_iter().map(|(k,v)|(k.to_string(),self.ctx.tpl.lock().unwrap().transform(&v))).collect()
     }
 
-    async fn create_innosetup_images(&self) -> Result<()> {
+    async fn create_innosetup_images(&self) -> Result<(Vec<PathBuf>,Vec<PathBuf>)> {
+
+        log_info!("InnoSetup", "generating wizard image files");
+
+        let mut small_files = Vec::new();
+        let small_file_bmp = self.ctx.cache_folder.join("innosetup-wizard-small.bmp");
+        let small_file_png = self.ctx.setup_resources_folder.join("innosetup-wizard-small.png");
+        let mut small_src = image::open(&small_file_png)
+            .expect(&format!("Unable to open {:?}", small_file_png.display()));
+        if !small_file_bmp.exists().await {
+            small_src.save(&small_file_bmp).expect(&format!("Unable to save {:?}", small_file_bmp.display()));
+        }
+        small_files.push(small_file_bmp.clone());
+
+        let mut large_files = Vec::new();
+        let large_file_bmp = self.ctx.cache_folder.join("innosetup-wizard-large.bmp");
+        let large_file_png = self.ctx.setup_resources_folder.join("innosetup-wizard-large.png");
+        let mut large_src = image::open(&large_file_png)
+            .expect(&format!("Unable to open {:?}", large_file_png.display()));
+        if !large_file_bmp.exists().await {
+            large_src.save(&large_file_bmp).expect(&format!("Unable to save {:?}", large_file_bmp.display()));
+        }
+        large_files.push(large_file_bmp.clone());
+
+        
+        if let Some(innosetup) = &self.ctx.manifest.innosetup {
+            if innosetup.resize_wizard_files.unwrap_or(false) {
+                return Ok((small_files,large_files))
+            }
+        }
+
+
         // https://jrsoftware.org/ishelp/index.php?topic=setup_wizardsmallimagefile
-        let _small_resolutions = [
+        let small_resolutions = [
             (138,140),(119,123),(110,106),(92,97),(83,80),(64,68),(55,55)
         ];
 
         // https://jrsoftware.org/ishelp/index.php?topic=setup_wizardsmallimagefile
-        let _large_resolutions = [
+        let large_resolutions = [
             (410,797),(355,700),(328,604),(273,556),(246,459),(192,386),(164,314)
         ];
 
+        cfg_if! {
+            if #[cfg(debug_assertions)] {
+                let resize_filter_type = FilterType::Triangle;
+            } else {
+                let resize_filter_type = FilterType::Lanczos3;
+            }
+        }
 
+        for (width,height) in small_resolutions.iter() {
+            let dimensions = small_src.dimensions();
+            if *width < dimensions.0 && *height < dimensions.1 {
+                let filename = self.ctx.cache_folder.join(format!("innosetup-wizard-small-{}x{}.bmp",*width,*height));
+                if !filename.exists().await {
+                    small_src = small_src.resize(*width, *height, resize_filter_type);
+                    small_src.save(&filename).expect(&format!("Unable to save {:?}", filename.display()));
+                }
+                small_files.push(filename);
+            }
+        }
 
-        Ok(())
+        for (width,height) in large_resolutions.iter() {
+            let dimensions = large_src.dimensions();
+            if *width < dimensions.0 && *height < dimensions.1 {
+                let filename = self.ctx.cache_folder.join(format!("innosetup-wizard-large-{}x{}.bmp",*width,*height));
+                if !filename.exists().await {
+                    large_src = large_src.resize(*width, *height, resize_filter_type);
+                    large_src.save(&filename).expect(&format!("Unable to save {:?}", filename.display()));
+                }
+                large_files.push(filename);
+            }
+        }
+
+        Ok((small_files,large_files))
     }
 
     async fn create_innosetup_icon(&self, ico_file : &PathBuf) -> Result<()> {
-        log_info!("Innosetup","generating icons");
+        log_info!("InnoSetup","generating icons");
 
 
         if Path::new(ico_file).exists().await {

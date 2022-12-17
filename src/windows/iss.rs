@@ -5,7 +5,7 @@ use async_std::path::PathBuf;
 use duct::cmd;
 use std::string::ToString;
 use crate::prelude::*;
-use super::innosetup::*;
+use super::innosetup::quote;
 
 pub const INNO_SETUP_COMPIL32: &str = "C:/Program Files (x86)/Inno Setup 6/compil32.exe";
 
@@ -24,6 +24,7 @@ pub struct ISS {
     run_on_startup: Option<String>,
     run_after_setup: Option<bool>,
     setup_icon_file: PathBuf,
+    wizard_image_files : (Vec<PathBuf>,Vec<PathBuf>),
     // // setup_icon : PathBuf,
     // // background_image : PathBuf,
     build_folder : PathBuf,
@@ -39,6 +40,7 @@ impl ISS {
     pub fn new(
         ctx: Arc<Context>,
         setup_icon_file : PathBuf,
+        wizard_image_files : (Vec<PathBuf>,Vec<PathBuf>)
     ) -> ISS {
 
         let windows = ctx.manifest.windows.as_ref().expect("nwjs.toml missing [windows] section");
@@ -96,6 +98,7 @@ impl ISS {
             output_file,
             app_exe_file,
             setup_icon_file,
+            wizard_image_files,
             run_on_startup,
             run_after_setup,
         }
@@ -122,7 +125,7 @@ impl ISS {
 
     pub async fn generate_iss(&self) -> Result<()> {
 
-        let mut iss = InnoSetup::new();
+        let mut iss = super::innosetup::InnoSetup::new();
 
         iss
             .define("AppName",&self.app_title)
@@ -132,6 +135,22 @@ impl ISS {
             .define("AppURL",&self.app_url)
             .define("AppExeName",&self.app_exe_file);
             
+        let wizard_image_small_files = self
+            .wizard_image_files
+            .0
+            .iter()
+            .map(|s|format!("\"{}\"",s.to_str().unwrap().to_string()))
+            .collect::<Vec<String>>()
+            .join(";")+";";
+
+        let wizard_image_large_files = self
+            .wizard_image_files
+            .1
+            .iter()
+            .map(|s|format!("\"{}\"",s.to_str().unwrap().to_string()))
+            .collect::<Vec<String>>()
+            .join(";")+";";
+
         iss.setup()
             .directives(&[
 
@@ -169,8 +188,10 @@ impl ISS {
                 // ; done in "64-bit mode" on x64, meaning it should use the native
                 // ; 64-bit Program Files directory and the 64-bit view of the registry.
                 ("ArchitecturesInstallIn64BitMode",&self.ctx.arch.to_string()),
-                ("WizardImageFile",quote!(self.ctx.setup_resources_folder.join("innosetup-wizard-large.bmp").to_str().unwrap().to_string())),
-                ("WizardSmallImageFile",quote!(self.ctx.setup_resources_folder.join("innosetup-wizard-small.bmp").to_str().unwrap().to_string())),
+                ("WizardImageFile",&wizard_image_large_files),
+                ("WizardSmallImageFile",&wizard_image_small_files),
+                // ("WizardImageFile",quote!(self.ctx.setup_resources_folder.join("innosetup-wizard-large.bmp").to_str().unwrap().to_string())),
+                // ("WizardSmallImageFile",quote!(self.ctx.setup_resources_folder.join("innosetup-wizard-small.bmp").to_str().unwrap().to_string())),
                 // ("WizardSmallImageFile=<%- path.join(RESOURCES,ident+'-55x58.bmp') %>
             ]);
 
