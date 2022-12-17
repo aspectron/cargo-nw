@@ -27,6 +27,7 @@ impl Default for Options {
 pub struct Context {
 
     pub manifest : Manifest,
+    pub package_json : Option<PackageJson>,
     pub platform : Platform,
     pub arch : Architecture,
     
@@ -76,8 +77,30 @@ impl Context {
         let manifest_toml = Manifest::locate(location).await?;
         log_info!("Manifest","`{}`",manifest_toml.to_str().unwrap());
         let manifest_folder = manifest_toml.parent().unwrap().to_path_buf();
-        let manifest = Manifest::load(&manifest_toml).await?;
+        let mut manifest = Manifest::load(&manifest_toml).await?;
         let project_root = manifest_toml.parent().unwrap();
+
+        let package_json_path = project_root.join("package.json");
+        let package_json = PackageJson::try_load(project_root.join(&package_json_path)).ok();
+        let has_wildcards = manifest.application.name.as_str() == "*" || manifest.application.version.as_str() == "*";
+
+        if has_wildcards && package_json.is_none() {
+            return Err(format!("missing `{}`: required due to wildcards",package_json_path.display()).into());
+        } else if has_wildcards {
+            let package_json = package_json.as_ref().unwrap();
+            if manifest.application.name.as_str() == "*" {
+                manifest.application.name = package_json.name.clone();
+            }
+            if manifest.application.version.as_str() == "*" {
+                if let Some(version) = &package_json.version {
+                    manifest.application.version = version.clone();
+                } else {
+                    return Err(format!("missing 'version' name in `{}`", package_json_path.display()).into())
+                }
+            }
+        }
+
+
         let app_snake_name = format!("{}-{}-{}-{}",
             manifest.application.name,
             manifest.application.version,
@@ -173,6 +196,7 @@ impl Context {
 
         let ctx = Context {
             manifest,
+            package_json,
             platform,
             arch,
             home_folder,

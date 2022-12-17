@@ -526,6 +526,16 @@ pub struct PackageJson {
     pub version : Option<String>,
 }
 
+impl PackageJson {
+    pub fn try_load<P>(filepath : P)-> Result<PackageJson> 
+    where P : AsRef<std::path::Path>
+    {
+        let text = std::fs::read_to_string(filepath)?;
+        let package_json: PackageJson = serde_json::from_str(&text)?;
+        Ok(package_json)
+    }
+}
+
 /// Zip Archive compression modes.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Archive {

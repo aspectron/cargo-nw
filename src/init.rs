@@ -451,9 +451,7 @@ impl Project {
 
         if Path::new("package.json").exists().await {
 
-            let text = fs::read_to_string("package.json").await?;
-            let package_json: PackageJson = serde_json::from_str(&text)?;
-
+            let package_json = PackageJson::try_load("package.json")?;
             self.name = package_json.name.to_lowercase().replace(" ","-");
             self.title = package_json.name;
             if let Some(version) = package_json.version {
