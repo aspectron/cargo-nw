@@ -93,7 +93,8 @@ impl Part {
             "libx11-6",
             "libxext6",
             "libwayland-client0",
-            "libatomic1-amd64-cross",
+            // "libatomic1-amd64-cross",
+            "libatomic1",
             "libxcomposite1",
             "libxdamage1",
             "libxfixes3",
@@ -105,8 +106,13 @@ impl Part {
             "libcups2",
             "libgbm1",
             "libpango1.0-0",
+            // needed for strict
             "libxkbcommon0",
             "libx11-xcb1",
+            "libgl1",
+
+            "mesa-utils",
+            "libgl1-mesa-glx",
         ].iter().map(|s|s.to_string()).collect::<HashSet<String>>();
         
         if let Some(packages) = packages {
@@ -155,6 +161,11 @@ impl App {
             // ~
             "opengl",
             "x11",
+            "upower-observe",
+            // ~
+            // "gsettings",
+            // "desktop", //?
+            // "desktop-legacy", //?
             // ~
             // "removable-media",
             // "personal-files",
