@@ -83,7 +83,7 @@ impl Installer for Linux {
             // let target_file = target_archive.file_name().unwrap().to_str().unwrap();
 
             let snap = crate::linux::snap::Snap::try_new(&self.ctx, &archive_path)?;
-            log_info!("Linux","creating SNAP package for '{}' channel", snap.data.grade.to_string());
+            log_info!("Linux","creating Snap package for '{}' channel", snap.data.grade.to_string());
             snap.create().await?;
             let snap_file = snap.build().await?;
             files.push(snap_file);

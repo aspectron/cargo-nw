@@ -282,7 +282,7 @@ impl Snap {
 
         std::fs::copy(&self.archive_filepath, self.ctx.build_folder.join(&self.archive_filename))?;
 
-        log_info!("SNAP","generating ...");
+        log_info!("Snap","generating ...");
 
         cmd!("snapcraft").dir(&self.ctx.build_folder).run()?;
 
