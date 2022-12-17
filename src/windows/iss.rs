@@ -251,8 +251,8 @@ impl ISS {
             if let Some(rules) = &firewall.rules {
                 for rule in rules.iter() {
                     issfw.clone().add_rule(
-                        &format!("{} App", self.app_title),
                         &rule.name,
+                        &rule.program.replace("/","\\"),
                         &rule.direction.clone().unwrap_or("in+out".to_string())
                     );
                 }
