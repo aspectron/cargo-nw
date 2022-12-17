@@ -31,8 +31,16 @@ pub struct Manifest {
     /// Snap settings
     pub snap : Option<Snap>,
 
-    // pub test : std::collections::HashMap<String, Test>,
+    // pub innosetup : HashMap<String, InnoSetupManifest>,
 }
+
+// #[derive(Debug, Clone, Deserialize)]
+// pub struct InnoSetupManifest(Vec<HashMap<String, String>>);
+//  {
+//     // dependencies: HashMap<String, String>,
+//     // name : String,
+//     version : Option<String>,
+// }
 
 // #[derive(Debug, Clone, Deserialize)]
 // pub struct Test {
@@ -47,11 +55,15 @@ impl Manifest {
         let cwd = current_dir().await;
 
         let location = if let Some(location) = location {
-            let location = Path::new(&location).to_path_buf();
-            if location.is_absolute() {
-                location
+            if location.starts_with("~/") {
+                home::home_dir().expect("unable to get home directory").join(&location[2..]).into()
             } else {
-                cwd.join(&location)
+                let location = Path::new(&location).to_path_buf();
+                if location.is_absolute() {
+                    location
+                } else {
+                    cwd.join(&location)
+                }
             }
         } else {
             cwd
@@ -474,10 +486,24 @@ impl Default for Snap {
 /// after the application installation on the target computer.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Firewall {
-    /// list of ports to open for the main application executable.
-    pub ports: Option<Vec<String>>,
-    /// list of additional firewall rules.
-    pub rules: Option<Vec<String>>,
+    /// Firewall application settings
+    pub application : Option<FirewallApplication>,
+    /// Additional firewall rules
+    /// If you need to define separate ports for in
+    /// and out directions, you need to define separate rules
+    pub rules : Option<Vec<FirewallRule>>
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct FirewallApplication {
+    pub direction : Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct FirewallRule {
+    pub name : String,
+    pub program : String,
+    pub direction : Option<String>,
 }
 
 /// Language directives

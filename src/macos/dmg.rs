@@ -138,6 +138,7 @@ impl DMG {
         let to = background_folder.join(format!("{}.png", self.app_name));
         fs::copy(&self.background_image,to).await?;
 
+        #[cfg(target_family = "unix")]
         std::os::unix::fs::symlink("/Applications",mountpoint.join("Applications"))?;
 
         Ok(())

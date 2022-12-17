@@ -54,16 +54,17 @@ impl Windows {
 impl Installer for Windows {
 
     async fn check(&self, targets: TargetSet) -> Result<()> {
-        
-        if !std::path::Path::new(super::iss::INNO_SETUP_COMPIL32).exists() {
-            println!("");
-            println!("fatal: unable to locate: {}", INNO_SETUP_COMPIL32);
-			println!("please download innosetup 6 at:");
-			println!("https://jrsoftware.org/isdl.php");
-            println!("");
-            return Err("missing InnoSetup compiler".into())
+        if targets.contains(&Target::InnoSetup) {
+            if !std::path::Path::new(super::iss::INNO_SETUP_COMPIL32).exists() {
+                println!("");
+                println!("fatal: unable to locate: `{}`", super::iss::INNO_SETUP_COMPIL32);
+                println!("please download innosetup 6 at:");
+                println!("https://jrsoftware.org/isdl.php");
+                println!("");
+                return Err("missing InnoSetup compiler".into())
+            }
         }
-
+            
         Ok(())
     }
 
@@ -218,11 +219,38 @@ impl Windows {
             }
         }
     
-        list.into_iter().map(|(k,v)|(k.to_string(),self.ctx.tpl.transform(v))).collect()
+        list.into_iter().map(|(k,v)|(k.to_string(),self.ctx.tpl.lock().unwrap().transform(&v))).collect()
     }
 
     async fn create_innosetup_icon(&self, ico_file : &PathBuf) -> Result<()> {
         log_info!("Innosetup","generating icons");
+/*
+
+100%	55x55
+125%	64x68
+150%	83x80
+175%	92x97
+200%	110x106
+225%	119x123
+250%	138x140
+
+---
+
+
+100%	164x314
+125%	192x386
+150%	246x459
+175%	273x556
+200%	328x604
+225%	355x700
+250%	410x797
+
+
+
+
+*/
+
+
 
         if Path::new(ico_file).exists().await {
             return Ok(());
@@ -336,7 +364,7 @@ impl Windows {
                 .map(|v|(v.0.as_str(),v.1.as_str()))
                 .collect::<Vec<_>>()
             )
-            .remove_string("LastChange")
+            // .remove_string("LastChange")
             .update()?;
 
         resources.close();

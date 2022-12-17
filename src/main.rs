@@ -86,6 +86,10 @@ enum Action {
         #[clap(short, long)]
         sdk : Option<bool>,
 
+        // /// Node Webkit version (override the manifest setting)
+        // #[clap(short, long)]
+        // version : Option<String>,
+
         #[cfg(any(target_os = "linux", feature = "unix"))]
         #[clap(short, long, help = "Snap distribution channel (linux only)")]
         #[cfg(any(target_os = "linux", feature = "unix"))]

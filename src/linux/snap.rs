@@ -293,7 +293,12 @@ impl Snap {
             "amd64"
         );
 
-        Ok(self.ctx.build_folder.join(snap_filename))
+        fs::rename(
+            self.ctx.build_folder.join(&snap_filename),
+            self.ctx.output_folder.join(&snap_filename)
+        ).await?;
+
+        Ok(self.ctx.output_folder.join(&snap_filename))
 
     }
 }
