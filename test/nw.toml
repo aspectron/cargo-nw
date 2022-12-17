@@ -18,7 +18,8 @@ non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
 [package]
 # archive = "STORE"
-signatures = true
+# archive = { algorithm = "DEFLATE"}
+signatures = ["SHA256"]
 root = ".."
 # build = [
     # { WASM = { } },

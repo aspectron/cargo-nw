@@ -25,7 +25,7 @@ impl Default for Options {
 pub struct Context {
 
     pub manifest : Manifest,
-    pub package_json : Option<PackageJson>,
+    // pub package_json : Option<PackageJson>,
     pub platform : Platform,
     pub arch : Architecture,
     
@@ -60,7 +60,6 @@ pub struct Context {
     pub tpl : Arc<Mutex<Tpl>>,
 }
 
-
 impl Context {
     pub async fn create(
         location : Option<String>,
@@ -78,26 +77,9 @@ impl Context {
         let mut manifest = Manifest::load(&manifest_toml).await?;
         let project_root = manifest_toml.parent().unwrap();
 
-        let package_json_path = project_root.join("package.json");
-        let package_json = PackageJson::try_load(project_root.join(&package_json_path)).ok();
-        let has_wildcards = manifest.application.name.as_str() == "*" || manifest.application.version.as_str() == "*";
-
-        if has_wildcards && package_json.is_none() {
-            return Err(format!("missing `{}`: required due to wildcards",package_json_path.display()).into());
-        } else if has_wildcards {
-            let package_json = package_json.as_ref().unwrap();
-            if manifest.application.name.as_str() == "*" {
-                manifest.application.name = package_json.name.clone();
-            }
-            if manifest.application.version.as_str() == "*" {
-                if let Some(version) = &package_json.version {
-                    manifest.application.version = version.clone();
-                } else {
-                    return Err(format!("missing 'version' name in `{}`", package_json_path.display()).into())
-                }
-            }
-        }
-
+        let root_folder = search_upwards(&manifest_folder,"Cargo.toml").await
+            .map(|location|location.parent().unwrap().to_path_buf())
+            .unwrap_or(manifest_folder.clone());
 
         let app_snake_name = format!("{}-{}-{}-{}",
             manifest.application.name,
@@ -106,9 +88,6 @@ impl Context {
             arch
         );
 
-        let root_folder = search_upwards(&manifest_folder,"Cargo.toml").await
-            .map(|location|location.parent().unwrap().to_path_buf())
-            .unwrap_or(manifest_folder.clone());
         let cargo_target_folder = root_folder.join("target");
         let cargo_nw_target_folder = cargo_target_folder.join("nw");
         let build_folder = Path::new(&cargo_nw_target_folder).join("build").join(&app_snake_name);
@@ -194,7 +173,7 @@ impl Context {
 
         let ctx = Context {
             manifest,
-            package_json,
+            // package_json,
             platform,
             arch,
             home_folder,
@@ -263,3 +242,4 @@ impl Context {
     }
 
 }
+

@@ -64,6 +64,9 @@ pub enum Error {
     #[error("'description.short' length must be less than 78 characters")]
     ShortDescriptionIsTooLong,
     
+    #[error("Toml Deserialize: {0}")]
+    TomlDeserialize(#[from] toml::de::Error),
+    
 
 
     // #[error("Error: {0}")]

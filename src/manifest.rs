@@ -90,13 +90,23 @@ impl Manifest {
     }
     
     pub async fn load(toml : &PathBuf) -> Result<Manifest> {
-        let nwjs_toml = read_to_string(toml).await?;
-        let manifest: Manifest = match toml::from_str(&nwjs_toml) {
+        let nw_toml = read_to_string(toml).await?;
+        let mut manifest: Manifest = match toml::from_str(&nw_toml) {
             Ok(manifest) => manifest,
             Err(err) => {
                 return Err(format!("Error loading nw.toml: {}", err).into());
             }
         };    
+
+        let folder = toml.parent().unwrap();
+        resolve_value_paths(folder, &mut [
+            &mut manifest.application.name,
+            &mut manifest.application.title,
+            &mut manifest.application.version,
+            &mut manifest.application.organization,
+            &mut manifest.description.short,
+            &mut manifest.description.long,
+        ]).await?;
 
         manifest.sanity_checks()?;
 
@@ -280,13 +290,14 @@ pub struct Package {
     pub build: Option<Vec<Build>>,
     /// Forces cargo-nw to always generate an Archive build.
     pub archive: Option<Archive>,
-    /// Disables all build types except archiv4e (`build all` will result in archive only)
+    /// Disables build types except archive (`build all` will result in archive only)
     /// This can be useful for utility projects that do not require interactive installation.
-    #[serde(rename = "archive-only")]
-    pub archive_only: Option<bool>,
-    /// If enabled, cargo-nw will generate sha256sum files.
-    /// beside the output packages.
-    pub signatures: Option<bool>,
+    pub disable : Option<Vec<Target>>,
+    /// If present, generates a signature file beside the redistributable.
+    /// A signature file like sha256sum contains hex hash of the original file.
+    /// Please note that this is a lightweight fingerprinting of the original file contents.
+    /// If security is a concern, you should utilize GPG signatures.
+    pub signatures: Option<Vec<Signature>>,
     /// Resource folder relative to the manifes file.
     /// This folder should contain the application icon
     /// as well as images and icons needed by setup generators.
@@ -314,7 +325,6 @@ pub struct Package {
     pub execute: Option<Vec<Execute>>,
     /// Customm output folder (default: `target/setup`).
     pub output: Option<String>,
-    pub 
 }
 
 /// Copy filter used in `package.include` and `package.exclude` sections
@@ -539,42 +549,92 @@ impl PackageJson {
     }
 }
 
-/// Zip Archive compression modes.
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct CargoToml {
+//     pub package : CargoPackage
+// }
+
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct CargoPackage {
+//     pub name : String,
+//     pub version : String,
+//     pub description : String,
+// }
+
+// impl CargoToml {
+//     pub fn try_load<P>(filepath : P)-> Result<CargoToml> 
+//     where P : AsRef<std::path::Path>
+//     {
+//         let cargo_toml_text = std::fs::read_to_string(filepath)?;
+//         let cargo_toml_manifest: CargoToml = match toml::from_str(&cargo_toml_text) {
+//             Ok(cargo_toml_manifest) => cargo_toml_manifest,
+//             Err(err) => {
+//                 return Err(format!("Error loading nw.toml: {}", err).into());
+//             }
+//         };
+//         Ok(cargo_toml_manifest)
+//     }
+// }
+
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum Archive {
+pub enum Algorithm {
     STORE,
     BZIP2,
     DEFLATE,
     ZSTD
 }
 
-impl Default for Archive {
-    fn default() -> Self {
-        Archive::DEFLATE
-        // Archive::BZIP2
+impl Default for Algorithm {
+    fn default() -> Algorithm {
+        Algorithm::DEFLATE
     }
 }
 
-impl Into<zip::CompressionMethod> for Archive {
+impl Into<zip::CompressionMethod> for Algorithm {
     fn into(self) -> zip::CompressionMethod {
         match self {
-            Archive::STORE => zip::CompressionMethod::Stored,
-            Archive::BZIP2 => zip::CompressionMethod::Bzip2,
-            Archive::DEFLATE => zip::CompressionMethod::Deflated,
-            Archive::ZSTD => zip::CompressionMethod::Zstd,
+            Algorithm::STORE => zip::CompressionMethod::Stored,
+            Algorithm::BZIP2 => zip::CompressionMethod::Bzip2,
+            Algorithm::DEFLATE => zip::CompressionMethod::Deflated,
+            Algorithm::ZSTD => zip::CompressionMethod::Zstd,
         }
     }
 }
 
-impl ToString for Archive {
+impl ToString for Algorithm {
     fn to_string(&self) -> String {
         match self {
-            Archive::STORE => "STORE",
-            Archive::BZIP2 => "BZIP2",
-            Archive::DEFLATE => "DEFLATE",
-            Archive::ZSTD => "ZSTD",
+            Algorithm::STORE => "STORE",
+            Algorithm::BZIP2 => "BZIP2",
+            Algorithm::DEFLATE => "DEFLATE",
+            Algorithm::ZSTD => "ZSTD",
         }.into()
     }
+}
+
+/// Zip Archive compression modes.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Archive {
+    Include(bool),
+    Options {
+        algorithm : Option<Algorithm>,
+        subfolder : Option<bool>,
+    }
+}
+
+impl Default for Archive {
+    fn default() -> Self {
+        Archive::Options {
+            algorithm: Some(Algorithm::default()),
+            subfolder: Some(true),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Signature {
+    SHA256,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -609,3 +669,66 @@ impl MacOsDiskImage {
     pub fn system_applications_folder_position(&self) -> [i32;2] { self.system_applications_folder_position.unwrap_or([100,385]) }
 }
 
+
+
+// ~~~
+
+async fn resolve_value_paths(folder: &Path, paths : &mut [&mut String]) -> Result<()> {
+
+    for path in paths.iter_mut() {
+        if is_value_path(path) {
+            let location = path.clone();
+            path.clear();
+            path.push_str(&load_value_path(folder, &location).await?);
+        }
+    }
+
+    Ok(())
+}
+
+fn is_value_path(v : &str) -> bool {
+    v.contains("::")
+}
+
+async fn load_value_path(folder: &Path, location: &str) -> Result<String> {
+    let parts = location.split("::").collect::<Vec<_>>();
+    let filename = folder.join(parts[0]).canonicalize().await?;
+    let value_path = parts[1].split(".").collect::<Vec<_>>();
+
+    let extension = filename
+        .extension()
+        .expect(&format!("unable to determine file type for file `{}` due to missing extension",filename.display()))
+        .to_str()
+        .unwrap();
+
+    match extension {
+        "toml" => {
+            let text = std::fs::read_to_string(&filename)?;
+            let mut v: &toml::Value = &toml::from_str(&text)?;
+            for field in value_path.iter() {
+                v = v.get(field)
+                    .ok_or::<Error>(format!(
+                        "unable to resolve the value `{}` in `{}`",
+                        value_path.join("."),
+                        filename.display()
+                    ).into())?;
+            }
+            Ok(v.as_str().unwrap().to_string())
+        }, 
+        "json" => {
+            let text = std::fs::read_to_string(&filename)?;
+            let mut v: &serde_json::Value = &serde_json::from_str(&text)?;
+            for field in value_path.iter() {
+                v = v.get(field)
+                    .ok_or::<Error>(format!(
+                        "unable to resolve the value `{}` in `{}`",
+                        value_path.join("."),
+                        filename.display()
+                    ).into())?;
+            }
+            Ok(v.as_str().unwrap().to_string())
+        },
+        _ => Err(format!("path parser: file extension `{extension}` is not supported").into())
+    }
+
+}

@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/aspectron/cargo-nw"
+authors = ["Anton Yemelyanov <anton.yemelyanov@gmail.com>", "Surinder Singh Matoo Mattaur <surinder83singh@gmail.com>"]
 keywords = ["cargo", "subcommand", "installation", "package","nwjs","nw"]
 categories = ["command-line-utilities", "development-tools::cargo-plugins", "development-tools::build-utils"]
 exclude = ["/.*", "/test"]
@@ -14,6 +15,7 @@ Cargo subcommand for building Node Webkit application deployment packages
 [features]
 test = []
 unix = []
+standalone = []
 multiplatform = []
 default = ["test","unix"]
 # default = ["test","multiplatform"]

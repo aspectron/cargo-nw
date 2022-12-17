@@ -227,16 +227,29 @@ pub async fn async_main() -> Result<()> {
                 options
             ).await?);
 
-            let include_archive =  if ctx.manifest.package.archive_only.unwrap_or(false) {
-                targets.clear();
-                true
-            } else if ctx.manifest.package.archive.is_some() {
-                true
-            } else {
-                false
-            };
+            let has_archive = 
+                if ctx.manifest.package.archive.is_some()
+                    || targets.contains(&Target::All)
+                    || targets.contains(&Target::Archive) {
+                    true
+                } else {
+                    false
+                };
 
-            if include_archive {
+            if let Some(list) = &ctx.manifest.package.disable {
+                for disable in list.iter() {
+                    match disable {
+                        Target::All => {
+                            targets.clear()
+                        },
+                        _ => {
+                            targets.remove(disable);
+                        }
+                    }
+                }
+            }
+
+            if has_archive {
                 targets.insert(Target::Archive);
             }
 

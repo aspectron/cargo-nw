@@ -1,5 +1,5 @@
 use flate2::read::GzDecoder;
-use tar::Archive;
+use tar::Archive as TarArchive;
 use zip::result::ZipError;
 use zip::write::FileOptions;
 // use std::fs;
@@ -42,7 +42,7 @@ fn extract_tar_gz(file: &PathBuf, dir: &PathBuf) -> Result<()> {
     // https://rust-lang-nursery.github.io/rust-cookbook/compression/tar.html
     let tar_gz = std::fs::File::open(file)?;
     let tar = GzDecoder::new(tar_gz);
-    let mut archive = Archive::new(tar);
+    let mut archive = TarArchive::new(tar);
     archive.unpack(dir)?;
     Ok(())
 }
@@ -171,19 +171,24 @@ where
 pub fn compress_folder(
     src_dir: &async_std::path::Path,
     dst_file: &async_std::path::Path,
-    // method: crate::manifest::Archive,
-    method: crate::manifest::Archive,
-    // method: zip::CompressionMethod,
+    archive: Archive,
 ) -> Result<()> { //zip::result::ZipResult<()> {
     if !Path::new(src_dir).is_dir() {
         return Err(ZipError::FileNotFound.into());
     }
 
+    let (algorithm, subfolder) = match archive {
+        Archive::Options { algorithm, subfolder} => {
+            (algorithm.unwrap_or_default(), subfolder.unwrap_or(true))
+        },
+        _ => {
+            (Algorithm::default(), true)
+        }
+    };
 
-
-    log_info!("Archive","compressing ({})", method.to_string());
-
-    let method : zip::CompressionMethod = method.into();
+    // let algorithm = options.algorithm.unwrap_or_default();
+    log_info!("Archive","compressing ({})", algorithm.to_string());
+    let method : zip::CompressionMethod = algorithm.into();
 
     let path = Path::new(dst_file);
     let file = File::create(path).unwrap();
@@ -198,13 +203,18 @@ pub fn compress_folder(
     let walkdir = WalkDir::new(src_dir);
     let it = walkdir.into_iter();
 
+    let prefix = if subfolder {
+        src_dir.parent().unwrap().into()
+    } else {
+        src_dir
+    };
+
     zip_folder(
         nb_files,
         dst_file.file_name().unwrap().to_str().unwrap(),
         path,
         &mut it.filter_map(|e| e.ok()), 
-        //src_dir.to_str().unwrap(), 
-        src_dir.parent().unwrap().into(),
+        prefix.into(),
         file,
         method
     )?;

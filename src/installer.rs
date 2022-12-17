@@ -11,7 +11,8 @@ use std::{collections::HashSet, str::FromStr};
 //     InnoSetup,
 // }
 
-#[derive(Debug, Clone, Subcommand, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Subcommand, Deserialize, Hash, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
 pub enum Target {
     All,
     Archive,

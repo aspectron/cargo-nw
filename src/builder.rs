@@ -188,10 +188,10 @@ impl Builder {
 
         let files: Vec<(_,_)> = files.iter().map(|f|(f.file_name().unwrap().to_owned(),f)).collect();
 
-        if self.ctx.manifest.package.signatures.unwrap_or(false) {
+        if let Some(signatures) = &self.ctx.manifest.package.signatures {
             log_info!("Build","generating signatures (SHA)");
             for (_,path) in files.iter() {
-                generate_sha256sum(&path).await?;
+                generate_signatures(&path, signatures).await?;
             }
         }
 
