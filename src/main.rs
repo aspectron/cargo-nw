@@ -227,7 +227,16 @@ pub async fn async_main() -> Result<()> {
                 options
             ).await?);
 
-            if ctx.manifest.package.archive.is_some() {
+            let include_archive =  if ctx.manifest.package.archive_only.unwrap_or(false) {
+                targets.clear();
+                true
+            } else if ctx.manifest.package.archive.is_some() {
+                true
+            } else {
+                false
+            };
+
+            if include_archive {
                 targets.insert(Target::Archive);
             }
 

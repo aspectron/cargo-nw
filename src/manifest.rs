@@ -280,6 +280,10 @@ pub struct Package {
     pub build: Option<Vec<Build>>,
     /// Forces cargo-nw to always generate an Archive build.
     pub archive: Option<Archive>,
+    /// Disables all build types except archiv4e (`build all` will result in archive only)
+    /// This can be useful for utility projects that do not require interactive installation.
+    #[serde(rename = "archive-only")]
+    pub archive_only: Option<bool>,
     /// If enabled, cargo-nw will generate sha256sum files.
     /// beside the output packages.
     pub signatures: Option<bool>,
@@ -310,6 +314,7 @@ pub struct Package {
     pub execute: Option<Vec<Execute>>,
     /// Customm output folder (default: `target/setup`).
     pub output: Option<String>,
+    pub 
 }
 
 /// Copy filter used in `package.include` and `package.exclude` sections
