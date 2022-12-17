@@ -207,8 +207,8 @@ pub async fn async_main() -> Result<()> {
 
             cfg_if! {
                 if #[cfg(not(any(target_os = "linux", feature = "unix")))] {
-                    let channel = Channel::default();
-                    let confinement = Confinement::default();
+                    let channel = Some(Channel::default());
+                    let confinement = Some(Confinement::default());
                 }
             }
             
