@@ -77,13 +77,13 @@ impl DMG {
         let window_width = window_size[0];
         let window_height = window_size[1]+window_caption_height;
         let window_l = window_position[0];
-        let window_t = window_position[1];
+        let window_t = window_position[1] + window_caption_height;
         let window_r = window_l + window_width;
         let window_b = window_t + window_height;
-        let icon_t = application_icon_position[0];
-        let icon_l = application_icon_position[1];
-        let apps_icon_t = system_applications_folder_position[0];
-        let apps_icon_l = system_applications_folder_position[1];
+        let icon_l = application_icon_position[0];
+        let icon_t = application_icon_position[1];
+        let apps_icon_l = system_applications_folder_position[0];
+        let apps_icon_t = system_applications_folder_position[1];
         // let apps_icon_t = icon_t;
         // let apps_icon_l = window_width - 100;
 
@@ -116,6 +116,7 @@ impl DMG {
         ");
 
         // make new alias file at container window to POSIX file "/Applications" with properties {name:"Applications"}
+        // println!("{}",script);
 
         let osa_script_file = self.build_folder.join("osa");
         fs::write(&osa_script_file, script).await?;

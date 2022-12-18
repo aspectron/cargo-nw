@@ -221,10 +221,8 @@ impl MacOS {
 
         let dimensions = src.dimensions();
         if dimensions.0 != 1024 || dimensions.1 != 1024 {
-            println!("");
-            println!("WARNING: {}", png.clone().file_name().unwrap().to_str().unwrap());
-            println!("         ^^^ icon dimensions are {}x{}; must be 1024x1024", dimensions.0,dimensions.1);
-            println!("");
+            log_warn!("Resources","`{}`", png.display());
+            log_warn!("Resources","application icon dimensions are {}x{}; should be 1024x1024", dimensions.0,dimensions.1);
         }
 
         let iconset_folder = self.ctx.cargo_target_folder.join("icns.iconset");

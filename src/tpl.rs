@@ -37,8 +37,10 @@ impl Tpl {
         }
     }
 
-    pub fn set(&mut self, key: &str, val: &str) {
-        self.map.insert(key.to_string(),val.to_string());
+    pub fn set(&mut self, kv: &[(&str,&str)]) {
+        for (k,v) in kv {
+            self.map.insert(k.to_string(),v.to_string());
+        }
     }
 
     pub fn extend(&self, tpl: &Tpl) -> Tpl {

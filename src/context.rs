@@ -70,12 +70,35 @@ impl Context {
     ) -> Result<Context> {
         // println!("");
 
+        let mut tpl : Tpl = [
+            // ("$ROOT",app_root_folder.to_str().unwrap().to_string()),
+            // ("$NAME",manifest.application.name.clone()),
+            // ("$VERSION",manifest.application.version.clone()),
+            // ("$OUTPUT",output_folder.to_str().unwrap().to_string()),
+            ("$PLATFORM",platform.to_string()),
+            ("$ARCH",arch.to_string()),
+        ].as_slice().try_into()?;
+        cfg_if! {
+            if #[cfg(target_os = "windows")] {
+                tpl.set(&[("$EXE",".exe")]);
+            } else {
+                tpl.set(&[("$EXE","")]);
+            }
+        }
+
+
+
         let home_folder: PathBuf = home::home_dir().unwrap().into();
         let manifest_toml = Manifest::locate(location).await?;
         log_info!("Manifest","`{}`",manifest_toml.to_str().unwrap());
         let manifest_folder = manifest_toml.parent().unwrap().to_path_buf();
         let manifest = Manifest::load(&manifest_toml).await?;
         let project_root = manifest_toml.parent().unwrap();
+
+        tpl.set(&[
+            ("$NAME",manifest.application.name.as_str()),
+            ("$VERSION",manifest.application.version.as_str()),
+        ]);
 
         let root_folder = search_upwards(&manifest_folder,"Cargo.toml").await
             .map(|location|location.parent().unwrap().to_path_buf())
@@ -103,8 +126,16 @@ impl Context {
         } else {
             Path::new(&cargo_nw_target_folder).join("setup")
         };
+        let output_folder = PathBuf::from(&tpl.transform(output_folder.to_str().unwrap()));
+        tpl.set(&[
+            ("$OUTPUT",output_folder.to_str().unwrap()),
+        ]);
 
         let temp_folder = Path::new(&home_folder).join(".cargo-nw").join("temp").join(&app_snake_name);
+        tpl.set(&[
+            ("$TEMP",temp_folder.to_str().unwrap()),
+        ]);
+
         let dependencies_folder = temp_folder.join("deps");
 
         let project_root_folder = project_root.to_path_buf();
@@ -112,6 +143,9 @@ impl Context {
             .map(|root|project_root_folder.to_path_buf().join(root))
             .unwrap_or(project_root_folder.clone());
         let app_root_folder: PathBuf = std::path::PathBuf::from(&app_root_folder).canonicalize()?.to_path_buf().into();
+        tpl.set(&[
+            ("$ROOT",app_root_folder.to_str().unwrap()),
+        ]);
 
         let setup_resources_folder = root_folder.join(&manifest.package.resources.as_ref().unwrap_or(&"resources/setup".to_string())).into();
         let sdk = manifest.node_webkit.sdk.unwrap_or(options.sdk);
@@ -123,7 +157,7 @@ impl Context {
         let include = manifest.package.include.clone();//.unwrap_or(vec![]);
         let exclude = manifest.package.exclude.clone();//.unwrap_or(vec![]);
 
-        let images = manifest.package.images.clone().unwrap_or_default();
+        let images = manifest.images.clone().unwrap_or_default();
 
         if manifest.description.short.len() > 78 {
             return Err(Error::ShortDescriptionIsTooLong);
@@ -131,45 +165,6 @@ impl Context {
 
         log_info!("Target","`{}`",output_folder.to_str().unwrap());
 
-        // let gitignore = if manifest.package.gitignore.unwrap_or(true) {
-        //     let gitignore = app_root_folder.join(".gitignore");
-        //     if gitignore.exists().await {
-        //         let gitignore = match std::fs::read_to_string(&gitignore) {
-        //             Ok(gitignore) => gitignore,
-        //             Err(e) => {
-        //                 return Err(format!("Unable to open '{}' - {}",gitignore.display(),e).into());
-        //             }
-        //         };
-        //         // let list = 
-        //         let list = gitignore
-        //             .split("\n")
-        //             .filter(|s|!s.is_empty())
-        //             .map(|s|s.to_string())
-        //             .collect::<Vec<_>>();
-        //         Some(list)
-        //         // exclude.extend(list);
-        //     } else {
-        //         None
-        //     }
-        // } else {
-        //     None
-        // };
-
-        let mut tpl : Tpl = [
-            ("$ROOT",app_root_folder.to_str().unwrap().to_string()),
-            ("$NAME",manifest.application.name.clone()),
-            ("$VERSION",manifest.application.version.clone()),
-            ("$OUTPUT",output_folder.to_str().unwrap().to_string()),
-            ("$PLATFORM",platform.to_string()),
-            ("$ARCH",arch.to_string()),
-        ].as_slice().try_into()?;
-        cfg_if! {
-            if #[cfg(target_os = "windows")] {
-                tpl.set("$EXE",".exe");
-            } else {
-                tpl.set("$EXE","");
-            }
-        }
 
         let ctx = Context {
             manifest,

@@ -388,7 +388,7 @@ impl Windows {
             .expect(&format!("Unable to open {:?}", app_icon_png));
 
         if app_icon_image.width() < 256 || app_icon_image.height() < 256 {
-            log_info!("Resources","{}",style("WARNING: application icon image size should be at least 256x256 (1024x1024 for MacOS)").red());
+            log_warn!("Resources","{}",style("application icon image size should be at least 256x256 (1024x1024 for MacOS)").red());
         }
         if app_icon_image.width() > 256 || app_icon_image.height() > 256 {
             app_icon_image = app_icon_image.resize( 256, 256, FilterType::Lanczos3);

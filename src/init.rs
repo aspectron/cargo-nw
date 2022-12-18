@@ -9,7 +9,7 @@ use console::style;
 use uuid::Uuid;
 
 const DEFAULT_APPLICATION_ICON: &[u8] = include_bytes!("../resources/default-application-icon.png");
-const MACOS_DMG_BACKGROUND: &[u8] = include_bytes!("../resources/macos-dmg-background.png");
+const MACOS_DISK_IMAGE_BACKGROUND: &[u8] = include_bytes!("../resources/macos-disk-image-background.png");
 const INNOSETUP_WIZARD_SMALL_IMAGE: &[u8] = include_bytes!("../resources/innosetup-wizard-small.png");
 const INNOSETUP_WIZARD_LARGE_IMAGE: &[u8] = include_bytes!("../resources/innosetup-wizard-large.png");
 const TRAY_ICON: &[u8] = include_bytes!("../resources/tray-icon@2x.png");
@@ -536,7 +536,7 @@ impl Project {
             ("resources/setup/application.png",DEFAULT_APPLICATION_ICON),
             ("resources/setup/document.png",DEFAULT_APPLICATION_ICON),
             ("resources/setup/macos-application.png",DEFAULT_APPLICATION_ICON),
-            ("resources/setup/macos-dmg-background.png",MACOS_DMG_BACKGROUND),
+            ("resources/setup/macos-dmg-background.png",MACOS_DISK_IMAGE_BACKGROUND),
             ("resources/setup/innosetup-wizard-small.png",INNOSETUP_WIZARD_SMALL_IMAGE),
             ("resources/setup/innosetup-wizard-large.png",INNOSETUP_WIZARD_LARGE_IMAGE),
             ("resources/icons/tray-icon@2x.png",TRAY_ICON),

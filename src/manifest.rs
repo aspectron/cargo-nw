@@ -5,6 +5,7 @@ use crate::prelude::*;
 use regex::Regex;
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub struct Manifest {
     /// Application settings
     pub application : Application,
@@ -16,7 +17,7 @@ pub struct Manifest {
     #[serde(rename = "dependency")]
     pub dependencies : Option<Vec<Dependency>>,
     /// Node Webkit directives
-    #[serde(rename = "node-webkit")]
+    // #[serde(rename = "node-webkit")]
     pub node_webkit : NodeWebkit,
     /// Windows-specific settings
     pub windows : Option<Windows>,
@@ -30,6 +31,8 @@ pub struct Manifest {
     pub macos_disk_image: Option<MacOsDiskImage>,
     /// Snap settings
     pub snap : Option<Snap>,
+    /// Custom overrides of default icon paths
+    pub images : Option<Images>,
 
     // pub innosetup : HashMap<String, InnoSetupManifest>,
 }
@@ -304,8 +307,6 @@ pub struct Package {
     /// This folder should contain the application icon
     /// as well as images and icons needed by setup generators.
     pub resources: Option<String>,
-    /// Custom overrides of default icon paths
-    pub images : Option<Images>,
     /// Project root relative to the manifest file. All 
     /// integration operations will occur from this folder.
     pub root: Option<String>,
@@ -674,7 +675,7 @@ impl MacOsDiskImage {
     pub fn window_size(&self) -> [i32;2] { self.window_size.unwrap_or([485,330]) }
     pub fn icon_size(&self) -> i32 { self.icon_size.unwrap_or(72) }
     pub fn application_icon_position(&self) -> [i32;2] { self.application_icon_position.unwrap_or([100,158]) }
-    pub fn system_applications_folder_position(&self) -> [i32;2] { self.system_applications_folder_position.unwrap_or([100,385]) }
+    pub fn system_applications_folder_position(&self) -> [i32;2] { self.system_applications_folder_position.unwrap_or([385,158]) }
 }
 
 
