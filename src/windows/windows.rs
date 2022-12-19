@@ -12,6 +12,7 @@ use chrono::Datelike;
 
 pub struct Windows {
     ctx : Arc<Context>,
+    tpl : Tpl,
     nwjs_root_folder: PathBuf,
     setup_icon_file : PathBuf,
     pub app_exe_file: String,
@@ -41,8 +42,11 @@ impl Windows {
             }
         };
 
+        let tpl = create_installer_tpl(&ctx, &nwjs_root_folder);
+
         Windows {
             ctx,
+            tpl,
             app_exe_file,
             nwjs_root_folder,
             setup_icon_file,
@@ -74,21 +78,23 @@ impl Installer for Windows {
         self.copy_app_data().await?;
         self.update_resources().await?;
 
-        let tpl = create_installer_tpl(
-            &self.ctx,
-            &self.ctx.app_root_folder,
-            &self.nwjs_root_folder
-        )?;
+        // let tpl = create_installer_tpl(
+        //     &self.ctx,
+        //     &self.nwjs_root_folder
+        // );
 
-        if let Some(actions) = &self.ctx.manifest.package.execute {
-            for action in actions {
-                log_info!("Build","executing pack action");
-                if let Execute::Pack(ec) = action {
-                    log_info!("Windows","executing `{}`",ec.display(Some(&tpl)));
-                    self.ctx.execute_with_context(ec, Some(&self.nwjs_root_folder), None).await?;
-                }
-            }
-        }
+        execute_actions(&self.ctx,&self.tpl,Stage::Package, &self.nwjs_root_folder).await?;
+
+        // builder.execute_actions(Stage::Package, &self.nwjs_root_folder, &self.nwjs_root_folder).await?;
+        // if let Some(actions) = &self.ctx.manifest.package.execute {
+        //     for action in actions {
+        //         log_info!("Build","executing pack action");
+        //         if let Execute::Pack(ec) = action {
+        //             log_info!("Windows","executing `{}`",ec.display(Some(&tpl)));
+        //             self.ctx.execute_with_context(ec, Some(&self.nwjs_root_folder), None).await?;
+        //         }
+        //     }
+        // }
 
         let mut files = Vec::new();
 
@@ -126,6 +132,10 @@ impl Installer for Windows {
         }
 
         Ok(files)
+    }
+
+    fn tpl(&self) -> Tpl {
+        self.tpl.clone()
     }
 
     fn target_folder(&self) -> PathBuf {
@@ -168,11 +178,11 @@ impl Windows {
     async fn copy_app_data(&self) -> Result<()> {
         log_info!("Integrating","application data");
 
-        let tpl = self.ctx.tpl_clone();
+        // let tpl = self.ctx.tpl_clone();
         copy_folder_with_filters(
             &self.ctx.app_root_folder,
             &self.nwjs_root_folder,
-            (&tpl,&self.ctx.include,&self.ctx.exclude).try_into()?,
+            (&self.tpl,&self.ctx.include,&self.ctx.exclude).try_into()?,
             CopyOptions::new(self.ctx.manifest.package.hidden.unwrap_or(false)),
         ).await?;
         Ok(())
@@ -221,7 +231,7 @@ impl Windows {
             }
         }
     
-        list.into_iter().map(|(k,v)|(k.to_string(),self.ctx.tpl.lock().unwrap().transform(&v))).collect()
+        list.into_iter().map(|(k,v)|(k.to_string(),self.tpl.transform(&v))).collect()
     }
 
     async fn create_innosetup_images(&self) -> Result<(Vec<PathBuf>,Vec<PathBuf>)> {

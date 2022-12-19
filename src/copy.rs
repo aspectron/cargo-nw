@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use async_std::path::Path;
+use async_std::path::PathBuf;
 use globset::{Glob,GlobSet};
 use walkdir::WalkDir;
 use regex::RegexSet;
@@ -10,7 +11,8 @@ use crate::prelude::*;
 pub struct CopyOptions {
     pub hidden : bool,
     // pub case_sensitive: bool,
-    pub flatten : bool
+    pub flatten : bool,
+    // pub rename : Option<String>,
 }
 
 impl From<Copy> for CopyOptions {
@@ -19,6 +21,7 @@ impl From<Copy> for CopyOptions {
             hidden: options.hidden.unwrap_or(false),
             // case_sensitive: options.case_sensitive.unwrap_or(false),
             flatten: options.flatten.unwrap_or(false),
+            // rename : options.rename.clone(),
         }
     }
 }
@@ -28,7 +31,8 @@ impl Default for CopyOptions {
         CopyOptions {
             hidden: false,
             // case_sensitive: false,
-            flatten: false
+            flatten: false,
+            // rename: None,
         }
     }
 }
@@ -38,7 +42,8 @@ impl CopyOptions {
         CopyOptions {
             hidden,
             // case_sensitive : false,
-            flatten: false
+            flatten: false,
+            // rename : None,
         }
     }
 }
@@ -191,9 +196,79 @@ impl Filters {
 //     ["/",path.to_str().unwrap()].join("")
 // }
 
+// pub fn get_destination(to : &str) -> (String,String) {
+
+// }
+
+pub struct Rename {
+    pub stem : Option<String>,
+    pub extension : Option<String>
+}
+
+impl Rename {
+    pub fn try_from(dest: &Path) -> Option<Rename> {
+
+        let stem = dest.file_stem();
+        let extension = dest.extension();
+    
+        let stem = if stem.map(|s|s.to_str().unwrap() == "*").unwrap_or(false) {
+            None
+        } else {
+            Some(stem.unwrap().to_str().unwrap().to_string())
+        };
+
+        let extension = if extension.map(|s|s.to_str().unwrap() == "*").unwrap_or(false) {
+            None
+        } else {
+            Some(extension.unwrap().to_str().unwrap().to_string())
+        };
+
+        if stem.is_some() && extension.is_some() {
+            Some(Rename { stem, extension })
+        } else {
+            None
+        }
+    }
+
+    pub fn transform(&self, path: &mut PathBuf) {
+
+        let stem = if let Some(stem) = &self.stem {
+            Some(stem.clone())
+        } else {
+            path
+                .file_stem()
+                .map(|s|
+                    s.to_str()
+                    .unwrap()
+                    .to_string()
+                )
+                // .unwrap()
+                // .to_string()
+        };
+
+        let extension = if let Some(extension) = &self.extension {
+            Some(extension.clone())
+        } else {
+            path
+                .extension()
+                .map(|s|
+                    s.to_str()
+                    .unwrap()
+                    .to_string()
+                )
+                // .unwrap()
+                // .to_string()
+        };
+
+        let filename = [stem,extension].iter().flatten().cloned().collect::<Vec<String>>().join(".");
+        path.set_file_name(filename);
+    }
+}
+
 pub async fn copy_folder_with_filters(
     src_folder: &Path,
     dest_folder: &Path,
+    // to : Option<String>,
     filters: Filters,
     options: CopyOptions,
 ) -> Result<()> {
@@ -217,6 +292,8 @@ pub async fn copy_folder_with_filters(
             }
         });
 
+    let rename = Rename::try_from(dest_folder);
+
     if options.flatten {
         let files: Vec::<_> = list.collect();
         if files.len() != 0 {
@@ -224,7 +301,10 @@ pub async fn copy_folder_with_filters(
         }
 
         for file in files {
-            let to_file = dest_folder.join(&file.file_name().unwrap());
+            let mut to_file = dest_folder.join(&file.file_name().unwrap());
+            if let Some(rename) = &rename {
+                rename.transform(&mut to_file);
+            }
             log_trace!("Copy","`{}` to `{}`",to_file.display(), dest_folder.display());
             std::fs::copy(
                 src_folder.join(&file),
@@ -245,10 +325,13 @@ pub async fn copy_folder_with_filters(
         }
     
         for file in list {
+            let mut to_file = dest_folder.join(&file);
+            if let Some(rename) = &rename {
+                rename.transform(&mut to_file);
+            }
             // println!("+{}",file.display());
-            log_trace!("Copy","`{}` to `{}`",file.display(), dest_folder.display());
-
-            std::fs::copy(src_folder.join(&file),dest_folder.join(&file))?;
+            log_trace!("Copy","`{}` to `{}`",file.display(), to_file.display());
+            std::fs::copy(src_folder.join(&file),to_file)?;
         }
     }
 
@@ -262,4 +345,36 @@ pub fn is_hidden(path: &std::path::Path) -> bool {
         .is_some();
 
     is_hidden
+}
+
+pub async fn copy(tpl: &Tpl, copy: &Copy, src_folder: &Path, target_folder: &Path) -> Result<()> 
+{
+
+    if let Some(file) = &copy.file {
+        if copy.glob.is_some() || copy.regex.is_some() || copy.flatten.is_some() {
+            return Err(format!("other options can not be present if `copy.file` is declared").into());
+        }
+        let from = tpl.transform(&file);
+        let to = tpl.transform(&copy.to);
+
+        std::fs::copy(from, to)?;
+    } else {
+        
+        let to_folder = target_folder.join(tpl.transform(&copy.to));
+        let mut options = CopyOptions::default();
+        options.hidden = copy.hidden.unwrap_or(false);
+        options.flatten = true;
+        copy_folder_with_filters(
+            &src_folder,
+            // &dep_build_folder,
+            // &target_folder,
+            &to_folder,
+            (tpl,copy).try_into()?,
+            options,
+        ).await?;
+    }
+
+
+
+    Ok(())
 }

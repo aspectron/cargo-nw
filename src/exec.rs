@@ -24,27 +24,23 @@ impl ExecArgs {
         }
     }
 
-    pub fn get(&self, tpl: Option<&Tpl>) -> Vec<String> {
+    pub fn get(&self, tpl: &Tpl) -> Vec<String> {
         match self {
             ExecArgs::String(cmd) => {
                 tpl
-                .map(|tpl|tpl.transform(&cmd))
-                .unwrap_or(cmd.clone())
+                .transform(&cmd)
                 .split(" ")
                 .map(|s|s.to_string())
                 .collect::<Vec<String>>()
             },
             ExecArgs::Argv(argv) => {
-                tpl
-                .map(|tpl|
-                    argv
-                    .into_iter()
-                    .map(|v|
-                        tpl
-                        .transform(&v)
-                    )
-                    .collect()
-                ).unwrap_or(argv.clone())
+                argv
+                .into_iter()
+                .map(|v|
+                    tpl
+                    .transform(&v)
+                )
+                .collect()
             },
         }
     }
@@ -66,7 +62,7 @@ pub async fn execute_with_context(
     ctx : &Context,
     ec: &ExecutionContext,
     cwd : Option<&Path>,
-    tpl: Option<&Tpl>,
+    tpl: &Tpl,
 ) -> Result<()> {
 
     let cwd = cwd.unwrap_or(&ctx.app_root_folder);
@@ -102,7 +98,7 @@ pub async fn execute(
     env: &Option<Vec<String>>,
     platform: &Option<Platform>,
     arch: &Option<Architecture>,
-    tpl: Option<&Tpl>,
+    tpl: &Tpl,
 ) -> Result<()> {
 
     if arch.is_some() && arch.as_ref() != Some(&ctx.arch) {
@@ -113,7 +109,7 @@ pub async fn execute(
         return Ok(())
     }
 
-    let argv = args.get(tpl.or(Some(&ctx.tpl.lock().unwrap().clone())));
+    let argv = args.get(tpl); //tpl.or(Some(&ctx.tpl.lock().unwrap().clone())));
     if !cwd.is_dir().await {
         return Err(format!("unable to locate folder: `{}` while running `{:?}`",cwd.display(),argv).into());
     }

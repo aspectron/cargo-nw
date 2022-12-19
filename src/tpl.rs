@@ -5,7 +5,7 @@ use crate::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct Tpl {
-    map : HashMap<String,String>,
+    pub map : HashMap<String,String>,
 }
 
 impl TryFrom<&[(&str,String)]> for Tpl {
@@ -32,9 +32,12 @@ impl TryFrom<&[(&str,&PathBuf)]> for Tpl {
 
 impl Tpl {
     pub fn new() -> Tpl {
-        Tpl {
-            map : HashMap::new(),
+        let mut map = HashMap::new();
+        for (k,v) in std::env::vars() {
+            map.insert(format!("${}",k.to_uppercase()),v.to_string());
         }
+
+        Tpl { map }
     }
 
     pub fn set(&mut self, kv: &[(&str,&str)]) {

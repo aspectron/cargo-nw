@@ -177,14 +177,17 @@ pub fn compress_folder(
         return Err(ZipError::FileNotFound.into());
     }
 
-    let (algorithm, subfolder) = match archive {
-        Archive::Options { algorithm, subfolder} => {
-            (algorithm.unwrap_or_default(), subfolder.unwrap_or(true))
-        },
-        _ => {
-            (Algorithm::default(), true)
-        }
-    };
+    // let (algorithm, subfolder) = match archive {
+    //     Archive::Options { algorithm, subfolder} => {
+    //         (algorithm.unwrap_or_default(), subfolder.unwrap_or(true))
+    //     },
+    //     _ => {
+    //         (Algorithm::default(), true)
+    //     }
+    // };
+    let algorithm = archive.algorithm.unwrap_or_default();
+    let subfolder = archive.subfolder.unwrap_or(true);
+    
 
     // let algorithm = options.algorithm.unwrap_or_default();
     log_info!("Archive","compressing ({})", algorithm.to_string());

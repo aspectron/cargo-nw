@@ -1,5 +1,3 @@
-use std::sync::Mutex;
-use std::sync::MutexGuard;
 use async_std::path::Path;
 use async_std::path::PathBuf;
 use crate::prelude::*;
@@ -57,7 +55,7 @@ pub struct Context {
     pub channel : Channel,
     pub confinement : Confinement,
     pub deps : Deps,
-    pub tpl : Arc<Mutex<Tpl>>,
+    pub tpl : Tpl,
 }
 
 impl Context {
@@ -127,9 +125,9 @@ impl Context {
             Path::new(&cargo_nw_target_folder).join("setup")
         };
         let output_folder = PathBuf::from(&tpl.transform(output_folder.to_str().unwrap()));
-        tpl.set(&[
-            ("$OUTPUT",output_folder.to_str().unwrap()),
-        ]);
+        // tpl.set(&[
+        //     ("$OUTPUT",output_folder.to_str().unwrap()),
+        // ]);
 
         let temp_folder = Path::new(&home_folder).join(".cargo-nw").join("temp").join(&app_snake_name);
         tpl.set(&[
@@ -144,7 +142,7 @@ impl Context {
             .unwrap_or(project_root_folder.clone());
         let app_root_folder: PathBuf = std::path::PathBuf::from(&app_root_folder).canonicalize()?.to_path_buf().into();
         tpl.set(&[
-            ("$ROOT",app_root_folder.to_str().unwrap()),
+            ("$SOURCE",app_root_folder.to_str().unwrap()),
         ]);
 
         let setup_resources_folder = root_folder.join(&manifest.package.resources.as_ref().unwrap_or(&"resources/setup".to_string())).into();
@@ -194,7 +192,7 @@ impl Context {
             channel,
             confinement,
             deps,
-            tpl : Arc::new(Mutex::new(tpl)),
+            tpl, // : Arc::new(Mutex::new(tpl)),
         };
 
         Ok(ctx)
@@ -219,22 +217,22 @@ impl Context {
         Ok(())
     }
 
-    pub fn tpl(&self) -> MutexGuard<Tpl> {
-        self.tpl.lock().unwrap()
+    pub fn tpl(&self) -> Tpl {
+        self.tpl.clone()
     }
 
-    pub fn tpl_clone(&self) -> Tpl {
-        self.tpl.lock().unwrap().clone()
-    }
+    // pub fn tpl_clone(&self) -> Tpl {
+    //     self.tpl.lock().unwrap().clone()
+    // }
 
-    pub async fn execute_with_context(
-        &self,
-        ec: &ExecutionContext,
-        cwd : Option<&Path>,
-        tpl: Option<&Tpl>,
-    ) -> Result<()> {
-        execute_with_context(self,ec,cwd,tpl).await
-    }
+    // pub async fn execute_with_context(
+    //     &self,
+    //     ec: &ExecutionContext,
+    //     cwd : Option<&Path>,
+    //     tpl: Option<&Tpl>,
+    // ) -> Result<()> {
+    //     execute_with_context(self,ec,cwd,tpl).await
+    // }
 
 }
 

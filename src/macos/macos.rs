@@ -17,6 +17,7 @@ pub struct MacOS {
     pub app_contents_folder : PathBuf,
     pub app_resources_folder : PathBuf,
     pub app_nw_folder : PathBuf,
+    pub tpl : Tpl,
 
     pub ctx : Arc<Context>,
 }
@@ -29,6 +30,8 @@ impl Installer for MacOS {
         Ok(())
     }
 
+
+
     async fn create(&self, targets: TargetSet) -> Result<Vec<PathBuf>> {
 
         self.copy_nwjs_bundle().await?;
@@ -37,21 +40,18 @@ impl Installer for MacOS {
         self.generate_resource_strings(&self.app_contents_folder).await?;
         self.generate_icons().await?;
 
-        let tpl = create_installer_tpl(
-            &self.ctx,
-            &self.ctx.app_root_folder,
-            &self.nwjs_root_folder
-        )?;
 
-        if let Some(actions) = &self.ctx.manifest.package.execute {
-            for action in actions {
-                log_info!("Build","executing pack action");
-                if let Execute::Pack(ec) = action {
-                    log_info!("MacOS","executing `{}`",ec.display(Some(&tpl)));
-                    self.ctx.execute_with_context(ec,Some(&self.app_nw_folder),None).await?;
-                }
-            }
-        }
+        execute_actions(&self.ctx, &self.tpl, Stage::Package, &self.app_nw_folder).await?;
+
+        // if let Some(actions) = &self.ctx.manifest.package.actions {
+        //     for action in actions {
+        //         log_info!("Build","executing pack action");
+        //         if let Execute::Pack(ec) = action {
+        //             log_info!("MacOS","executing `{}`",ec.display(Some(&tpl)));
+        //             self.ctx.execute_with_context(ec,Some(&self.app_nw_folder),None).await?;
+        //         }
+        //     }
+        // }
 
         let mut files = Vec::new();
         if targets.contains(&Target::Archive) {
@@ -98,6 +98,10 @@ impl Installer for MacOS {
         Ok(files)
     }
 
+    fn tpl(&self) -> Tpl {
+        self.tpl.clone()
+    }
+
     fn target_folder(&self) -> PathBuf {
         self.app_nw_folder.clone()
     }
@@ -108,12 +112,21 @@ impl MacOS {
     pub fn new(ctx: Arc<Context>) -> MacOS {
 
         let nwjs_root_folder = ctx.build_folder.join(format!("{}.app", &ctx.manifest.application.title));
+
+        let app_nw_folder = nwjs_root_folder.join("Contents").join("Resources").join("app.nw");
+
+        let tpl = create_installer_tpl(
+            &ctx,
+            &app_nw_folder,
+        );
+
         MacOS {
             app_contents_folder: nwjs_root_folder.join("Contents"),
             app_resources_folder: nwjs_root_folder.join("Contents").join("Resources"),
-            app_nw_folder: nwjs_root_folder.join("Contents").join("Resources").join("app.nw"),
+            app_nw_folder, //: nwjs_root_folder.join("Contents").join("Resources").join("app.nw"),
             nwjs_root_folder,
             ctx,
+            tpl,
         }
     }
 
@@ -153,11 +166,11 @@ impl MacOS {
     async fn copy_app_data(&self) -> Result<()> {
         log_info!("Integrating","application data");
 
-        let tpl = self.ctx.tpl_clone();
+        // let tpl = self.ctx.tpl_clone();
         copy_folder_with_filters(
             &self.ctx.app_root_folder,
             &self.app_nw_folder,
-            (&tpl,&self.ctx.include,&self.ctx.exclude).try_into()?,
+            (&self.tpl,&self.ctx.include,&self.ctx.exclude).try_into()?,
             CopyOptions::new(self.ctx.manifest.package.hidden.unwrap_or(false)),
         ).await?;
 

@@ -5,7 +5,8 @@ use crate::prelude::*;
 use regex::Regex;
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "kebab-case")]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
+// #[serde(deny_unknown_fields)]
 pub struct Manifest {
     /// Application settings
     pub application : Application,
@@ -34,6 +35,7 @@ pub struct Manifest {
     /// Custom overrides of default icon paths
     pub images : Option<Images>,
 
+    pub action : Option<Vec<Action>>,
     // pub innosetup : HashMap<String, InnoSetupManifest>,
 }
 
@@ -195,7 +197,7 @@ impl ExecutionContext {
         ExecArgs::try_new(&self.cmd,&self.argv)
     }
 
-    pub fn display(&self, tpl: Option<&Tpl>) -> String {
+    pub fn display(&self, tpl: &Tpl) -> String {
         self.name.clone().unwrap_or_else(|| {
             let descr = self.get_args().unwrap().get(tpl).join(" ");
             if descr.len() > 30 {
@@ -325,7 +327,8 @@ pub struct Package {
     /// Execute actions during different stages of the build process
     /// Supported values are `build`, `pack`, `deploy`, `publish` 
     /// Please see [`Execute`] for additional information.
-    pub execute: Option<Vec<Execute>>,
+    // pub execute: Option<Vec<Execute>>,
+    // pub actions : Vec<Action>,
     /// Customm output folder (default: `target/setup`).
     pub output: Option<String>,
 }
@@ -365,6 +368,9 @@ pub struct Copy {
     /// Copy all source files into the target folder without preserving
     /// subfolders (results in all files being placed in the target folder)
     pub flatten : Option<bool>,
+    /// Rename files to the target filename/pattern
+    // pub rename : Option<String>,
+    pub file : Option<String>,
 }
 
 /// Git directive used as a part of the [`Dependency`] section
@@ -381,6 +387,8 @@ pub struct Git {
 pub struct Dependency {
     /// Name of the dependency (will be displayed during the build process)
     pub name : Option<String>,
+    pub platform : Option<Vec<Platform>>,
+    pub arch : Option<Vec<Architecture>>,
     /// Git url of the dependency repository
     pub git : Option<Git>,
     pub run : Vec<ExecutionContext>,
@@ -624,17 +632,17 @@ impl ToString for Algorithm {
 
 /// Zip Archive compression modes.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum Archive {
-    Include(bool),
-    Options {
-        algorithm : Option<Algorithm>,
-        subfolder : Option<bool>,
-    }
+#[serde(rename="lowercase")]
+pub struct Archive {
+    pub include : Option<bool>,
+    pub algorithm : Option<Algorithm>,
+    pub subfolder : Option<bool>,
 }
 
 impl Default for Archive {
     fn default() -> Self {
-        Archive::Options {
+        Archive {
+            include : Some(true),
             algorithm: Some(Algorithm::default()),
             subfolder: Some(true),
         }

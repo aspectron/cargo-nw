@@ -21,6 +21,8 @@ pub mod signatures;
 pub mod tpl;
 pub mod copy;
 pub mod exec;
+pub mod action;
+pub mod script;
 
 cfg_if! {
     if #[cfg(feature = "multiplatform")] {
@@ -253,8 +255,9 @@ pub async fn async_main() -> Result<()> {
                 targets.insert(Target::Archive);
             }
 
-            let build = Builder::new(ctx);
-            build.execute(targets).await?;
+            let installer = create_installer(&ctx);
+            let build = Arc::new(Builder::new(ctx));
+            build.execute(targets, &installer).await?;
         },
         Action::Clean { 
             all, 
@@ -312,15 +315,9 @@ pub async fn async_main() -> Result<()> {
                 Options::default()
             ).await?);
 
-            if let Some(actions) = &ctx.manifest.package.execute {
-                log_info!("Publish","executing actions");
-                for action in actions {
-                    if let Execute::Publish(ec) = action {
-                        log_info!("Publish","executing `{}`",ec.display(Some(&ctx.tpl())));
-                        ctx.execute_with_context(ec, None,None).await?;
-                    }
-                }
-            }
+            let installer = create_installer(&ctx);
+            let target_folder = installer.target_folder();
+            execute_actions(&ctx,&installer.tpl(),Stage::Publish,&target_folder).await?;
         },
         #[cfg(feature = "test")]
         Action::Test {

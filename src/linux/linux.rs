@@ -6,6 +6,7 @@ use crate::prelude::*;
 
 pub struct Linux {
     ctx : Arc<Context>,
+    tpl : Tpl,
     pub nwjs_root_folder : PathBuf,
 }
 
@@ -14,8 +15,11 @@ impl Linux {
 
         let nwjs_root_folder = ctx.build_folder.join(&ctx.app_snake_name);
 
+        let tpl = create_installer_tpl(&ctx, &nwjs_root_folder);
+
         Linux {
             ctx,
+            tpl,
             nwjs_root_folder
         }
     }
@@ -44,21 +48,18 @@ impl Installer for Linux {
         self.copy_icons().await?;
         self.create_desktop_file().await?;
 
-        let tpl = create_installer_tpl(
-            &self.ctx,
-            &self.ctx.app_root_folder,
-            &self.nwjs_root_folder
-        )?;
+        // builder.execute_actions(Stage::Package, &self.nwjs_root_folder, &self.nwjs_root_folder).await?;
+        execute_actions(&self.ctx,&self.tpl,Stage::Package, &self.nwjs_root_folder).await?;
 
-        if let Some(actions) = &self.ctx.manifest.package.execute {
-            for action in actions {
-                if let Execute::Pack(ec) = action {
-                    // log_info!("Build","executing pack action");
-                    log_info!("Linux","executing `{}`",ec.display(Some(&tpl)));
-                    self.ctx.execute_with_context(ec, Some(&self.nwjs_root_folder), None).await?;
-                }
-            }
-        }
+        // if let Some(actions) = &self.ctx.manifest.package.execute {
+        //     for action in actions {
+        //         if let Execute::Pack(ec) = action {
+        //             // log_info!("Build","executing pack action");
+        //             log_info!("Linux","executing `{}`",ec.display(Some(&tpl)));
+        //             self.ctx.execute_with_context(ec, Some(&self.nwjs_root_folder), None).await?;
+        //         }
+        //     }
+        // }
 
         let mut files = Vec::new();
 
@@ -90,6 +91,10 @@ impl Installer for Linux {
         }
 
         Ok(files)
+    }
+
+    fn tpl(&self) -> Tpl {
+        self.tpl.clone()
     }
 
     fn target_folder(&self) -> PathBuf {
@@ -135,11 +140,11 @@ impl Linux {
     async fn copy_app_data(&self) -> Result<()> {
         log_info!("Integrating","application data");
 
-        let tpl = self.ctx.tpl_clone();
+        // let tpl = self.ctx.tpl_clone();
         copy_folder_with_filters(
             &self.ctx.app_root_folder,
             &self.nwjs_root_folder,
-            (&tpl,&self.ctx.include,&self.ctx.exclude).try_into()?,
+            (&self.tpl,&self.ctx.include,&self.ctx.exclude).try_into()?,
             CopyOptions::new(self.ctx.manifest.package.hidden.unwrap_or(false)),
         ).await?;
 

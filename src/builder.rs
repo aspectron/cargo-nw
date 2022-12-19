@@ -19,7 +19,7 @@ impl Builder {
     }
 
 
-    pub async fn execute(&self, targets: TargetSet) -> Result<()> {
+    pub async fn execute(self : &Arc<Self>, targets: TargetSet, installer: &Box<dyn Installer>) -> Result<()> {
 
         // println!("{:#?}", self.ctx.manifest);
         // return Ok(());
@@ -29,37 +29,15 @@ impl Builder {
         }
 
 
+        let tpl = installer.tpl();
 
         self.ctx.clean().await?;
         self.ctx.deps.ensure().await?;
         self.ctx.ensure_folders().await?;
 
-        cfg_if! {
-            if #[cfg(feature = "unix")] {
-                let installer: Box<dyn Installer> = match &self.ctx.platform {
-                    Platform::Linux => {
-                        Box::new(crate::linux::Linux::new(self.ctx.clone()))
-                    },
-                    Platform::MacOS => {
-                        Box::new(crate::macos::MacOS::new(self.ctx.clone()))
-                    },
-                    Platform::Windows => {
-                        panic!("Windows platform can not be used in *nix environment");
-                    }
-                };
-            } else
-            if #[cfg(target_os = "windows")] {
-                let installer = Box::new(crate::windows::Windows::new(self.ctx.clone()));
-            } else if #[cfg(target_os = "macos")] {
-                let installer = Box::new(crate::macos::MacOS::new(self.ctx.clone()));
-                // Box::new(windows::Windows::new(self.ctx.clone()))
-            } else if #[cfg(target_os = "linux")] {
-                let installer = Box::new(crate::linux::Linux::new(self.ctx.clone()));
-            }
-        }
+        // let installer = create_installer(&self.ctx);
 
-
-        self.process_dependencies(installer.target_folder()).await?;
+        self.process_dependencies(&tpl, installer.target_folder()).await?;
 
         // return Ok(());
 
@@ -110,7 +88,7 @@ impl Builder {
                             env,
                             &None,
                             &None,
-                            None
+                            &tpl
                         ).await?;
                     },
                     Build::NPM {
@@ -148,12 +126,12 @@ impl Builder {
                             env,
                             &None,
                             &None,
-                            None
+                            &tpl
                         ).await?;
                     },
                     Build::Custom(ec) => {
-                        log_info!("Build","executing `{}`",ec.display(Some(&self.ctx.tpl())));
-                        self.ctx.execute_with_context(ec,None, None).await?;
+                        log_info!("Build","executing `{}`",ec.display(&tpl));
+                        execute_with_context(&self.ctx,ec,None, &tpl).await?;
                     }
                 }
             }
@@ -167,14 +145,20 @@ impl Builder {
         log_info!("Build","redistributable type: {}",style(format!("{}", target_list)).cyan());
 
 
-        if let Some(actions) = &self.ctx.manifest.package.execute {
-            for action in actions {
-                if let Execute::Build(ec) = action {
-                    log_info!("Build","executing `{}`",ec.display(Some(&self.ctx.tpl())));
-                    self.ctx.execute_with_context(ec,None,None).await?;
-                }
-            }
-        }
+        let target_folder = installer.target_folder();
+        // self.execute_actions(Stage::Build, &installer).await?;
+        execute_actions(&self.ctx, &tpl, Stage::Package, &target_folder).await?;
+
+        // if let Some(actions) = &self.ctx.manifest.action {
+        //     let actions = actions
+        //         .iter()
+        //         .filter(|action|action.stage.map(|stage|stage == Stage::Build).unwrap_or(false))
+        //         .collect::<Vec<_>>();
+
+        //     for action in actions {
+        //         action.execute(&self.ctx,&self.ctx.tpl(),&self.ctx.project_root_folder,&target_folder).await?;
+        //     }
+        // }
 
         // installer execution
 
@@ -203,33 +187,55 @@ impl Builder {
 
         log_info!("Finished","build completed in {:.0}s", duration.as_millis() as f64/1000.0);
 
-        if let Some(actions) = &self.ctx.manifest.package.execute {
-            for action in actions {
-                if let Execute::Deploy(ec) = action {
-                    log_info!("Deploy","executing `{}`",ec.display(Some(&self.ctx.tpl())));
-                    self.ctx.execute_with_context(ec,None, None).await?;
-                }
-            }
-        }
+        // let target_folder = installer.target_folder();
+        execute_actions(&self.ctx, &tpl, Stage::Deploy, &target_folder).await?;
+
+        // self.execute_actions(Stage::Deploy, &installer).await?;
+        // self.execute_actions(Stage::Deploy, &target_folder,&target_folder).await?;
+        // if let Some(actions) = &self.ctx.manifest.action {
+        //     let actions = actions
+        //         .iter()
+        //         .filter(|action|action.stage.map(|stage|stage == Stage::Deploy).unwrap_or(false))
+        //         .collect::<Vec<_>>();
+
+        //     for action in actions {
+        //         action.execute(&self.ctx,&self.ctx.tpl(),&self.ctx.project_root_folder,&target_folder).await?;
+        //     }
+        // }
 
         println!("");
 
         Ok(())
     }
 
-    async fn process_dependencies(&self, target_folder: PathBuf) -> Result<()> {
+
+    async fn process_dependencies(&self, tpl: &Tpl, target_folder: PathBuf) -> Result<()> {
         if let Some(deps) = &self.ctx.manifest.dependencies {
             fs::create_dir_all(&self.ctx.dependencies_folder).await?;
             for dep in deps.iter() {
-                self.process_dependency(dep, &target_folder).await?;
+                self.process_dependency(dep, tpl, &target_folder).await?;
             }
         }
 
         Ok(())
     }
 
-    async fn process_dependency(&self, dep : &Dependency, target_folder: &Path) -> Result<()> {
-        let mut name = dep.name.clone();
+    async fn process_dependency(&self, dep : &Dependency,tpl: &Tpl, target_folder: &Path) -> Result<()> {
+        let mut name = dep.name.clone();//.map_or("dependency".to_string(),|n|n);
+
+        if let Some(platform) = &dep.platform {
+            if !platform.contains(&self.ctx.platform) {
+                log_info!("Dependency","skipping `{}` on platform `{}`",name.unwrap_or("dependency".to_string()),self.ctx.platform.to_string());
+                return Ok(())
+            }
+        }
+
+        if let Some(arch) = &dep.arch {
+            if !arch.contains(&self.ctx.arch) {
+                log_info!("Dependency","skipping `{}` on arch `{}`",name.unwrap_or("dependency".to_string()),self.ctx.arch.to_string());
+                return Ok(())
+            }
+        }
 
         let (rebuild, dep_build_folder, status) = if let Some(git) = &dep.git {
             let repo = Path::new(&git.url).file_name().unwrap().to_str().unwrap();
@@ -267,25 +273,16 @@ impl Builder {
         if rebuild {
             log_info!("Dependency", "building `{}`",name);
             for ec in dep.run.iter() {
-                self.ctx.execute_with_context(ec, Some(dep_build_folder.as_path()),None).await?;
+                execute_with_context(&self.ctx, ec, Some(dep_build_folder.as_path()),tpl).await?;
             }
         } else {
             log_info!("Dependency", "skipping `{}` (build is up to date)",name);
         }
 
-        let tpl = self.ctx.tpl_clone();
+        // let tpl = self.ctx.tpl_clone();
 
-        for copy in dep.copy.iter() {
-            let to_folder = target_folder.join(tpl.transform(&copy.to));
-            let mut options = CopyOptions::default();
-            options.hidden = copy.hidden.unwrap_or(false);
-            options.flatten = true;
-            copy_folder_with_filters(
-                &dep_build_folder,
-                &to_folder,
-                (&tpl,copy).try_into()?,
-                options,
-            ).await?;
+        for copy_settings in dep.copy.iter() {
+            copy(&tpl,copy_settings,&dep_build_folder,target_folder).await?;
         }
 
         if let Some((status_file,status_data)) = status {

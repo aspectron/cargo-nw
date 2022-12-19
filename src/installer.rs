@@ -164,18 +164,53 @@ impl FromStr for Confinement {
 pub trait Installer {
     async fn create(&self, targets: TargetSet) -> Result<Vec<PathBuf>>;
     async fn check(&self, targets: TargetSet) -> Result<()>;
+    fn tpl(&self) -> Tpl;
     fn target_folder(&self) -> PathBuf;
 }
 
-pub fn create_installer_tpl(ctx: &Context, source: &PathBuf, output: &PathBuf) -> Result<Tpl> {
-    let application = &ctx.manifest.application;
-    let tpl: Tpl = [
-        ("$SOURCE",source.to_str().unwrap().to_string()),
-        ("$OUTPUT",output.to_str().unwrap().to_string()),
-        ("$NAME",application.name.clone()),
-        ("$TITLE",application.title.clone()),
-        ("$VERSION",application.version.clone()),
-    ].as_slice().try_into()?;
+pub fn create_installer_tpl(ctx: &Context, target_folder: &PathBuf) -> Tpl {
+    let mut tpl = ctx.tpl();
+    tpl.set(&[
+        // ("$SOURCE",source.to_str().unwrap()),
+        ("$OUTPUT",target_folder.to_str().unwrap())
+    ]);
+    // let application = &ctx.manifest.application;
+    // let tpl: Tpl = [
+    //     ("$SOURCE",source.to_str().unwrap().to_string()),
+    //     ("$OUTPUT",output.to_str().unwrap().to_string()),
+    //     ("$NAME",application.name.clone()),
+    //     ("$TITLE",application.title.clone()),
+    //     ("$VERSION",application.version.clone()),
+    // ].as_slice().try_into()?;
 
-    Ok(tpl)
+    tpl
+}
+
+
+pub fn create_installer(ctx: &Arc<Context>) -> Box<dyn Installer> {
+    cfg_if! {
+        if #[cfg(feature = "unix")] {
+            let installer: Box<dyn Installer> = match &ctx.platform {
+                Platform::Linux => {
+                    Box::new(crate::linux::Linux::new(ctx.clone()))
+                },
+                Platform::MacOS => {
+                    Box::new(crate::macos::MacOS::new(ctx.clone()))
+                },
+                Platform::Windows => {
+                    panic!("Windows platform can not be used in *nix environment");
+                }
+            };
+        } else
+        if #[cfg(target_os = "windows")] {
+            let installer: Box<dyn Installer> = Box::new(crate::windows::Windows::new(ctx.clone()));
+        } else if #[cfg(target_os = "macos")] {
+            let installer: Box<dyn Installer> = Box::new(crate::macos::MacOS::new(ctx.clone()));
+            // Box::new(windows::Windows::new(self.ctx.clone()))
+        } else if #[cfg(target_os = "linux")] {
+            let installer: Box<dyn Installer> = Box::new(crate::linux::Linux::new(ctx.clone()));
+        }
+    }
+
+    installer
 }
