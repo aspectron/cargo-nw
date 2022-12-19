@@ -13,10 +13,17 @@ pub enum Stage {
 }
 
 
+// #[derive(Debug, Clone, Deserialize)]
+// pub enum PlatformVariant {
+//     Any(Platform),
+//     List(Vec<Platform>)
+// }
+
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Action {
-    pub platform : Option<Platform>,
-    pub arch : Option<Architecture>,
+    pub platform : Option<Vec<Platform>>,
+    pub arch : Option<Vec<Architecture>>,
     pub stage : Option<Stage>,
 
     pub run : Option<Vec<ExecutionContext>>,
@@ -26,14 +33,14 @@ pub struct Action {
 
 impl Action {
     pub async fn execute(&self, ctx: &Context, tpl: &Tpl, src_folder: &Path, dest_folder: &Path) -> Result<()> {
-        if let Some(platform) = &self.platform {
-            if platform != &ctx.platform {
+        if let Some(platforms) = &self.platform {
+            if !platforms.contains(&ctx.platform) {
                 return Ok(());
             }
         }
 
         if let Some(arch) = &self.arch {
-            if arch!= &ctx.arch {
+            if !arch.contains(&ctx.arch) {
                 return Ok(());
             }
         }

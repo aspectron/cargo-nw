@@ -5,6 +5,7 @@ use crate::error::Error;
 use serde::{Serialize,Deserialize};
 
 #[derive(Debug, Clone, Subcommand, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Platform {
     Windows,
     Linux,

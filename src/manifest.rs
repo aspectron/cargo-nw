@@ -133,6 +133,7 @@ impl Manifest {
 
 /// Application section of the nw.toml manifest
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Application {
     /// Application name (must be alphanumeric, lowercase, underscore and dash)
     /// This name is used to identity the project in file names
@@ -159,6 +160,7 @@ pub struct Application {
 
 /// Description directives
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Description {
     /// Short application description.
     pub short: String,
@@ -169,7 +171,7 @@ pub struct Description {
 
 
 #[derive(Debug, Clone, Deserialize)]
-// #[allow(non_camel_case_types)]
+#[serde(deny_unknown_fields)]
 pub struct ExecutionContext {
     pub name: Option<String>,
     pub argv : Option<Vec<String>>,
@@ -212,7 +214,7 @@ impl ExecutionContext {
 /// Execute actions that are invoked at different stage of the package integration
 /// For argument specification please see [`ExecutionContext`]
 #[derive(Debug, Clone, Deserialize)]
-// #[allow(non_camel_case_types)]
+#[serde(deny_unknown_fields)]
 pub enum Execute {
     /// Executed in the project folder after cleanup operations, before the build proceses. 
     /// This stage can be used to prepare external dependencies.
@@ -244,6 +246,7 @@ pub enum Execute {
 
 /// Build directives.
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub enum Build {
     /// Run `wasmpack` before the integration.
     WASM {
@@ -286,6 +289,7 @@ pub enum Build {
 
 /// Package directives
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Package {
     /// Use `.gitignore` entries as part of the `exclude` globs
     /// (default `true`). This prevents files in `.gitignore` to
@@ -335,6 +339,7 @@ pub struct Package {
 
 /// Copy filter used in `package.include` and `package.exclude` sections
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub enum CopyFilter {
     #[serde(rename = "glob")]
     Glob(Vec<String>),
@@ -345,7 +350,7 @@ pub enum CopyFilter {
 
 /// Copy options used as a part of [`Dependency`] directive
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename = "copy")]
+#[serde(rename = "copy", deny_unknown_fields)]
 pub struct Copy {
     /// Glob filter - allows to specify a list of globs for
     /// file copy. For example:
@@ -375,6 +380,7 @@ pub struct Copy {
 
 /// Git directive used as a part of the [`Dependency`] section
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Git {
     /// Git repository url
     pub url : String,
@@ -384,6 +390,7 @@ pub struct Git {
 
 /// Dependency section
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Dependency {
     /// Name of the dependency (will be displayed during the build process)
     pub name : Option<String>,
@@ -397,7 +404,7 @@ pub struct Dependency {
 
 /// Node Webkit Directives
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename = "node-webkit")]
+#[serde(rename = "node-webkit", deny_unknown_fields)]
 pub struct NodeWebkit {
     ///
     /// Node Webkit version. This version must be downloadable
@@ -420,13 +427,14 @@ pub struct NodeWebkit {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct InnoSetup {
     /// Wizard file resizing (default: true)
     pub resize_wizard_files : Option<bool>
 }
 
-#[allow(non_snake_case)]
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Windows {
     /// UUID string used by InnoSetup for application
     /// registration.
@@ -454,6 +462,7 @@ pub struct Windows {
 
 /// Windows resource strings: https://learn.microsoft.com/en-us/windows/win32/menurc/string-str
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub enum WindowsResourceString {
     ProductName(String),
     ProductVersion(String),
@@ -471,6 +480,7 @@ pub enum WindowsResourceString {
 /// Snap directives
 /// 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Snap {
     ///
     /// Snap channel: 'stable', 'devel'; default 'stable'
@@ -515,6 +525,7 @@ impl Default for Snap {
 /// Instructs InnoSetup to run `advfirewall firewall add rule` command
 /// after the application installation on the target computer.
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Firewall {
     /// Firewall application settings
     pub application : Option<FirewallApplication>,
@@ -525,11 +536,13 @@ pub struct Firewall {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct FirewallApplication {
     pub direction : Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct FirewallRule {
     pub name : String,
     pub program : String,
@@ -538,6 +551,7 @@ pub struct FirewallRule {
 
 /// Language directives
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Languages {
     /// List of languages used by the application. This will configure
     /// InnoSetup to make the matching language set availabe during
@@ -632,7 +646,7 @@ impl ToString for Algorithm {
 
 /// Zip Archive compression modes.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename="lowercase")]
+#[serde(deny_unknown_fields)]
 pub struct Archive {
     pub include : Option<bool>,
     pub algorithm : Option<Algorithm>,
@@ -655,6 +669,7 @@ pub enum Signature {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct MacOsDiskImage {
     pub window_caption_height : Option<i32>,
     pub window_position : Option<[i32;2]>,
