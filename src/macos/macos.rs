@@ -62,7 +62,7 @@ impl Installer for MacOS {
         // }
 
         let mut files = Vec::new();
-        if targets.contains(&Target::Archive) {
+        if !self.ctx.dry_run && targets.contains(&Target::Archive) {
             log_info!("MacOS","creating archive");
             
             let level = self.ctx.manifest.package.archive.clone().unwrap_or_default();
@@ -77,7 +77,7 @@ impl Installer for MacOS {
             files.push(target_file);
         }
         
-        if targets.contains(&Target::DMG) {
+        if !self.ctx.dry_run && targets.contains(&Target::DMG) {
             log_info!("MacOS","creating DMG build");
 
             let background_image = find_file(

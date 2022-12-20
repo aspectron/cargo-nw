@@ -212,15 +212,15 @@ impl Rename {
         let extension = dest.extension();
     
         let stem = if stem.map(|s|s.to_str().unwrap() == "*").unwrap_or(false) {
-            None
-        } else {
             Some(stem.unwrap().to_str().unwrap().to_string())
+        } else {
+            None
         };
 
         let extension = if extension.map(|s|s.to_str().unwrap() == "*").unwrap_or(false) {
-            None
-        } else {
             Some(extension.unwrap().to_str().unwrap().to_string())
+        } else {
+            None
         };
 
         if stem.is_some() && extension.is_some() {

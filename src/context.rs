@@ -5,6 +5,7 @@ use crate::prelude::*;
 #[derive(Debug)]
 pub struct Options {
     pub sdk : bool,
+    pub dry_run : bool,
     pub channel: Option<Channel>,
     pub confinement: Option<Confinement>,
 }
@@ -13,6 +14,7 @@ impl Default for Options {
     fn default() -> Self {
         Options {
             sdk: false,
+            dry_run: false,
             channel : None,
             confinement: None,
         }
@@ -52,6 +54,7 @@ pub struct Context {
     pub images : Images,
 
     pub sdk : bool,
+    pub dry_run : bool,
     pub channel : Channel,
     pub confinement : Confinement,
     pub deps : Deps,
@@ -147,6 +150,7 @@ impl Context {
 
         let setup_resources_folder = root_folder.join(&manifest.package.resources.as_ref().unwrap_or(&"resources/setup".to_string())).into();
         let sdk = manifest.node_webkit.sdk.unwrap_or(options.sdk);
+        let dry_run = options.dry_run;
         let snap = manifest.snap.clone().unwrap_or_default();
         let channel = options.channel.or(snap.channel).unwrap_or_default();
         let confinement = options.confinement.or(snap.confinement).unwrap_or_default();
@@ -189,6 +193,7 @@ impl Context {
             images,
             // app_root_folder,
             sdk,
+            dry_run,
             channel,
             confinement,
             deps,

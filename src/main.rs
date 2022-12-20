@@ -86,7 +86,11 @@ enum Action {
     Build {
         /// Package using Node Webkit SDK edition
         #[clap(short, long)]
-        sdk : Option<bool>,
+        sdk : bool,
+
+        /// Integrate but do not produce any redistributables
+        #[clap(short, long, name = "dry-run")]
+        dry_run : bool,
 
         // /// Node Webkit version (override the manifest setting) 
         // #[clap(short, long)]
@@ -180,6 +184,7 @@ pub async fn async_main() -> Result<()> {
         Action::Build {
             // verbose,
             sdk,
+            dry_run,
             arch,
             target,
             default,
@@ -203,6 +208,10 @@ pub async fn async_main() -> Result<()> {
                 targets.insert(default);
             }
 
+            if dry_run {
+                targets.insert(Target::All);
+            }
+
             if targets.contains(&Target::All) {
                 targets = Target::get_all_targets();
             }
@@ -215,7 +224,8 @@ pub async fn async_main() -> Result<()> {
             }
             
             let options = Options {
-                sdk : sdk.unwrap_or(false),
+                sdk,
+                dry_run,
                 channel,
                 confinement,
             };

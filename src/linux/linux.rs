@@ -65,34 +65,35 @@ impl Installer for Linux {
         // }
 
         let mut files = Vec::new();
+        if !self.ctx.dry_run {
+            log_info!("Linux","creating archive");
 
-        log_info!("Linux","creating archive");
+            // archive is needed for both archive target and for snap
+            let level = self.ctx.manifest.package.archive.clone().unwrap_or_default();
+            let archive_filename = Path::new(&format!("{}.zip",self.ctx.app_snake_name)).to_path_buf();
+            let archive_path = self.ctx.output_folder.join(&archive_filename);
+            compress_folder(
+                &self.nwjs_root_folder,
+                &archive_path,
+                level
+            )?;
 
-        // archive is needed for both archive target and for snap
-        let level = self.ctx.manifest.package.archive.clone().unwrap_or_default();
-        let archive_filename = Path::new(&format!("{}.zip",self.ctx.app_snake_name)).to_path_buf();
-        let archive_path = self.ctx.output_folder.join(&archive_filename);
-        compress_folder(
-            &self.nwjs_root_folder,
-            &archive_path,
-            level
-        )?;
+            if !self.ctx.dry_run && targets.contains(&Target::Archive) {
+                files.push(archive_path.clone());
+            }
 
-        if targets.contains(&Target::Archive) {
-            files.push(archive_path.clone());
+            #[cfg(any(target_os = "linux", feature = "unix"))]
+            if !self.ctx.dry_run && targets.contains(&Target::Snap) {
+                // let target_file = target_archive.file_name().unwrap().to_str().unwrap();
+
+                let snap = crate::linux::snap::Snap::try_new(&self.ctx, &archive_path)?;
+                log_info!("Linux","creating Snap package for '{}' channel", snap.data.grade.to_string());
+                snap.create().await?;
+                let snap_file = snap.build().await?;
+                files.push(snap_file);
+            }
         }
-
-        #[cfg(any(target_os = "linux", feature = "unix"))]
-        if targets.contains(&Target::Snap) {
-            // let target_file = target_archive.file_name().unwrap().to_str().unwrap();
-
-            let snap = crate::linux::snap::Snap::try_new(&self.ctx, &archive_path)?;
-            log_info!("Linux","creating Snap package for '{}' channel", snap.data.grade.to_string());
-            snap.create().await?;
-            let snap_file = snap.build().await?;
-            files.push(snap_file);
-        }
-
+        
         Ok(files)
     }
 

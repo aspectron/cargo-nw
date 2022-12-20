@@ -102,7 +102,7 @@ impl Installer for Windows {
 
         let mut files = Vec::new();
 
-        if targets.contains(&Target::Archive) {
+        if !self.ctx.dry_run && targets.contains(&Target::Archive) {
             log_info!("Windows","creating archive");
             
             // let filename = Path::new(&format!("{}.zip",self.ctx.app_snake_name)).to_path_buf();
@@ -120,7 +120,7 @@ impl Installer for Windows {
         }
 
         #[cfg(any(target_os = "windows", feature = "multiplatform"))]
-        if targets.contains(&Target::InnoSetup) {
+        if !self.ctx.dry_run && targets.contains(&Target::InnoSetup) {
 
             self.create_innosetup_icon(&self.setup_icon_file).await?;
             let wizard_image_files = self.create_innosetup_images().await?;

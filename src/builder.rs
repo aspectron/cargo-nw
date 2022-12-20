@@ -166,7 +166,10 @@ impl Builder {
 
         let files = installer.create(&targets).await?;
 
-        if files.is_empty() {
+        if self.ctx.dry_run {
+            log_warn!("Integration","dry-run completed successfully");
+            return Ok(());
+        } else if files.is_empty() {
             return Err(Error::Warning("build produced no output".into()));
         }
 
