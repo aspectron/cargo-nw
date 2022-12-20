@@ -57,7 +57,11 @@ impl Windows {
 #[async_trait]
 impl Installer for Windows {
 
-    async fn check(&self, targets: TargetSet) -> Result<()> {
+    async fn init(&self, targets: &TargetSet) -> Result<()> {
+        Ok(())
+    }
+
+    async fn check(&self, targets: &TargetSet) -> Result<()> {
         if targets.contains(&Target::InnoSetup) {
             if !std::path::Path::new(super::iss::INNO_SETUP_COMPIL32).exists() {
                 println!("");
@@ -72,7 +76,7 @@ impl Installer for Windows {
         Ok(())
     }
 
-    async fn create(&self, targets: TargetSet) -> Result<Vec<PathBuf>> {
+    async fn create(&self, targets: &TargetSet) -> Result<Vec<PathBuf>> {
 
         self.copy_nwjs_folder().await?;
         self.copy_app_data().await?;

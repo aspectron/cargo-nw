@@ -44,7 +44,9 @@ exclude = [{ glob = ["{bin/*,src/*,target/*,test/*,*.lock,*.toml,.git*}"] }]
 # platform = ["windows"]
 stage = "build"
 items = [
-    { write = { file = "$OUTPUT/index.html", content = "cargo-nw test" }},
+    { write = { file = "$OUTPUT/index.html", content = """
+<h1>cargo-nw test</h1>
+""" }},
     { write = { file = "$OUTPUT/package.json", content = "{ \"main\":\"index.html\" }" }}
 # { run = { cmd = "bash publish $OUTPUT/$NAME-$VERSION" }},
 # { copy = { file = "", to = "" }},

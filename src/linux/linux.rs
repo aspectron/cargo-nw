@@ -28,7 +28,10 @@ impl Linux {
 #[async_trait]
 impl Installer for Linux {
 
-    async fn check(&self, targets: TargetSet) -> Result<()> {
+    async fn init(&self, targets: &TargetSet) -> Result<()> {
+        Ok(())
+    }
+    async fn check(&self, targets: &TargetSet) -> Result<()> {
 
         if targets.contains(&Target::Snap) {
             if let Err(err) = cmd("snapcraft",["--version"]).run() {
@@ -40,7 +43,7 @@ impl Installer for Linux {
         Ok(())
     }
 
-    async fn create(&self, targets: TargetSet) -> Result<Vec<PathBuf>> {
+    async fn create(&self, targets: &TargetSet) -> Result<Vec<PathBuf>> {
 
         self.copy_nwjs_folder().await?;
         self.rename_app_binary().await?;

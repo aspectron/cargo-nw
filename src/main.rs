@@ -256,8 +256,9 @@ pub async fn async_main() -> Result<()> {
             }
 
             let installer = create_installer(&ctx);
+            // installer.check().await?;
             let build = Arc::new(Builder::new(ctx));
-            build.execute(targets, &installer).await?;
+            build.execute(&targets, &installer).await?;
         },
         Action::Clean { 
             all, 
@@ -317,7 +318,7 @@ pub async fn async_main() -> Result<()> {
 
             let installer = create_installer(&ctx);
             let target_folder = installer.target_folder();
-            execute_actions(&ctx,&installer.tpl(),Stage::Publish,&target_folder).await?;
+            execute_actions(Stage::Publish,&ctx,&installer.tpl(),&target_folder).await?;
         },
         #[cfg(feature = "test")]
         Action::Test {

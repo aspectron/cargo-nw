@@ -19,7 +19,7 @@ impl Builder {
     }
 
 
-    pub async fn execute(self : &Arc<Self>, targets: TargetSet, installer: &Box<dyn Installer>) -> Result<()> {
+    pub async fn execute(self : &Arc<Self>, targets: &TargetSet, installer: &Box<dyn Installer>) -> Result<()> {
 
         // println!("{:#?}", self.ctx.manifest);
         // return Ok(());
@@ -28,6 +28,7 @@ impl Builder {
             return Err("no build targets selected".into());
         }
 
+        installer.check(targets).await?;
 
         let tpl = installer.tpl();
 
@@ -35,6 +36,7 @@ impl Builder {
         self.ctx.deps.ensure().await?;
         self.ctx.ensure_folders().await?;
 
+        installer.init(&targets).await?;
         // let installer = create_installer(&self.ctx);
 
         self.process_dependencies(&tpl, installer.target_folder()).await?;
@@ -147,7 +149,7 @@ impl Builder {
 
         let target_folder = installer.target_folder();
         // self.execute_actions(Stage::Build, &installer).await?;
-        execute_actions(&self.ctx, &tpl, Stage::Package, &target_folder).await?;
+        execute_actions(Stage::Build,&self.ctx, &tpl,&target_folder).await?;
 
         // if let Some(actions) = &self.ctx.manifest.action {
         //     let actions = actions
@@ -162,7 +164,7 @@ impl Builder {
 
         // installer execution
 
-        let files = installer.create(targets).await?;
+        let files = installer.create(&targets).await?;
 
         if files.is_empty() {
             return Err(Error::Warning("build produced no output".into()));
@@ -188,7 +190,7 @@ impl Builder {
         log_info!("Finished","build completed in {:.0}s", duration.as_millis() as f64/1000.0);
 
         // let target_folder = installer.target_folder();
-        execute_actions(&self.ctx, &tpl, Stage::Deploy, &target_folder).await?;
+        execute_actions(Stage::Deploy,&self.ctx, &tpl, &target_folder).await?;
 
         // self.execute_actions(Stage::Deploy, &installer).await?;
         // self.execute_actions(Stage::Deploy, &target_folder,&target_folder).await?;

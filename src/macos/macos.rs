@@ -25,16 +25,22 @@ pub struct MacOS {
 #[async_trait]
 impl Installer for MacOS {
 
-    async fn check(&self, _targets: TargetSet) -> Result<()> {
+    async fn check(&self, _targets: &TargetSet) -> Result<()> {
+        
+        Ok(())
+    }
+
+
+    async fn init(&self, _targets: &TargetSet) -> Result<()> {
+        std::fs::create_dir_all(&self.app_nw_folder)?;
         
         Ok(())
     }
 
 
 
-    async fn create(&self, targets: TargetSet) -> Result<Vec<PathBuf>> {
+    async fn create(&self, targets: &TargetSet) -> Result<Vec<PathBuf>> {
 
-        // std::fs::create_dir_all(&self.app_nw_folder)?;
 
         self.copy_nwjs_bundle().await?;
         self.copy_app_data().await?;
@@ -43,7 +49,7 @@ impl Installer for MacOS {
         self.generate_icons().await?;
 
 
-        execute_actions(&self.ctx, &self.tpl, Stage::Package, &self.app_nw_folder).await?;
+        execute_actions(Stage::Package,&self.ctx, &self.tpl, &self.app_nw_folder).await?;
 
         // if let Some(actions) = &self.ctx.manifest.package.actions {
         //     for action in actions {
@@ -167,7 +173,7 @@ impl MacOS {
     async fn copy_app_data(&self) -> Result<()> {
         log_info!("Integrating","application data");
 
-        std::fs::create_dir_all(&self.app_nw_folder)?;
+        // std::fs::create_dir_all(&self.app_nw_folder)?;
 
         // let tpl = self.ctx.tpl_clone();
         copy_folder_with_filters(

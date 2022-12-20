@@ -114,6 +114,7 @@ impl ActionItem {
         if let Some(write) = &self.write {
             let file = tpl.transform(&write.file);
             let file = Path::new(&file);
+            // println!("writing file: `{}` content: {}", file.display(), write.content);
             async_std::fs::write(&file,&tpl.transform(&write.content)).await?;
         }
 
@@ -126,9 +127,9 @@ impl ActionItem {
 }
 
 pub async fn execute_actions(
+    stage : Stage,
     ctx : &Context,
     tpl : &Tpl,
-    stage : Stage,
     // src_folder: &Path,
     // dest_folder: &Path,
     // installer: &Box<dyn Installer>,
@@ -152,6 +153,7 @@ pub async fn execute_actions(
 
         // let target_folder = installer.target_folder();
         for action in actions {
+            // println!("execution action: {:?}", action);
             action.execute(&stage, ctx,tpl,&ctx.project_root_folder,&target_folder).await?;
         }
     }
