@@ -101,6 +101,38 @@ impl FromStr for Architecture {
 //     family : String
 // }
 
-pub fn family(platform: &Platform, arch: &Architecture) -> String {
-    format!("{}-{}", platform, arch)
+// pub fn family(platform: &Platform, arch: &Architecture) -> String {
+//     format!("{}-{}", platform, arch)
+// }
+
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum OsFamily {
+    Windows,
+    Unix
 }
+
+impl Default for OsFamily {
+    fn default() -> Self {
+        cfg_if::cfg_if! {
+            if #[cfg(target_family = "windows")] {
+                OsFamily::Windows
+            } else {
+                OsFamily::Unix
+            }
+        }
+    }
+}
+
+
+impl FromStr for OsFamily {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "windows" => Ok(OsFamily::Windows),
+            "unix" => Ok(OsFamily::Unix),
+            _ => Err(Error::InvalidFamily(s.to_string())),
+        }
+    }
+}
+

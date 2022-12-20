@@ -24,6 +24,9 @@ pub enum Error {
     #[error("Unknown architecture: '{0}'")]
     InvalidArchitecture(String),
     
+    #[error("Unknown operating system family: '{0}'")]
+    InvalidFamily(String),
+    
     #[error("I/O error: {0}")]
     IO(#[from] std::io::Error),
 

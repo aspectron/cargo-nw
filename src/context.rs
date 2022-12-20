@@ -82,8 +82,14 @@ impl Context {
         cfg_if! {
             if #[cfg(target_os = "windows")] {
                 tpl.set(&[("$EXE",".exe")]);
+                tpl.set(&[("$CMD",".cmd")]);
+                tpl.set(&[("$PS1",".ps1")]);
+                tpl.set(&[("$SH","")]);
             } else {
                 tpl.set(&[("$EXE","")]);
+                tpl.set(&[("$CMD","")]);
+                tpl.set(&[("$PS1","")]);
+                tpl.set(&[("$SH",".sh")]);
             }
         }
 
@@ -98,6 +104,10 @@ impl Context {
 
         tpl.set(&[
             ("$NAME",manifest.application.name.as_str()),
+            ("$TITLE",manifest.application.title.as_str()),
+            ("$ORGANIZATION",manifest.application.organization.as_str()),
+            ("$DESCRIPTION_SHORT",manifest.description.short.as_str()),
+            ("$DESCRIPTION_LONG",manifest.description.long.as_str()),
             ("$VERSION",manifest.application.version.as_str()),
         ]);
 

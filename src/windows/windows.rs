@@ -235,7 +235,7 @@ impl Windows {
             }
         }
     
-        list.into_iter().map(|(k,v)|(k.to_string(),self.tpl.transform(&v))).collect()
+        list.into_iter().map(|(k,v)|(self.tpl.transform(&k),self.tpl.transform(&v))).collect()
     }
 
     async fn create_innosetup_images(&self) -> Result<(Vec<PathBuf>,Vec<PathBuf>)> {

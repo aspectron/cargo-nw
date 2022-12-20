@@ -23,7 +23,7 @@ pub enum Stage {
 pub struct Action {
     pub platform : Option<Vec<Platform>>,
     pub arch : Option<Vec<Architecture>>,
-    pub family : Option<String>,
+    pub family : Option<OsFamily>,
     pub stage : Option<Stage>,
     pub items : Vec<ActionItem>,
 }
@@ -48,8 +48,8 @@ impl Action {
             }
         }
 
-        if let Some(family_) = &self.family {
-            if family_ != &family(&ctx.platform,&ctx.arch) {
+        if let Some(family) = &self.family {
+            if family != &OsFamily::default() {
                 return Ok(());
             }
         }
@@ -68,7 +68,7 @@ impl Action {
 pub struct ActionItem {
     pub platform : Option<Vec<Platform>>,
     pub arch : Option<Vec<Architecture>>,
-    pub family : Option<String>,
+    pub family : Option<OsFamily>,
     pub stage : Option<Stage>,
 
     pub run : Option<ExecutionContext>,
@@ -97,8 +97,8 @@ impl ActionItem {
             }
         }
 
-        if let Some(family_) = &self.family {
-            if family_ != &family(&ctx.platform,&ctx.arch) {
+        if let Some(family) = &self.family {
+            if family != &OsFamily::default() {
                 return Ok(());
             }
         }

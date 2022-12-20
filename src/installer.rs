@@ -173,7 +173,8 @@ pub fn create_installer_tpl(ctx: &Context, target_folder: &PathBuf) -> Tpl {
     let mut tpl = ctx.tpl();
     tpl.set(&[
         // ("$SOURCE",source.to_str().unwrap()),
-        ("$OUTPUT",target_folder.to_str().unwrap())
+        // ("$OUTPUT",target_folder.to_str().unwrap()),
+        ("$TARGET",target_folder.to_str().unwrap())
     ]);
     // let application = &ctx.manifest.application;
     // let tpl: Tpl = [
