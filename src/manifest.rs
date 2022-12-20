@@ -74,26 +74,24 @@ impl Manifest {
             cwd
         };
 
-        let location = match location.extension() {
-            Some(extension) if extension.to_str().unwrap() == "toml" && location.is_file().await => {
-                Some(location)
-            },
-            _ => {
-                let location = location.join("nw.toml");
-                if location.is_file().await {
-                    Some(location)
-                } else {
-                    None
-                }
-            }
-        };
+        let locations = [
+            &location,
+            &location.with_extension("toml"),
+            &location.join("nw.toml")
+        ];
 
-        if let Some(location) = location {
-            let location = std::path::PathBuf::from(&location).canonicalize()?.to_path_buf();
-            Ok(location.into())
-        } else {
-            Err(format!("Unable to locate 'nw.toml' manifest").into())
+        for location in locations.iter() {
+            match location.canonicalize().await {
+                Ok(location) => {
+                    if location.is_file().await {
+                        return Ok(location)
+                    }
+                }, 
+                _ => { }
+            }
         }
+
+        Err(format!("Unable to locate 'nw.toml' manifest").into())
     }
     
     pub async fn load(toml : &PathBuf) -> Result<Manifest> {
