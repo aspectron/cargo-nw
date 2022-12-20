@@ -34,6 +34,8 @@ impl Installer for MacOS {
 
     async fn create(&self, targets: TargetSet) -> Result<Vec<PathBuf>> {
 
+        // std::fs::create_dir_all(&self.app_nw_folder)?;
+
         self.copy_nwjs_bundle().await?;
         self.copy_app_data().await?;
         self.rename_app_bundle(&self.app_contents_folder).await?;
@@ -112,7 +114,6 @@ impl MacOS {
     pub fn new(ctx: Arc<Context>) -> MacOS {
 
         let nwjs_root_folder = ctx.build_folder.join(format!("{}.app", &ctx.manifest.application.title));
-
         let app_nw_folder = nwjs_root_folder.join("Contents").join("Resources").join("app.nw");
 
         let tpl = create_installer_tpl(
@@ -165,6 +166,8 @@ impl MacOS {
 
     async fn copy_app_data(&self) -> Result<()> {
         log_info!("Integrating","application data");
+
+        std::fs::create_dir_all(&self.app_nw_folder)?;
 
         // let tpl = self.ctx.tpl_clone();
         copy_folder_with_filters(

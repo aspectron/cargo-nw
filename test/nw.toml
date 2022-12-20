@@ -41,13 +41,17 @@ exclude = [{ glob = ["{bin/*,src/*,target/*,test/*,*.lock,*.toml,.git*}"] }]
 # ]
 
 [[action]]
-platform = ["windows"]
+# platform = ["windows"]
 stage = "build"
-run = [{ cmd = "bash publish $OUTPUT/$NAME-$VERSION" }]
-copy = [{ file = "", to = "" }]
-script = { type = "bash", script ="""
-echo "hello world"
-""" }
+items = [
+    { write = { file = "$OUTPUT/index.html", content = "cargo-nw test" }},
+    { write = { file = "$OUTPUT/package.json", content = "{ \"main\":\"index.html\" }" }}
+# { run = { cmd = "bash publish $OUTPUT/$NAME-$VERSION" }},
+# { copy = { file = "", to = "" }},
+# { script = { type = "bash", script ="""
+# echo "hello world"
+# """ } },
+]
 
 # list = [{ run = { cmd = "bash list" }}]
 

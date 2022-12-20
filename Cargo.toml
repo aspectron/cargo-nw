@@ -52,10 +52,11 @@ question = "0.2.2"
 walkdir = "2.3.2"
 ignore = "0.4.18"
 uuid = { version = "1.2.2", features = ["v4"] }
-manual-serializer = { path="../manual-serializer" }
+# manual-serializer = { path="../manual-serializer" }
 
 # [target.'cfg(target_os = "windows")'.dependencies]
-winres-edit = { path="../winres-edit" }
+# winres-edit = { path="../winres-edit" }
+winres-edit = "0.1.0"
 
 [target.'cfg(target_os = "windows")'.dependencies.windows]
 # [dependencies.windows]

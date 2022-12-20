@@ -95,3 +95,12 @@ impl FromStr for Architecture {
 //     DMG,
 //     InnoSetup,
 // }
+
+// #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+// pub struct Family {
+//     family : String
+// }
+
+pub fn family(platform: &Platform, arch: &Architecture) -> String {
+    format!("{}-{}", platform, arch)
+}
