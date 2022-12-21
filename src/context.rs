@@ -153,7 +153,14 @@ impl Context {
         let app_root_folder = manifest.package.root.as_ref()
             .map(|root|project_root_folder.to_path_buf().join(root))
             .unwrap_or(project_root_folder.clone());
-        let app_root_folder: PathBuf = std::path::PathBuf::from(&app_root_folder).canonicalize()?.to_path_buf().into();
+
+        let app_root_folder: PathBuf = match std::path::PathBuf::from(&app_root_folder).canonicalize() {
+            Ok(path) => path.into(),
+            Err(err) => {
+                return Err(format!("unable to locate application root folder `{}`: {}", app_root_folder.display(),err).into());
+            }
+        };
+
         tpl.set(&[
             ("$SOURCE",app_root_folder.to_str().unwrap()),
         ]);

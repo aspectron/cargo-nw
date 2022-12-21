@@ -1,7 +1,7 @@
 [application]
-name = "nw-cargo-window-test"
-title = "NW Cargo Window Test"
-version = "0.1.0"
+name = "nw-cargo-background-test"
+title = "./background/package.json::name"
+version = "./background/package.json::version"
 # description = "Example project demonstrating cargo-nw functionality"
 organization = "ASPECTRON Inc"
 
@@ -20,7 +20,7 @@ non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 # archive = "STORE"
 # archive = { algorithm = "DEFLATE"}
 signatures = ["SHA256"]
-root = "window/"
+root = "background/"
 resources = "../resources"
 # build = [
     # { WASM = { } },

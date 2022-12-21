@@ -704,12 +704,17 @@ impl MacOsDiskImage {
 // ~~~
 
 async fn resolve_value_paths(folder: &Path, paths : &mut [&mut String]) -> Result<()> {
-
     for path in paths.iter_mut() {
         if is_value_path(path) {
             let location = path.clone();
             path.clear();
-            path.push_str(&load_value_path(folder, &location).await?);
+            let value = match load_value_path(folder, &location).await {
+                Ok(value) => value,
+                Err(err) => {
+                    return Err(format!("unable to locate `{}` in `{}`: {}",location,folder.display(),err).into())
+                }
+            };
+            path.push_str(&value);
         }
     }
 
