@@ -106,8 +106,8 @@ impl Context {
             ("$NAME",manifest.application.name.as_str()),
             ("$TITLE",manifest.application.title.as_str()),
             ("$ORGANIZATION",manifest.application.organization.as_str()),
-            ("$DESCRIPTION_SHORT",manifest.description.short.as_str()),
-            ("$DESCRIPTION_LONG",manifest.description.long.as_str()),
+            ("$SHORT",manifest.description.short.as_str()),
+            ("$LONG",manifest.description.long.as_str()),
             ("$VERSION",manifest.application.version.as_str()),
         ]);
 
@@ -177,10 +177,6 @@ impl Context {
         let exclude = manifest.package.exclude.clone();//.unwrap_or(vec![]);
 
         let images = manifest.images.clone().unwrap_or_default();
-
-        if manifest.description.short.len() > 78 {
-            return Err(Error::ShortDescriptionIsTooLong);
-        }
 
         log_info!("Target","`{}`",output_folder.to_str().unwrap());
 
