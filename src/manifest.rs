@@ -125,6 +125,10 @@ impl Manifest {
             return Err(format!("invalid application name '{}'", self.application.name).into());
         }
 
+        if self.description.short.len() > 78 {
+            return Err(Error::ShortDescriptionIsTooLong);
+        }
+
         Ok(())
     }
 }
