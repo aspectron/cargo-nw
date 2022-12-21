@@ -82,11 +82,13 @@ impl Context {
         cfg_if! {
             if #[cfg(target_os = "windows")] {
                 tpl.set(&[("$EXE",".exe")]);
+                tpl.set(&[("$BAT",".bat")]);
                 tpl.set(&[("$CMD",".cmd")]);
                 tpl.set(&[("$PS1",".ps1")]);
                 tpl.set(&[("$SH","")]);
             } else {
                 tpl.set(&[("$EXE","")]);
+                tpl.set(&[("$BAT","")]);
                 tpl.set(&[("$CMD","")]);
                 tpl.set(&[("$PS1","")]);
                 tpl.set(&[("$SH",".sh")]);
