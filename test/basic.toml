@@ -1,0 +1,151 @@
+[application]
+name = "nw-cargo-basic-test"
+title = "NW Cargo Basic Test"
+version = "0.1.0"
+# description = "Example project demonstrating cargo-nw functionality"
+organization = "ASPECTRON Inc"
+
+[description]
+short = "Neque porro quisquam est qui dolorem ipsum quia dolor sit amet..."
+long = """
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod 
+tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, 
+quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo 
+consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse 
+cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat 
+non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+"""
+
+[package]
+# archive = "STORE"
+# archive = { algorithm = "DEFLATE"}
+signatures = ["SHA256"]
+# root = ".."
+# build = [
+    # { WASM = { } },
+    # { NPM = { } }
+# ]
+# wasm = "root/wasm"
+resources = "resources"
+# include = [{ glob = ["bin/*","test/*"]}]
+# exclude = [{ regex = ["(js|exe)$"]}]
+
+exclude = [{ glob = ["*"] }]
+# exclude = [{ glob = ["{bin/*,src/*,target/*,test/*,*.lock,*.toml,.git*}"] }]
+
+# actions = [
+#     { build = { platform = ["windows"], run = { cmd = "bash publish $OUTPUT/$NAME-$VERSION" } } },
+#     { platform = "windows", copy = { from = "", to = "" } },
+#     { build = { argv = ["123"], folder = "456" } },
+# #     { package = { cmd = "456", folder = "789" } },
+# #     { deploy = { cmd = "ABC", folder = "XYZ" } },
+# ]
+
+[[action]]
+# platform = ["windows"]
+stage = "build"
+items = [
+    { write = { file = "$TARGET/index.html", content = """
+<style>body { font-family: monospace; text-align: center; background: "#b1e7fc"; }</style>
+<body>
+    <h1>$TITLE</h1>
+    <h2>$PLATFORM-$ARCH</h2>
+</body>
+""" }},
+    { write = { file = "$TARGET/package.json", content = """
+    { 
+        \"name\":\"$TITLE\",
+        \"main\":\"index.html\" 
+    }
+""" }}
+# { run = { cmd = "bash publish $OUTPUT/$NAME-$VERSION" }},
+# { copy = { file = "", to = "" }},
+# { script = { type = "bash", script ="""
+# echo "hello world"
+# """ } },
+]
+
+# list = [{ run = { cmd = "bash list" }}]
+
+# [[build]]
+# actions.build = [
+#     { platform = "windows", run = {}}, 
+#     { family = "unix", run = {}},
+#     { arch = "x86", copy = {} }
+# ]
+# [[package]]
+# [[deploy]]
+
+
+# publish = [
+#     "publish $OUTPUT/$NAME-$VERSION"
+# ]
+
+# [[dependency]]
+# platform = ["windows", "linux"]
+# git = { url = "https://github.com/kaspanet/kaspad", branch = "master" }
+# run = [
+#     { cmd = "go build" },
+#     { cmd = "go build", folder = "cmd/genkeypair" },
+#     { cmd = "go build", folder = "cmd/kaspactl" },
+#     { cmd = "go build", folder = "cmd/kaspawallet" },
+# ]
+# # copy = [
+# #     { glob = [""], to = "", flatten = true },
+# #     { regex = [""], to = "", flatten = true },
+# # ]
+
+# copy = [
+#     { regex = [
+#         "kaspad(.exe)?$",
+#         "genkeypair(.exe)?$",
+#         "kaspactl(.exe)?$"
+#     ], to = "bin/$PLATFORM-$ARCH", flatten = true },
+# ]
+
+[node-webkit]
+version = "0.70.1"
+ffmpeg = true
+
+[macos-disk-image]
+window_caption_height = 60
+window_position = [200,200]
+window_size = [485,330]
+icon_size = 72
+application_icon_position = [100,152]
+system_applications_folder_position = [385,152]
+
+[windows]
+uuid = "95ba9908-ff97-4281-8dca-7461bc9ee058"
+group = "Cargo NW"
+# run_on_startup = "everyone"
+run_after_setup = true
+
+resources = [
+    { CompanyName = "$ORGANIZATION" },
+    { Custom = { name = "NW Project", value = "$TITLE" }},
+]
+# resources
+# CompanyName
+# FileDescription
+# FileVersion
+# InternalName
+# LegalCopyright
+# LegalTrademarks
+# OriginalFilename
+# PrivateBuild
+# ProductName
+# ProductVersion
+
+[languages]
+languages = ["english","french"]
+
+[firewall]
+application = { direction = "in+out" }
+# rules = [
+    # { name = "Test", program = "bin\\windows-x64\\test.exe", direction="in+out" }
+# ]
+
+# [innosetup]
+# alpha = [{ k1 = "ab\"cd" }, { "Files:" = "asd"}]
+# beta = [{ k2 = "def" }]

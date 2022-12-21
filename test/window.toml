@@ -1,6 +1,6 @@
 [application]
-name = "nw-example"
-title = "NW Example"
+name = "nw-cargo-window-test"
+title = "NW Cargo Window Test"
 version = "0.1.0"
 # description = "Example project demonstrating cargo-nw functionality"
 organization = "ASPECTRON Inc"
@@ -20,17 +20,18 @@ non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 # archive = "STORE"
 # archive = { algorithm = "DEFLATE"}
 signatures = ["SHA256"]
-root = ".."
+root = "window/"
+resources = "../resources"
 # build = [
     # { WASM = { } },
     # { NPM = { } }
 # ]
 # wasm = "root/wasm"
-resources = "resources"
-include = [{ glob = ["bin/*","test/*"]}]
+include = [{ glob = ["*"]}]
 # exclude = [{ regex = ["(js|exe)$"]}]
 
-exclude = [{ glob = ["{bin/*,src/*,target/*,test/*,*.lock,*.toml,.git*}"] }]
+# exclude = [{ glob = ["*"] }]
+# exclude = [{ glob = ["{bin/*,src/*,target/*,test/*,*.lock,*.toml,.git*}"] }]
 
 # actions = [
 #     { build = { platform = ["windows"], run = { cmd = "bash publish $OUTPUT/$NAME-$VERSION" } } },
@@ -40,20 +41,29 @@ exclude = [{ glob = ["{bin/*,src/*,target/*,test/*,*.lock,*.toml,.git*}"] }]
 # #     { deploy = { cmd = "ABC", folder = "XYZ" } },
 # ]
 
-[[action]]
-# platform = ["windows"]
-stage = "build"
-items = [
-    { write = { file = "$OUTPUT/index.html", content = """
-<h1>cargo-nw test</h1>
-""" }},
-    { write = { file = "$OUTPUT/package.json", content = "{ \"main\":\"index.html\" }" }}
+# [[action]]
+# # platform = ["windows"]
+# stage = "build"
+# items = [
+#     { write = { file = "$TARGET/index.html", content = """
+# <style>body { font-family: monospace; text-align: center; background: "#b1e7fc" }</style>    
+# <body>
+#     <h1>$TITLE</h1>
+#     <h2>$PLATFORM-$ARCH</h2>
+# </body>
+# """ }},
+#     { write = { file = "$TARGET/package.json", content = """
+#     { 
+#         \"name\":\"$TITLE\",
+#         \"main\":\"index.html\" 
+#     }
+# """ }}
 # { run = { cmd = "bash publish $OUTPUT/$NAME-$VERSION" }},
 # { copy = { file = "", to = "" }},
 # { script = { type = "bash", script ="""
 # echo "hello world"
 # """ } },
-]
+# ]
 
 # list = [{ run = { cmd = "bash list" }}]
 
@@ -71,27 +81,27 @@ items = [
 #     "publish $OUTPUT/$NAME-$VERSION"
 # ]
 
-[[dependency]]
-platform = ["windows", "linux"]
-git = { url = "https://github.com/kaspanet/kaspad", branch = "master" }
-run = [
-    { cmd = "go build" },
-    { cmd = "go build", folder = "cmd/genkeypair" },
-    { cmd = "go build", folder = "cmd/kaspactl" },
-    { cmd = "go build", folder = "cmd/kaspawallet" },
-]
-# copy = [
-#     { glob = [""], to = "", flatten = true },
-#     { regex = [""], to = "", flatten = true },
+# [[dependency]]
+# platform = ["windows", "linux"]
+# git = { url = "https://github.com/kaspanet/kaspad", branch = "master" }
+# run = [
+#     { cmd = "go build" },
+#     { cmd = "go build", folder = "cmd/genkeypair" },
+#     { cmd = "go build", folder = "cmd/kaspactl" },
+#     { cmd = "go build", folder = "cmd/kaspawallet" },
 # ]
+# # copy = [
+# #     { glob = [""], to = "", flatten = true },
+# #     { regex = [""], to = "", flatten = true },
+# # ]
 
-copy = [
-    { regex = [
-        "kaspad(.exe)?$",
-        "genkeypair(.exe)?$",
-        "kaspactl(.exe)?$"
-    ], to = "bin/$PLATFORM-$ARCH", flatten = true },
-]
+# copy = [
+#     { regex = [
+#         "kaspad(.exe)?$",
+#         "genkeypair(.exe)?$",
+#         "kaspactl(.exe)?$"
+#     ], to = "bin/$PLATFORM-$ARCH", flatten = true },
+# ]
 
 [node-webkit]
 version = "0.70.1"
@@ -107,14 +117,13 @@ system_applications_folder_position = [385,152]
 
 [windows]
 uuid = "95ba9908-ff97-4281-8dca-7461bc9ee058"
-group = "NWJS"
-run_on_startup = "everyone"
+group = "Cargo NW"
+# run_on_startup = "everyone"
 run_after_setup = true
 
 resources = [
-    { CompanyName = "Hello" },
-    { Custom = { name = "ABC", value = "DEF" }},
-    { Custom = { name = "ABC", value = "DEF" }}
+    { CompanyName = "$ORGANIZATION" },
+    { Custom = { name = "NW Project", value = "$TITLE" }},
 ]
 # resources
 # CompanyName
@@ -133,9 +142,9 @@ languages = ["english","french"]
 
 [firewall]
 application = { direction = "in+out" }
-rules = [
-    { name = "Test", program = "bin\\windows-x64\\test.exe", direction="in+out" }
-]
+# rules = [
+    # { name = "Test", program = "bin\\windows-x64\\test.exe", direction="in+out" }
+# ]
 
 # [innosetup]
 # alpha = [{ k1 = "ab\"cd" }, { "Files:" = "asd"}]
