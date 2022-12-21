@@ -111,11 +111,9 @@ impl Context {
             ("$VERSION",manifest.application.version.as_str()),
         ]);
 
-        // let root_folder = search_upwards(&manifest_folder,"Cargo.toml").await
-        //     .map(|location|location.parent().unwrap().to_path_buf())
-        //     .unwrap_or(manifest_folder.clone());
-
-        let root_folder = manifest_folder.clone();
+        let root_folder = search_upwards(&manifest_folder,"Cargo.toml").await
+            .map(|location|location.parent().unwrap().to_path_buf())
+            .unwrap_or(manifest_folder.clone());
 
         let app_snake_name = format!("{}-{}-{}-{}",
             manifest.application.name,
@@ -160,7 +158,7 @@ impl Context {
             ("$SOURCE",app_root_folder.to_str().unwrap()),
         ]);
 
-        let setup_resources_folder = root_folder.join(&manifest.package.resources.as_ref().unwrap_or(&"resources/setup".to_string())).into();
+        let setup_resources_folder = manifest_folder.join(&manifest.package.resources.as_ref().unwrap_or(&"resources/setup".to_string())).into();
         let sdk = manifest.node_webkit.sdk.unwrap_or(options.sdk);
         let dry_run = options.dry_run;
         let snap = manifest.snap.clone().unwrap_or_default();
