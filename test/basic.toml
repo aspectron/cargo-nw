@@ -26,7 +26,7 @@ signatures = ["SHA256"]
     # { NPM = { } }
 # ]
 # wasm = "root/wasm"
-resources = "resources"
+resources = "../resources"
 # include = [{ glob = ["bin/*","test/*"]}]
 # exclude = [{ regex = ["(js|exe)$"]}]
 
