@@ -111,9 +111,11 @@ impl Context {
             ("$VERSION",manifest.application.version.as_str()),
         ]);
 
-        let root_folder = search_upwards(&manifest_folder,"Cargo.toml").await
-            .map(|location|location.parent().unwrap().to_path_buf())
-            .unwrap_or(manifest_folder.clone());
+        // let root_folder = search_upwards(&manifest_folder,"Cargo.toml").await
+        //     .map(|location|location.parent().unwrap().to_path_buf())
+        //     .unwrap_or(manifest_folder.clone());
+
+        let root_folder = manifest_folder.clone();
 
         let app_snake_name = format!("{}-{}-{}-{}",
             manifest.application.name,
