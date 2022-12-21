@@ -28,8 +28,13 @@ pub async fn current_dir() -> PathBuf {
 pub async fn find_file(folder: &Path,files: &[String]) -> Result<PathBuf> {
     for file in files {
         let path = folder.join(file);
-        if path.exists().await {
-            return Ok(path);
+        match path.canonicalize().await {
+            Ok(path) => {
+                if path.is_file().await {
+                    return Ok(path);
+                }
+            },
+            _ => { }
         }
     }
     return Err(format!("Unable to locate any of the files: {} \nfrom {:?} directory", files.join(", "), folder.to_str().unwrap_or("")).into())
