@@ -35,55 +35,55 @@ const INDEX_JS: &str = r###"
 const INDEX_HTML: &str = r###"
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Hello World!</title>
-    <style>
-        html{
-            background-color:#FFF;
-            height:100%;
-            width:100%;
-            margin:0px;
-            padding:0px;
-        }
-        body{
-            min-height:100px;
-            height:100%;
-            background-color:#cbcbcb;
-            position: absolute;
-            left:0px;
-            right:0px;
-            top:0px;
-            bottom:0px;
-            padding:15px;
-            margin:0px;
-        }
-    </style>
-  </head>
-  <body>
-    <h1>Hello World!</h1>
-    <script>
-      (async()=>{
-        window.$$SNAKE = await import('/root/wasm/$NAME.js');
-        const wasm = await window.$$SNAKE.default('/root/wasm/$NAME_bg.wasm');
-        window.$$SNAKE.create_context_menu();
-      })();
-    </script>
-  </body>
+    <head>
+        <title>$TITLE</title>
+        <style>
+            html{
+                background-color:#FFF;
+                height:100%;
+                width:100%;
+                margin:0px;
+                padding:0px;
+            }
+            body{
+                min-height:100px;
+                height:100%;
+                background-color:#cbcbcb;
+                position: absolute;
+                left:0px;
+                right:0px;
+                top:0px;
+                bottom:0px;
+                padding:15px;
+                margin:0px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>$TITLE</h1>
+        <script>
+            (async()=>{
+                window.$$SNAKE = await import('/root/wasm/$NAME.js');
+                const wasm = await window.$$SNAKE.default('/root/wasm/$NAME_bg.wasm');
+                window.$$SNAKE.create_context_menu();
+            })();
+        </script>
+    </body>
 </html>
 "###;
 
 const PAGE2_HTML: &str = r###"
 <!DOCTYPE html>
 <html>
-  <head>
-    <!--title>new window test</title-->
-  </head>
-  <body>
-    <h1>Window 2</h1>
-    <script>
-        console.log("nw", nw);
-    </script>
-  </body>
+    <head>
+        <!--title>new window test</title-->
+    </head>
+    <body>
+        <h1>$TITLE (Window 2)</h1>
+        <script>
+            console.log("nw", nw);
+        </script>
+    </body>
 </html>
 "###;
 

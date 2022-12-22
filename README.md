@@ -36,7 +36,7 @@ NOTE: To create a redistributable for each platform, you need to run `cargo-nw` 
 ## Dependencies
 * [Rust](https://www.rust-lang.org/tools/install)
 * [InnoSetup for Windows](https://jrsoftware.org/isdl.php) for creation of interactive Windows installers
-* [Wasmpack](https://rustwasm.github.io/wasm-pack/installer/) if building Node-Webkit WASM applications in Rust
+* [Wasmpack](https://rustwasm.github.io/wasm-pack/installer/) if building Node Webkit WASM applications in Rust
 * [SnapCraft](https://snapcraft.io/install/snapcraft/ubuntu) + [LXD](https://linuxcontainers.org/lxd/getting-started-cli/) 
 
 ## Installation
@@ -44,52 +44,9 @@ NOTE: To create a redistributable for each platform, you need to run `cargo-nw` 
 cargo install cargo-nw
 ```
 
-## Usage
+## Documentation
 
-During the build process `cargo-nw` places all temporary in the `target/nw/build/` folder relative to `nw.toml` and the generated redistributables in the `target/nw/setup/` folder.
-
-Dependencies, such as Node Webkit redistributables are placed in `~/.cargo-nw` folder.  Custom dependency builds are also located there (in `~./cargo-nw/temp/` folder).
-
-When a new target selected, `cargo-nw` will download the appropriate Node Webkit redistributables from https://nwjs.io and store them in `~/.cargo-nw` for later use. The Node Webkit version is specified in the manifest file.
-
-There are 3 main commands `init`,`build`,`clean`, that can be used as follows:
-
-* `cargo nw init` creates a new Rust WASM project;
-    * if the folder is empty, `cargo-nw` will create a new Rust WASM (wasm-pack) project
-    * if an existing `package.json` file already exists in the current folder, only `nw.toml` manifest will be created.
-* `cargo nw init --manifest` creates only the `nw.toml` manifest file
-* `cargo nw build <type>` executes the redistributable build where `<type>` is `dmg`,`innosetup`,`snap`,`archive`,`all`
-* `cargo nw clean` removes temporary files
-* `cargo nw clean --deps` removes downloaded Node Webkit binaries
-
-For detailed information please run `cargo nw --help`
-
-## Installation
-### Linux
-```bash
-sudo apt install libssl-dev
-sudo snap install snapcraft
-sudo snap install lxd
-sudo adduser <username> lxd
-sudo service snap.lxd.daemon restart
-# you may need to restart the system
-```
-
-When creating SNAP files, to install them locally you need to run:
-```bash
-# when building with `strict` containment
-snap install --dangerous <yourfile>.app
-# when building with `clssic` containment
-snap install --dangerous --classic <yourfile>.app
-```
-
-### MacOS
-
-You should not need any external dependencies for MacOS builds as DMG functionality is integrated in the OS
-
-### Windows
-
-For Windows, `cargo-nw` supports InnoSetup which needs to be installed separately from https://jrsoftware.org/isdl.php 
+For detailed documentation please see [Cargo NW Documentation](https://cargo-nw.aspectron.org)
 
 ## Manifest
 
