@@ -124,7 +124,10 @@ enum Action {
     },
     /// Clean intermediate build folders
     Clean { 
-        /// Clean only downloaded dependency packages
+        /// Clean downloaded Node Webkit redistributables
+        #[clap(long)]
+        dist : bool,
+        /// Clean project dependencies
         #[clap(long)]
         deps : bool,
         /// Clean dependencies and build folders
@@ -272,9 +275,11 @@ pub async fn async_main() -> Result<()> {
         },
         Action::Clean { 
             all, 
-            deps 
+            deps,
+            dist 
         } => {
             let deps = deps || all;
+            let dist = dist || all;
 
             let ctx = Arc::new(Context::create(
                 location,
@@ -284,8 +289,12 @@ pub async fn async_main() -> Result<()> {
                 Options::default()
             ).await?);
 
-            if deps {
+            if dist {
                 ctx.deps.clean().await?;
+            }
+
+            if deps {
+                ctx.clean_dependencies().await?;
             }
 
             ctx.clean().await?;

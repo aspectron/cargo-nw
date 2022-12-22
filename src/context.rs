@@ -140,6 +140,7 @@ impl Context {
         let cargo_nw_target_folder = cargo_target_folder.join("nw");
         let build_folder = Path::new(&cargo_nw_target_folder).join("build").join(&app_snake_name);
         let cache_folder = Path::new(&cargo_nw_target_folder).join("cache").join(&app_snake_name);
+        let dependencies_folder = Path::new(&cargo_nw_target_folder).join("deps").join(&app_snake_name);
         
         let output_folder = if let Some(output) = output.or(manifest.package.output.clone()) {
             let output = Path::new(&output);
@@ -162,7 +163,7 @@ impl Context {
             ("$TEMP",temp_folder.to_str().unwrap()),
         ]);
 
-        let dependencies_folder = temp_folder.join("deps");
+        // let dependencies_folder = temp_folder.join("deps");
 
         let project_root_folder = project_root.to_path_buf();
         let app_root_folder = manifest.package.source.as_ref()
@@ -232,7 +233,12 @@ impl Context {
     }
 
     pub async fn ensure_folders(&self) -> Result<()> {
-        let folders = [&self.build_folder, &self.output_folder, &self.cache_folder];
+        let folders = [
+            &self.build_folder,
+            &self.output_folder,
+            &self.cache_folder,
+            &self.dependencies_folder,
+        ];
         for folder in folders {
             if !std::path::Path::new(folder).exists() {
                 std::fs::create_dir_all(folder)?;
@@ -242,6 +248,13 @@ impl Context {
         Ok(())
     }
 
+    pub async fn clean_dependencies(&self) -> Result<()> {
+        if self.dependencies_folder.exists().await {
+            log_info!("Cleaning","`{}`",self.dependencies_folder.display());
+            async_std::fs::remove_dir_all(&self.dependencies_folder).await?;
+        }
+        Ok(())
+    }
     pub async fn clean(&self) -> Result<()> {
         if self.build_folder.exists().await {
             log_info!("Cleaning","`{}`",self.build_folder.display());
