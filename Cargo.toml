@@ -2,7 +2,7 @@
 name = "cargo-nw"
 version = "0.1.0"
 edition = "2021"
-license = "Apache-2.0 OR MIT"
+license = "GPL-3.0"
 repository = "https://github.com/aspectron/cargo-nw"
 documentation = "https://cargo-nw.aspectron.org"
 authors = ["Anton Yemelyanov <anton.yemelyanov@gmail.com>", "Surinder Singh Matoo Mattaur <surinder83singh@gmail.com>"]
@@ -11,6 +11,7 @@ categories = ["command-line-utilities", "development-tools::cargo-plugins", "dev
 exclude = ["/.*", "/test"]
 description = """
 Cargo subcommand for building Node Webkit application deployment packages
+(redistributables) for Windows, MacOS and Linux.
 """
 
 [features]
