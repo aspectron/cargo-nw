@@ -152,9 +152,10 @@ impl Context {
             Path::new(&cargo_nw_target_folder).join("setup")
         };
         let output_folder = PathBuf::from(&tpl.transform(output_folder.to_str().unwrap()));
-        // tpl.set(&[
-        //     ("$OUTPUT",output_folder.to_str().unwrap()),
-        // ]);
+        tpl.set(&[
+            ("$OUTPUT",output_folder.to_str().unwrap()),
+            // ("$SETUP",output_folder.to_str().unwrap()),
+        ]);
 
         let temp_folder = Path::new(&home_folder).join(".cargo-nw").join("temp").join(&app_snake_name);
         tpl.set(&[
@@ -245,6 +246,10 @@ impl Context {
         if self.build_folder.exists().await {
             log_info!("Cleaning","`{}`",self.build_folder.display());
             async_std::fs::remove_dir_all(&self.build_folder).await?;
+        }
+        if self.cache_folder.exists().await {
+            log_info!("Cleaning","`{}`",self.cache_folder.display());
+            async_std::fs::remove_dir_all(&self.cache_folder).await?;
         }
         Ok(())
     }
