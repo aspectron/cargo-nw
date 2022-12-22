@@ -111,6 +111,18 @@ impl Context {
             ("$VERSION",manifest.application.version.as_str()),
         ]);
 
+        [
+            ("$AUTHORS",&manifest.application.authors),
+            ("$COPYRIGHT",&manifest.application.copyright),
+            ("$TRADEMARKS",&manifest.application.trademarks),
+            ("$EULA",&manifest.application.eula),
+            ("$URL",&manifest.application.url),
+        ].iter().for_each(|(k,v)|{
+            if let Some(v) = v {
+                tpl.set(&[(k,v.as_str())]);
+            }
+        });
+
         let root_folder = search_upwards(&manifest_folder,"Cargo.toml").await
             .map(|location|location.parent().unwrap().to_path_buf())
             .unwrap_or(manifest_folder.clone());
@@ -150,7 +162,7 @@ impl Context {
         let dependencies_folder = temp_folder.join("deps");
 
         let project_root_folder = project_root.to_path_buf();
-        let app_root_folder = manifest.package.root.as_ref()
+        let app_root_folder = manifest.package.source.as_ref()
             .map(|root|project_root_folder.to_path_buf().join(root))
             .unwrap_or(project_root_folder.clone());
 

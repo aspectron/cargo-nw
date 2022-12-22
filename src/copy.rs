@@ -354,7 +354,7 @@ pub async fn copy(tpl: &Tpl, copy: &Copy, src_folder: &Path, target_folder: &Pat
         if copy.glob.is_some() || copy.regex.is_some() || copy.flatten.is_some() {
             return Err(format!("other options can not be present if `copy.file` is declared").into());
         }
-        let from = tpl.transform(&file);
+        let from = src_folder.join(tpl.transform(&file));
         let to = tpl.transform(&copy.to);
 
         std::fs::copy(from, to)?;

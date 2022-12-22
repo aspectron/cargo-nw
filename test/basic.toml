@@ -54,8 +54,8 @@ items = [
 """ }},
     { write = { file = "$TARGET/package.json", content = """
     { 
-        \"name\":\"$TITLE\",
-        \"main\":\"index.html\" 
+        "name":"$TITLE",
+        "main":"index.html" 
     }
 """ }}
 # { run = { cmd = "bash publish $OUTPUT/$NAME-$VERSION" }},

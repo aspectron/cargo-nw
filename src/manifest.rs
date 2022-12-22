@@ -317,7 +317,7 @@ pub struct Package {
     pub resources: Option<String>,
     /// Project root relative to the manifest file. All 
     /// integration operations will occur from this folder.
-    pub root: Option<String>,
+    pub source: Option<String>,
     /// List of inclusion globs used during the project
     /// integration (default `**/*` - all files).  If you
     /// specify entries in this list, you have to cover all

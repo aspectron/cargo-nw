@@ -114,6 +114,11 @@ impl ActionItem {
         if let Some(write) = &self.write {
             let file = tpl.transform(&write.file);
             let file = Path::new(&file);
+
+            let parent = file.parent();
+            if let Some(parent) = parent {
+                async_std::fs::create_dir_all(&parent).await?;
+            }
             // println!("writing file: `{}` content: {}", file.display(), write.content);
             async_std::fs::write(&file,&tpl.transform(&write.content)).await?;
         }
