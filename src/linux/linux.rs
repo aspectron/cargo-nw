@@ -7,20 +7,26 @@ use crate::prelude::*;
 pub struct Linux {
     ctx : Arc<Context>,
     tpl : Tpl,
-    pub nwjs_root_folder : PathBuf,
+    pub target_folder : PathBuf,
 }
 
 impl Linux {
     pub fn new(ctx: Arc<Context>) -> Linux {
 
         let nwjs_root_folder = ctx.build_folder.join(&ctx.app_snake_name);
+        let target_folder = if ctx.manifest.package.use_app_nw.unwrap_or(false) {
+            nwjs_root_folder.clone()
+        } else {
+            nwjs_root_folder.join("app.nw")
+        };
 
-        let tpl = create_installer_tpl(&ctx, &nwjs_root_folder);
+        let tpl = create_installer_tpl(&ctx, &target_folder);
 
         Linux {
             ctx,
             tpl,
-            nwjs_root_folder
+            // nwjs_root_folder
+            target_folder,
         }
     }
 }
@@ -28,7 +34,7 @@ impl Linux {
 #[async_trait]
 impl Installer for Linux {
 
-    async fn init(&self, targets: &TargetSet) -> Result<()> {
+    async fn init(&self, _targets: &TargetSet) -> Result<()> {
         Ok(())
     }
     async fn check(&self, targets: &TargetSet) -> Result<()> {
@@ -51,18 +57,7 @@ impl Installer for Linux {
         self.copy_icons().await?;
         self.create_desktop_file().await?;
 
-        // builder.execute_actions(Stage::Package, &self.nwjs_root_folder, &self.nwjs_root_folder).await?;
-        execute_actions(&self.ctx,&self.tpl,Stage::Package, &self.nwjs_root_folder).await?;
-
-        // if let Some(actions) = &self.ctx.manifest.package.execute {
-        //     for action in actions {
-        //         if let Execute::Pack(ec) = action {
-        //             // log_info!("Build","executing pack action");
-        //             log_info!("Linux","executing `{}`",ec.display(Some(&tpl)));
-        //             self.ctx.execute_with_context(ec, Some(&self.nwjs_root_folder), None).await?;
-        //         }
-        //     }
-        // }
+        execute_actions(Stage::Package,&self.ctx,&self.tpl,&self.target_folder).await?;
 
         let mut files = Vec::new();
         if !self.ctx.dry_run {
@@ -73,7 +68,7 @@ impl Installer for Linux {
             let archive_filename = Path::new(&format!("{}.zip",self.ctx.app_snake_name)).to_path_buf();
             let archive_path = self.ctx.output_folder.join(&archive_filename);
             compress_folder(
-                &self.nwjs_root_folder,
+                &self.target_folder,
                 &archive_path,
                 level
             )?;
@@ -102,7 +97,7 @@ impl Installer for Linux {
     }
 
     fn target_folder(&self) -> PathBuf {
-        self.nwjs_root_folder.clone()
+        self.target_folder.clone()
     }
 
 }
@@ -117,16 +112,16 @@ impl Linux {
         log_info!("Integrating","NW binaries");
         dir::copy(
             Path::new(&self.ctx.deps.nwjs.target()),
-            &self.nwjs_root_folder, 
+            &self.target_folder, 
             &options
         )?;
 
         if self.ctx.manifest.node_webkit.ffmpeg.unwrap_or(false) {
             log_info!("Integrating","FFMPEG binaries");
-            fs::create_dir_all(self.nwjs_root_folder.join("lib")).await?;
+            fs::create_dir_all(self.target_folder.join("lib")).await?;
             fs::copy(
                 Path::new(&self.ctx.deps.ffmpeg.as_ref().unwrap().target()).join("libffmpeg.so"),
-                self.nwjs_root_folder.join("lib").join("libffmpeg.so")
+                self.target_folder.join("lib").join("libffmpeg.so")
             ).await?;
         }
 
@@ -135,8 +130,8 @@ impl Linux {
 
     async fn rename_app_binary(&self) -> Result<()> {
         fs::rename(
-            self.nwjs_root_folder.join("nw"), 
-            self.nwjs_root_folder.join(&self.ctx.manifest.application.name)
+            self.target_folder.join("nw"), 
+            self.target_folder.join(&self.ctx.manifest.application.name)
         ).await?;
         Ok(())
     }
@@ -147,7 +142,7 @@ impl Linux {
         // let tpl = self.ctx.tpl_clone();
         copy_folder_with_filters(
             &self.ctx.app_root_folder,
-            &self.nwjs_root_folder,
+            &self.target_folder,
             (&self.tpl,&self.ctx.include,&self.ctx.exclude).try_into()?,
             CopyOptions::new(self.ctx.manifest.package.hidden.unwrap_or(false)),
         ).await?;
@@ -162,7 +157,7 @@ impl Linux {
         ).await?;
 
         let filename = format!("{}.png",self.ctx.manifest.application.name);
-        fs::copy(&app_icon, self.nwjs_root_folder.join(filename)).await?;
+        fs::copy(&app_icon, self.target_folder.join(filename)).await?;
 
         Ok(())
     }
@@ -171,7 +166,7 @@ impl Linux {
         let application = &self.ctx.manifest.application;
 
         // TODO where should this be located?
-        let desktop_file = self.nwjs_root_folder.join(format!("{}.desktop",application.name));
+        let desktop_file = self.target_folder.join(format!("{}.desktop",application.name));
         let mut df = DesktopFile::new(desktop_file);
 
         let iconfile = format!("{}.png",application.name);
@@ -195,7 +190,7 @@ impl Linux {
 desktop-file-install --dir=$HOME/.local/share/applications {}.desktop\n\
 update-desktop-database $HOME/.local/share/applications\n\
 ", application.name);
-        let dfinstall_script_file = self.nwjs_root_folder.join(format!("{}.sh",application.name));
+        let dfinstall_script_file = self.target_folder.join(format!("{}.sh",application.name));
         fs::write(&dfinstall_script_file, df_install_script_text).await?;
         #[cfg(target_family = "unix")]
         fs::set_permissions(dfinstall_script_file, std::os::unix::fs::PermissionsExt::from_mode(0o755)).await?;

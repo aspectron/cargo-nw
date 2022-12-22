@@ -13,7 +13,8 @@ use chrono::Datelike;
 pub struct Windows {
     ctx : Arc<Context>,
     tpl : Tpl,
-    nwjs_root_folder: PathBuf,
+    // nwjs_root_folder: PathBuf,
+    target_folder: PathBuf,
     setup_icon_file : PathBuf,
     pub app_exe_file: String,
 
@@ -22,7 +23,13 @@ pub struct Windows {
 impl Windows {
     pub fn new(ctx: Arc<Context>) -> Windows {
 
-        let nwjs_root_folder = ctx.build_folder.clone(); // ctx.build_folder.join(&ctx.manifest.application.title);
+        let nwjs_root_folder = ctx.build_folder.join(&ctx.app_snake_name);
+        // let nwjs_root_folder = ctx.build_folder.clone(); // ctx.build_folder.join(&ctx.manifest.application.title);
+        let target_folder = if ctx.manifest.package.use_app_nw.unwrap_or(false) {
+            nwjs_root_folder.clone()
+        } else {
+            nwjs_root_folder.join("app.nw")
+        };
         let app_name = ctx.manifest.application.name.clone();
 
         let setup_icon_file = if let Some(crate::manifest::Windows { setup_icon : Some(setup_icon ), .. }) = &ctx.manifest.windows {
@@ -42,13 +49,14 @@ impl Windows {
             }
         };
 
-        let tpl = create_installer_tpl(&ctx, &nwjs_root_folder);
+        let tpl = create_installer_tpl(&ctx, &target_folder);
 
         Windows {
             ctx,
             tpl,
             app_exe_file,
-            nwjs_root_folder,
+            // nwjs_root_folder,
+            target_folder,
             setup_icon_file,
         }
     }
@@ -57,7 +65,7 @@ impl Windows {
 #[async_trait]
 impl Installer for Windows {
 
-    async fn init(&self, targets: &TargetSet) -> Result<()> {
+    async fn init(&self, _targets: &TargetSet) -> Result<()> {
         Ok(())
     }
 
@@ -87,18 +95,7 @@ impl Installer for Windows {
         //     &self.nwjs_root_folder
         // );
 
-        execute_actions(&self.ctx,&self.tpl,Stage::Package, &self.nwjs_root_folder).await?;
-
-        // builder.execute_actions(Stage::Package, &self.nwjs_root_folder, &self.nwjs_root_folder).await?;
-        // if let Some(actions) = &self.ctx.manifest.package.execute {
-        //     for action in actions {
-        //         log_info!("Build","executing pack action");
-        //         if let Execute::Pack(ec) = action {
-        //             log_info!("Windows","executing `{}`",ec.display(Some(&tpl)));
-        //             self.ctx.execute_with_context(ec, Some(&self.nwjs_root_folder), None).await?;
-        //         }
-        //     }
-        // }
+        execute_actions(Stage::Package,&self.ctx,&self.tpl,&self.target_folder).await?;
 
         let mut files = Vec::new();
 
@@ -110,7 +107,7 @@ impl Installer for Windows {
             let filename = Path::new(&format!("{}.zip",self.ctx.app_snake_name)).to_path_buf();
             let target_file = self.ctx.output_folder.join(&filename);
             compress_folder(
-                &self.nwjs_root_folder,
+                &self.target_folder,
                 &target_file,
                 level
             )?;
@@ -143,7 +140,7 @@ impl Installer for Windows {
     }
 
     fn target_folder(&self) -> PathBuf {
-        self.nwjs_root_folder.clone()
+        self.target_folder.clone()
     }
 
 }
@@ -159,20 +156,20 @@ impl Windows {
 
         dir::copy(
             &Path::new(&self.ctx.deps.nwjs.target()),
-            &self.nwjs_root_folder, 
+            &self.target_folder, 
             &options
         )?;
 
         fs::rename(
-            self.nwjs_root_folder.join("nw.exe"),
-            self.nwjs_root_folder.join(&self.app_exe_file),
+            self.target_folder.join("nw.exe"),
+            self.target_folder.join(&self.app_exe_file),
         ).await?;
 
         if self.ctx.manifest.node_webkit.ffmpeg.unwrap_or(false) {
             log_info!("Integrating","FFMPEG binaries");
             fs::copy(
                 Path::new(&self.ctx.deps.ffmpeg.as_ref().unwrap().target()).join("ffmpeg.dll"),
-                self.nwjs_root_folder.join("ffmpeg.dll")
+                self.target_folder.join("ffmpeg.dll")
             ).await?;
         }
 
@@ -185,7 +182,7 @@ impl Windows {
         // let tpl = self.ctx.tpl_clone();
         copy_folder_with_filters(
             &self.ctx.app_root_folder,
-            &self.nwjs_root_folder,
+            &self.target_folder,
             (&self.tpl,&self.ctx.include,&self.ctx.exclude).try_into()?,
             CopyOptions::new(self.ctx.manifest.package.hidden.unwrap_or(false)),
         ).await?;

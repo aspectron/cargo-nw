@@ -16,7 +16,8 @@ pub struct MacOS {
     pub nwjs_root_folder : PathBuf,
     pub app_contents_folder : PathBuf,
     pub app_resources_folder : PathBuf,
-    pub app_nw_folder : PathBuf,
+    pub target_folder : PathBuf,
+    // pub app_nw_folder : PathBuf,
     pub tpl : Tpl,
 
     pub ctx : Arc<Context>,
@@ -32,7 +33,7 @@ impl Installer for MacOS {
 
 
     async fn init(&self, _targets: &TargetSet) -> Result<()> {
-        std::fs::create_dir_all(&self.app_nw_folder)?;
+        std::fs::create_dir_all(&self.target_folder)?;
         
         Ok(())
     }
@@ -49,7 +50,7 @@ impl Installer for MacOS {
         self.generate_icons().await?;
 
 
-        execute_actions(Stage::Package,&self.ctx, &self.tpl, &self.app_nw_folder).await?;
+        execute_actions(Stage::Package,&self.ctx, &self.tpl, &self.target_folder).await?;
 
         // if let Some(actions) = &self.ctx.manifest.package.actions {
         //     for action in actions {
@@ -111,7 +112,7 @@ impl Installer for MacOS {
     }
 
     fn target_folder(&self) -> PathBuf {
-        self.app_nw_folder.clone()
+        self.target_folder.clone()
     }
 }
 
@@ -120,17 +121,17 @@ impl MacOS {
     pub fn new(ctx: Arc<Context>) -> MacOS {
 
         let nwjs_root_folder = ctx.build_folder.join(format!("{}.app", &ctx.manifest.application.title));
-        let app_nw_folder = nwjs_root_folder.join("Contents").join("Resources").join("app.nw");
+        let target_folder = nwjs_root_folder.join("Contents").join("Resources").join("app.nw");
 
         let tpl = create_installer_tpl(
             &ctx,
-            &app_nw_folder,
+            &target_folder,
         );
 
         MacOS {
             app_contents_folder: nwjs_root_folder.join("Contents"),
             app_resources_folder: nwjs_root_folder.join("Contents").join("Resources"),
-            app_nw_folder, //: nwjs_root_folder.join("Contents").join("Resources").join("app.nw"),
+            target_folder, //: nwjs_root_folder.join("Contents").join("Resources").join("app.nw"),
             nwjs_root_folder,
             ctx,
             tpl,
@@ -178,7 +179,7 @@ impl MacOS {
         // let tpl = self.ctx.tpl_clone();
         copy_folder_with_filters(
             &self.ctx.app_root_folder,
-            &self.app_nw_folder,
+            &self.target_folder,
             (&self.tpl,&self.ctx.include,&self.ctx.exclude).try_into()?,
             CopyOptions::new(self.ctx.manifest.package.hidden.unwrap_or(false)),
         ).await?;

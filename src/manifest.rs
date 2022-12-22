@@ -292,7 +292,7 @@ pub enum Build {
 
 /// Package directives
 #[derive(Debug, Clone, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename_all = "kebab-case")]
 pub struct Package {
     /// Use `.gitignore` entries as part of the `exclude` globs
     /// (default `true`). This prevents files in `.gitignore` to
@@ -331,13 +331,12 @@ pub struct Package {
     pub exclude: Option<Vec<CopyFilter>>,
     /// Copy hidden files (default: false).
     pub hidden: Option<bool>,
-    /// Execute actions during different stages of the build process
-    /// Supported values are `build`, `pack`, `deploy`, `publish` 
-    /// Please see [`Execute`] for additional information.
-    // pub execute: Option<Vec<Execute>>,
-    // pub actions : Vec<Action>,
     /// Customm output folder (default: `target/setup`).
     pub output: Option<String>,
+    /// Place application inside of the `app.nw` folder in
+    /// the redistributable on Windows and Linux (false by default).
+    /// This setting is always true for MacOS.
+    pub use_app_nw : Option<bool>,
 }
 
 /// Copy filter used in `package.include` and `package.exclude` sections
