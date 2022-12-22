@@ -66,7 +66,7 @@ pub async fn execute_with_context(
 ) -> Result<()> {
 
     let cwd = cwd.unwrap_or(&ctx.app_root_folder);
-    let cwd = ec.folder
+    let cwd = ec.cwd
         .as_ref()
         .map(|folder|{
             let folder = Path::new(folder);
@@ -83,6 +83,7 @@ pub async fn execute_with_context(
         &ec.get_args()?,
         &cwd,
         &ec.env,
+        &ec.family,
         &ec.platform,
         &ec.arch,
         tpl,
@@ -96,16 +97,21 @@ pub async fn execute(
     cwd: &Path,
     // cwd: &Option<String>,
     env: &Option<Vec<String>>,
+    family: &Option<PlatformFamily>,
     platform: &Option<Platform>,
     arch: &Option<Architecture>,
     tpl: &Tpl,
 ) -> Result<()> {
-
-    if arch.is_some() && arch.as_ref() != Some(&ctx.arch) {
+    
+    if family.is_some() && family.as_ref() != Some(&PlatformFamily::default()) {
         return Ok(())
     }
     
     if platform.is_some() && platform.as_ref() != Some(&ctx.platform) {
+        return Ok(())
+    }
+
+    if arch.is_some() && arch.as_ref() != Some(&ctx.arch) {
         return Ok(())
     }
 

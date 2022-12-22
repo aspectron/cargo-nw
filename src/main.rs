@@ -76,7 +76,7 @@ struct Args {
     
     #[cfg(feature = "unix")]
     #[clap(short, long)]
-    #[cfg(feature = "unix")]
+    // #[cfg(feature = "unix")]
     platform : Option<Platform>,
 }
 
@@ -98,12 +98,12 @@ enum Action {
 
         #[cfg(any(target_os = "linux", feature = "unix"))]
         #[clap(short, long, help = "Snap distribution channel (linux only)")]
-        #[cfg(any(target_os = "linux", feature = "unix"))]
+        // #[cfg(any(target_os = "linux", feature = "unix"))]
         channel : Option<Channel>,
         
         #[cfg(any(target_os = "linux", feature = "unix"))]
         #[clap(short, long, help = "Snap package confinement (linux only)")]
-        #[cfg(any(target_os = "linux", feature = "unix"))]
+        // #[cfg(any(target_os = "linux", feature = "unix"))]
         confinement : Option<Confinement>,
         
         /// Target platform architecture (x64,ia32,aarch64)

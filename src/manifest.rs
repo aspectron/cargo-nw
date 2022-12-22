@@ -178,9 +178,10 @@ pub struct ExecutionContext {
     pub name: Option<String>,
     pub argv : Option<Vec<String>>,
     pub cmd : Option<String>,
-    pub folder : Option<String>,
+    pub cwd : Option<String>,
     pub platform: Option<Platform>,
     pub arch: Option<Architecture>,
+    pub family: Option<PlatformFamily>,
     pub env : Option<Vec<String>>,
 }
 
