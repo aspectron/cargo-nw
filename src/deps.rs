@@ -42,11 +42,8 @@ impl Meta {
 }
 
 pub fn get_nwjs_suffix(platform: &Platform) -> String {
-    match platform {
-        Platform::Windows => "win",
-        Platform::Linux => "linux",
-        Platform::MacOS => "osx",
-    }.into()
+    let nw_platform : NwPlatform = platform.clone().into();
+    nw_platform.to_string()
 }
 
 pub fn get_nwjs_archive_extension(platform: &Platform) -> String {

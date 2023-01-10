@@ -71,12 +71,12 @@ impl Context {
     ) -> Result<Context> {
         // println!("");
 
+        let node_platform: NodePlatform = platform.clone().into();
+        let nw_platform: NwPlatform = platform.clone().into();
         let mut tpl : Tpl = [
-            // ("$ROOT",app_root_folder.to_str().unwrap().to_string()),
-            // ("$NAME",manifest.application.name.clone()),
-            // ("$VERSION",manifest.application.version.clone()),
-            // ("$OUTPUT",output_folder.to_str().unwrap().to_string()),
             ("$PLATFORM",platform.to_string()),
+            ("$NODE-PLATFORM",node_platform.to_string()),
+            ("$NW-PLATFORM",nw_platform.to_string()),
             ("$ARCH",arch.to_string()),
         ].as_slice().try_into()?;
         cfg_if! {

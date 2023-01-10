@@ -52,6 +52,63 @@ impl FromStr for Platform {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum NodePlatform {
+    Windows,
+    Linux,
+    MacOS,
+}
+
+impl From<Platform> for NodePlatform {
+    fn from(platform: Platform) -> Self {
+        match platform {
+            Platform::Windows => NodePlatform::Windows,
+            Platform::Linux => NodePlatform::Linux,
+            Platform::MacOS => NodePlatform::MacOS,
+        }
+    }
+}
+
+impl fmt::Display for NodePlatform {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            NodePlatform::Windows => write!(f, "win32"),
+            NodePlatform::Linux => write!(f, "linux"),
+            NodePlatform::MacOS => write!(f, "darwin"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum NwPlatform {
+    Windows,
+    Linux,
+    MacOS,
+}
+
+impl From<Platform> for NwPlatform {
+    fn from(platform: Platform) -> Self {
+        match platform {
+            Platform::Windows => NwPlatform::Windows,
+            Platform::Linux => NwPlatform::Linux,
+            Platform::MacOS => NwPlatform::MacOS,
+        }
+    }
+}
+
+impl fmt::Display for NwPlatform {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            NwPlatform::Windows => write!(f, "win"),
+            NwPlatform::Linux => write!(f, "linux"),
+            NwPlatform::MacOS => write!(f, "osx"),
+        }
+    }
+}
+
+
 
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
