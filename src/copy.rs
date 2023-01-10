@@ -338,8 +338,11 @@ pub async fn copy_folder_with_filters(
     Ok(())
 }
 
-pub fn is_hidden(path: &std::path::Path) -> bool {
+pub fn is_hidden<P>(path: P) -> bool 
+where P : AsRef<Path>
+{
     let is_hidden = path
+        .as_ref()
         .components()
         .find(|f|f.as_os_str().to_string_lossy().starts_with("."))
         .is_some();
@@ -349,7 +352,6 @@ pub fn is_hidden(path: &std::path::Path) -> bool {
 
 pub async fn copy(tpl: &Tpl, copy: &Copy, src_folder: &Path, target_folder: &Path) -> Result<()> 
 {
-
     if let Some(file) = &copy.file {
         if copy.glob.is_some() || copy.regex.is_some() || copy.flatten.is_some() {
             return Err(format!("other options can not be present if `copy.file` is declared").into());
