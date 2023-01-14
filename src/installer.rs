@@ -1,6 +1,6 @@
 use crate::prelude::*;
-use cfg_if::cfg_if;
 use async_std::path::PathBuf;
+use cfg_if::cfg_if;
 use clap::Subcommand;
 use std::{collections::HashSet, str::FromStr};
 
@@ -36,14 +36,14 @@ impl ToString for Target {
             Target::InnoSetup => "InnoSetup",
             #[cfg(any(target_os = "linux", feature = "unix"))]
             Target::Snap => "Snap",
-        }.to_string()
+        }
+        .to_string()
     }
 }
 
 impl FromStr for Target {
     type Err = Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err>
-    {
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s {
             "all" => Ok(Target::All),
             "archive" => Ok(Target::Archive),
@@ -60,7 +60,7 @@ impl FromStr for Target {
 
 impl Target {
     pub fn get_all_targets() -> HashSet<Target> {
-        // let list = 
+        // let list =
         cfg_if! {
             if #[cfg(target_os = "macos")] {
                 vec![
@@ -84,13 +84,12 @@ impl Target {
 
 pub type TargetSet = HashSet<Target>;
 
-
 #[derive(Debug, Clone, Subcommand, Serialize, Deserialize, Hash, PartialEq, Eq)]
 pub enum Channel {
     #[serde(rename = "stable")]
     Stable,
     #[serde(rename = "devel")]
-    Devel
+    Devel,
 }
 
 impl Default for Channel {
@@ -104,14 +103,14 @@ impl ToString for Channel {
         match self {
             Channel::Stable => "stable",
             Channel::Devel => "devel",
-        }.to_string()
+        }
+        .to_string()
     }
 }
 
 impl FromStr for Channel {
     type Err = Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err>
-    {
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s {
             "stable" => Ok(Channel::Stable),
             "devel" => Ok(Channel::Devel),
@@ -143,19 +142,23 @@ impl ToString for Confinement {
             Confinement::Strict => "strict",
             Confinement::Classic => "classic",
             Confinement::Devmode => "devmode",
-        }.to_string()
+        }
+        .to_string()
     }
 }
 
 impl FromStr for Confinement {
     type Err = Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err>
-    {
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s {
             "strict" => Ok(Confinement::Strict),
             "classic" => Ok(Confinement::Classic),
             "devmode" => Ok(Confinement::Devmode),
-            _ => Err(format!("unsupported confinement: {} (must be one of: 'strict','classic','devmode')", s).into()),
+            _ => Err(format!(
+                "unsupported confinement: {} (must be one of: 'strict','classic','devmode')",
+                s
+            )
+            .into()),
         }
     }
 }
@@ -174,7 +177,7 @@ pub fn create_installer_tpl(ctx: &Context, target_folder: &PathBuf) -> Tpl {
     tpl.set(&[
         // ("$SOURCE",source.to_str().unwrap()),
         // ("$OUTPUT",target_folder.to_str().unwrap()),
-        ("$TARGET",target_folder.to_str().unwrap())
+        ("$TARGET", target_folder.to_str().unwrap()),
     ]);
     // let application = &ctx.manifest.application;
     // let tpl: Tpl = [
@@ -187,7 +190,6 @@ pub fn create_installer_tpl(ctx: &Context, target_folder: &PathBuf) -> Tpl {
 
     tpl
 }
-
 
 pub fn create_installer(ctx: &Arc<Context>) -> Box<dyn Installer> {
     cfg_if! {

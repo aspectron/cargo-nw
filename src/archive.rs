@@ -6,8 +6,8 @@ use zip::write::FileOptions;
 // use std::fs::DirEntry;
 use std::fs::File;
 use std::io::Read;
-use std::path::PathBuf;
 use std::path::Path;
+use std::path::PathBuf;
 use walkdir::{DirEntry, WalkDir};
 // use async_std::path::PathBuf;
 // use async_std::path::Path;
@@ -17,23 +17,21 @@ use crate::prelude::*;
 use console::style;
 
 // pub async fn extract(file: &str, dir: &str) -> Result<()> {
-pub async fn extract(file: &async_std::path::PathBuf, dir: &async_std::path::PathBuf) -> Result<()> {
-
-    let file_str = file
-        .clone()
-        .into_os_string()
-        .into_string()?;
+pub async fn extract(
+    file: &async_std::path::PathBuf,
+    dir: &async_std::path::PathBuf,
+) -> Result<()> {
+    let file_str = file.clone().into_os_string().into_string()?;
 
     // println!("extracting file: {} to {}", file_str, dir_str);
 
     if file_str.ends_with(".tar.gz") || file_str.ends_with(".tgz") {
-        extract_tar_gz(&file.into(),&dir.into())?;
+        extract_tar_gz(&file.into(), &dir.into())?;
     } else if file_str.ends_with(".zip") {
-        extract_zip(&file.into(),&dir.into()).await?;
+        extract_zip(&file.into(), &dir.into()).await?;
     } else {
         return Err(format!("extract(): unsupported file type: {}", file_str).into());
     }
-
 
     Ok(())
 }
@@ -101,17 +99,15 @@ async fn extract_zip(file: &PathBuf, dir: &PathBuf) -> Result<()> {
     }
 
     Ok(())
-
 }
 
-
 fn zip_folder<T>(
-    nb_files : usize,
-    filename : &str,
+    nb_files: usize,
+    filename: &str,
     _path: &Path,
     it: &mut dyn Iterator<Item = DirEntry>,
     // prefix: &str,
-    prefix : &Path,
+    prefix: &Path,
     writer: T,
     method: zip::CompressionMethod,
 ) -> Result<()>
@@ -126,7 +122,7 @@ where
     let options = FileOptions::default()
         .compression_method(method)
         .unix_permissions(0o755);
-        
+
     let mut buffer = Vec::new();
     for entry in it {
         let path = entry.path();
@@ -155,10 +151,13 @@ where
 
         count += 1;
         let pos = count as f64 / nb_files as f64 * 100.0;
-        let percent = style(format!("{:1.2}%",pos)).cyan();
-        let size = style(format!("{:1.2} Mb",bytes as f64 / 1024.0 / 1024.0)).cyan();
+        let percent = style(format!("{:1.2}%", pos)).cyan();
+        let size = style(format!("{:1.2} Mb", bytes as f64 / 1024.0 / 1024.0)).cyan();
         let files = style(format!("{count}/{nb_files} files")).cyan();
-        log_state!("Compressing","... {filename}: {percent} - {files} - {size} ");
+        log_state!(
+            "Compressing",
+            "... {filename}: {percent} - {files} - {size} "
+        );
     }
 
     log_state_clear();
@@ -167,12 +166,12 @@ where
     Ok(())
 }
 
-
 pub fn compress_folder(
     src_dir: &async_std::path::Path,
     dst_file: &async_std::path::Path,
     archive: Archive,
-) -> Result<()> { //zip::result::ZipResult<()> {
+) -> Result<()> {
+    //zip::result::ZipResult<()> {
     if !Path::new(src_dir).is_dir() {
         return Err(ZipError::FileNotFound.into());
     }
@@ -187,11 +186,10 @@ pub fn compress_folder(
     // };
     let algorithm = archive.algorithm.unwrap_or_default();
     let subfolder = archive.subfolder.unwrap_or(true);
-    
 
     // let algorithm = options.algorithm.unwrap_or_default();
-    log_info!("Archive","compressing ({})", algorithm.to_string());
-    let method : zip::CompressionMethod = algorithm.into();
+    log_info!("Archive", "compressing ({})", algorithm.to_string());
+    let method: zip::CompressionMethod = algorithm.into();
 
     let path = Path::new(dst_file);
     let file = File::create(path).unwrap();
@@ -200,7 +198,7 @@ pub fn compress_folder(
     let it = walkdir.into_iter();
     let mut nb_files = 0;
     for _ in it {
-        nb_files = nb_files+1;
+        nb_files = nb_files + 1;
     }
 
     let walkdir = WalkDir::new(src_dir);
@@ -216,10 +214,10 @@ pub fn compress_folder(
         nb_files,
         dst_file.file_name().unwrap().to_str().unwrap(),
         path,
-        &mut it.filter_map(|e| e.ok()), 
+        &mut it.filter_map(|e| e.ok()),
         prefix.into(),
         file,
-        method
+        method,
     )?;
 
     Ok(())

@@ -1,8 +1,7 @@
-use std::collections::HashMap;
-use std::{rc::Rc, cell::RefCell};
-use std::fmt;
 use convert_case::{Case, Casing};
-
+use std::collections::HashMap;
+use std::fmt;
+use std::{cell::RefCell, rc::Rc};
 
 pub struct InnoSetup {
     definitions: Rc<Definitions>,
@@ -12,7 +11,7 @@ pub struct InnoSetup {
 
 impl InnoSetup {
     pub fn new() -> InnoSetup {
-        InnoSetup { 
+        InnoSetup {
             sections: Vec::new(),
             map: HashMap::new(),
             definitions: Rc::new(Definitions::new()),
@@ -27,7 +26,7 @@ impl InnoSetup {
     pub fn section(&mut self, name: &str) -> Rc<Section> {
         let section = Rc::new(Section::new(name));
         self.sections.push(section.clone());
-        self.map.insert(name.to_lowercase(),section.clone());
+        self.map.insert(name.to_lowercase(), section.clone());
         section
     }
 
@@ -57,7 +56,9 @@ impl InnoSetup {
 
     pub fn run(&mut self) -> Rc<Run> {
         if let Some(section) = self.map.get("run") {
-            Rc::new(Run { section : section.clone().as_args() })
+            Rc::new(Run {
+                section: section.clone().as_args(),
+            })
         } else {
             let section = self.section("Run").as_args();
             Rc::new(Run { section })
@@ -66,7 +67,9 @@ impl InnoSetup {
 
     pub fn firewall(&mut self) -> Rc<Firewall> {
         if let Some(section) = self.map.get("run") {
-            Rc::new(Firewall { section : section.clone().as_args() })
+            Rc::new(Firewall {
+                section: section.clone().as_args(),
+            })
         } else {
             let section = self.section("Run").as_args();
             Rc::new(Firewall { section })
@@ -78,50 +81,51 @@ impl InnoSetup {
         section
     }
 
-
     pub fn languages(&mut self, languages: &[&str]) {
         let args = self.section("Languages").as_args();
 
         for lang in languages {
             let lang = lang.to_lowercase();
-            let lang_title = lang.to_string()
-            .from_case(Case::Lower)
-            .to_case(Case::Title);
+            let lang_title = lang.to_string().from_case(Case::Lower).to_case(Case::Title);
             if lang.as_str() == "english" {
-                args.push(&[qs!("Name",lang_title),qs!("MessagesFile","compiler:Default.isl")])
+                args.push(&[
+                    qs!("Name", lang_title),
+                    qs!("MessagesFile", "compiler:Default.isl"),
+                ])
             } else {
-                args.push(&[qs!("Name",lang_title),qs!("MessagesFile",format!("compiler:Languages\\{lang_title}.isl"))])
-
+                args.push(&[
+                    qs!("Name", lang_title),
+                    qs!(
+                        "MessagesFile",
+                        format!("compiler:Languages\\{lang_title}.isl")
+                    ),
+                ])
             };
         }
-
     }
-
-
 }
 
 pub struct Definitions {
-    args: Rc<RefCell<Vec<(String,String)>>>
+    args: Rc<RefCell<Vec<(String, String)>>>,
 }
 
 impl Definitions {
     pub fn new() -> Definitions {
         Definitions {
-            args: Rc::new(RefCell::new(Vec::new()))
+            args: Rc::new(RefCell::new(Vec::new())),
         }
     }
 
-    pub fn define(self : Rc<Self>, k: &str, v: &str) -> Rc<Self> {
-        self.args.borrow_mut().push((k.to_string(),v.to_string()));
+    pub fn define(self: Rc<Self>, k: &str, v: &str) -> Rc<Self> {
+        self.args.borrow_mut().push((k.to_string(), v.to_string()));
         self
     }
-
 }
 
 impl fmt::Display for Definitions {
-    fn fmt(&self, f : &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
-        for (k,v) in self.args.borrow().iter() {
-            writeln!(f, "#define {} \"{}\"",k,v)?;
+    fn fmt(&self, f: &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
+        for (k, v) in self.args.borrow().iter() {
+            writeln!(f, "#define {} \"{}\"", k, v)?;
         }
 
         Ok(())
@@ -129,19 +133,19 @@ impl fmt::Display for Definitions {
 }
 
 pub struct DirectivesSection {
-    args: Rc<RefCell<Vec<(String,String)>>>
+    args: Rc<RefCell<Vec<(String, String)>>>,
 }
 
 impl DirectivesSection {
     pub fn new() -> DirectivesSection {
         DirectivesSection {
-            args: Rc::new(RefCell::new(Vec::new()))
+            args: Rc::new(RefCell::new(Vec::new())),
         }
     }
 
-    pub fn directives(self : Rc<Self>, list : &[(&str,&str)]) -> Rc<Self> {
-        for (k,v) in list {
-            self.args.borrow_mut().push((k.to_string(),v.to_string()));
+    pub fn directives(self: Rc<Self>, list: &[(&str, &str)]) -> Rc<Self> {
+        for (k, v) in list {
+            self.args.borrow_mut().push((k.to_string(), v.to_string()));
         }
 
         self
@@ -149,9 +153,9 @@ impl DirectivesSection {
 }
 
 impl fmt::Display for DirectivesSection {
-    fn fmt(&self, f : &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
-        for (k,v) in self.args.borrow().iter() {
-            writeln!(f, "{} = {}",k,v)?;
+    fn fmt(&self, f: &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
+        for (k, v) in self.args.borrow().iter() {
+            writeln!(f, "{} = {}", k, v)?;
         }
 
         Ok(())
@@ -159,21 +163,21 @@ impl fmt::Display for DirectivesSection {
 }
 
 pub struct ArgsSection {
-    args: Rc<RefCell<Vec<Vec<(String,String)>>>>
+    args: Rc<RefCell<Vec<Vec<(String, String)>>>>,
 }
 
 impl ArgsSection {
     pub fn new() -> ArgsSection {
         ArgsSection {
-            args: Rc::new(RefCell::new(Vec::new()))
+            args: Rc::new(RefCell::new(Vec::new())),
         }
     }
 
-    pub fn args(self : Rc<Self>, list : &[&[(&str,&str)]]) -> Rc<Self> {
+    pub fn args(self: Rc<Self>, list: &[&[(&str, &str)]]) -> Rc<Self> {
         for line in list {
             let mut args = Vec::new();
-            for (k,v) in line.iter() {
-                args.push((k.to_string(),v.to_string()));
+            for (k, v) in line.iter() {
+                args.push((k.to_string(), v.to_string()));
             }
             self.args.borrow_mut().push(args);
         }
@@ -181,16 +185,16 @@ impl ArgsSection {
         self
     }
 
-    pub fn push(self: &Rc<Self>, args: &[(String,String)]) {
+    pub fn push(self: &Rc<Self>, args: &[(String, String)]) {
         self.args.borrow_mut().push(args.to_vec());
     }
 }
 
 impl fmt::Display for ArgsSection {
-    fn fmt(&self, f : &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
         for entries in self.args.borrow().iter() {
-            for (k,v) in entries.iter() {
-                write!(f, "{}: {}; ",k,v)?;
+            for (k, v) in entries.iter() {
+                write!(f, "{}: {}; ", k, v)?;
             }
             writeln!(f, "")?;
         }
@@ -200,16 +204,12 @@ impl fmt::Display for ArgsSection {
 }
 
 pub struct Icons {
-    section : Rc<ArgsSection>
+    section: Rc<ArgsSection>,
 }
 
 impl Icons {
-    pub fn icon(self: Rc<Self>, name: &str, filename: &str, task : Option<&str>) -> Rc<Self> {
-
-        let mut args = vec![
-            qs!("Name", name),
-            qs!("Filename", filename)
-        ];
+    pub fn icon(self: Rc<Self>, name: &str, filename: &str, task: Option<&str>) -> Rc<Self> {
+        let mut args = vec![qs!("Name", name), qs!("Filename", filename)];
         if let Some(task) = task {
             args.push(("Tasks".into(), task.into()));
         }
@@ -218,9 +218,8 @@ impl Icons {
     }
 }
 
-
 pub struct Registry {
-    section : Rc<ArgsSection>
+    section: Rc<ArgsSection>,
 }
 
 impl Registry {
@@ -231,9 +230,8 @@ impl Registry {
         value_type: &str,
         value_name: &str,
         value_data: &str,
-        flags : Option<&str>
+        flags: Option<&str>,
     ) -> Rc<Self> {
-
         let mut args = vec![
             ("Root".to_string(), root.to_string()),
             qs!("Subkey", subkey),
@@ -249,9 +247,8 @@ impl Registry {
     }
 }
 
-
 pub struct Tasks {
-    section : Rc<ArgsSection>
+    section: Rc<ArgsSection>,
 }
 
 impl Tasks {
@@ -260,10 +257,9 @@ impl Tasks {
         name: &str,
         description: &str,
         group: &str,
-        flags : Option<&str>,
-        other : Option<&[(&str,&str)]>
+        flags: Option<&str>,
+        other: Option<&[(&str, &str)]>,
     ) -> Rc<Self> {
-
         let mut args = vec![
             qs!("Name", name),
             qs!("Description", description),
@@ -273,9 +269,8 @@ impl Tasks {
             args.push(("Flags".into(), flags.into()));
         }
         if let Some(other) = other {
-            for (k,v) in other.iter() {
+            for (k, v) in other.iter() {
                 args.push((k.to_string(), v.to_string()));
-
             }
         }
         self.section.clone().push(&args);
@@ -284,7 +279,7 @@ impl Tasks {
 }
 
 pub struct FilesSection {
-    section : Rc<ArgsSection>
+    section: Rc<ArgsSection>,
 }
 
 impl FilesSection {
@@ -292,13 +287,9 @@ impl FilesSection {
         self: Rc<Self>,
         source: &str,
         dest_dir: &str,
-        flags : Option<&str>,
+        flags: Option<&str>,
     ) -> Rc<Self> {
-
-        let mut args = vec![
-            qs!("Source",source),
-            qs!("DestDir",dest_dir),
-        ];
+        let mut args = vec![qs!("Source", source), qs!("DestDir", dest_dir)];
         if let Some(flags) = flags {
             args.push(("Flags".into(), flags.into()));
         }
@@ -308,7 +299,7 @@ impl FilesSection {
 }
 
 pub struct Run {
-    section : Rc<ArgsSection>
+    section: Rc<ArgsSection>,
 }
 
 impl Run {
@@ -317,17 +308,14 @@ impl Run {
         filename: &str,
         parameters: Option<&str>,
         description: Option<&str>,
-        flags : Option<&str>,
+        flags: Option<&str>,
     ) -> Rc<Self> {
-
-        let mut args = vec![
-            qs!("Filename",filename),
-        ];
+        let mut args = vec![qs!("Filename", filename)];
         if let Some(parameters) = parameters {
-            args.push(qs!("Parameters",parameters));
+            args.push(qs!("Parameters", parameters));
         }
         if let Some(description) = description {
-            args.push(qs!("Description",description));
+            args.push(qs!("Description", description));
         }
         if let Some(flags) = flags {
             args.push(("Flags".into(), flags.into()));
@@ -337,20 +325,12 @@ impl Run {
     }
 }
 
-
 pub struct Firewall {
-    section : Rc<ArgsSection>
+    section: Rc<ArgsSection>,
 }
 
 impl Firewall {
-
-    pub fn add_rule(
-        self: Rc<Self>,
-        name: &str,
-        file: &str,
-        direction: &str,
-    ) -> Rc<Self> {
-
+    pub fn add_rule(self: Rc<Self>, name: &str, file: &str, direction: &str) -> Rc<Self> {
         if direction.contains("in") {
             let args = vec![
                 qs!("Filename","{sys}\\netsh.exe"),
@@ -378,8 +358,8 @@ pub enum SectionArgs {
 }
 
 pub struct Section {
-    name : String,
-    args: Rc<RefCell<Option<SectionArgs>>>
+    name: String,
+    args: Rc<RefCell<Option<SectionArgs>>>,
 }
 
 impl Section {
@@ -395,7 +375,9 @@ impl Section {
         if let Some(section) = section.as_ref() {
             match section {
                 SectionArgs::Directive(section) => section.clone(),
-                SectionArgs::MultiArg(_) => panic!("InnoSetup - requesting incompatible section types"),
+                SectionArgs::MultiArg(_) => {
+                    panic!("InnoSetup - requesting incompatible section types")
+                }
             }
         } else {
             let directives = Rc::new(DirectivesSection::new());
@@ -408,7 +390,9 @@ impl Section {
         let mut section = self.args.borrow_mut();
         if let Some(section) = section.as_ref() {
             match section {
-                SectionArgs::Directive(_) => panic!("InnoSetup - requesting incompatible section types"),
+                SectionArgs::Directive(_) => {
+                    panic!("InnoSetup - requesting incompatible section types")
+                }
                 SectionArgs::MultiArg(section) => section.clone(),
             }
         } else {
@@ -417,21 +401,20 @@ impl Section {
             args
         }
     }
-
 }
 
 impl fmt::Display for InnoSetup {
-    fn fmt(&self, f : &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
         writeln!(f, "{}", self.definitions.to_string())?;
         for section in &self.sections {
             writeln!(f, "[{}]", section.name)?;
             if let Some(section) = section.args.borrow().as_ref() {
                 match section {
                     SectionArgs::Directive(section) => {
-                        writeln!(f, "{}",section.to_string())?;
-                    },
+                        writeln!(f, "{}", section.to_string())?;
+                    }
                     SectionArgs::MultiArg(section) => {
-                        writeln!(f, "{}",section.to_string())?;
+                        writeln!(f, "{}", section.to_string())?;
                     }
                 }
             } else {
@@ -444,18 +427,18 @@ impl fmt::Display for InnoSetup {
 
 #[macro_export]
 macro_rules! quote {
-    ($v:expr) => (
-        &format!("\"{}\"",$v)
-    )
+    ($v:expr) => {
+        &format!("\"{}\"", $v)
+    };
 }
 
 pub use quote;
 
 #[macro_export]
 macro_rules! qs {
-    ($k:expr, $v:expr) => (
-        (String::from($k), format!("\"{}\"",$v))
-    )
+    ($k:expr, $v:expr) => {
+        (String::from($k), format!("\"{}\"", $v))
+    };
 }
 
 pub use qs;

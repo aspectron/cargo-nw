@@ -1,8 +1,8 @@
-use cfg_if::cfg_if;
-use std::{fmt, str::FromStr};
-use clap::Subcommand;
 use crate::error::Error;
-use serde::{Serialize,Deserialize};
+use cfg_if::cfg_if;
+use clap::Subcommand;
+use serde::{Deserialize, Serialize};
+use std::{fmt, str::FromStr};
 
 #[derive(Debug, Clone, Subcommand, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -41,8 +41,7 @@ impl fmt::Display for Platform {
 
 impl FromStr for Platform {
     type Err = Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err>
-    {
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s {
             "windows" => Ok(Platform::Windows),
             "macos" => Ok(Platform::MacOS),
@@ -108,9 +107,6 @@ impl fmt::Display for NwPlatform {
     }
 }
 
-
-
-
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 pub enum Architecture {
@@ -166,7 +162,7 @@ impl FromStr for Architecture {
 #[serde(rename_all = "lowercase")]
 pub enum PlatformFamily {
     Windows,
-    Unix
+    Unix,
 }
 
 impl Default for PlatformFamily {
@@ -181,7 +177,6 @@ impl Default for PlatformFamily {
     }
 }
 
-
 impl FromStr for PlatformFamily {
     type Err = Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -192,4 +187,3 @@ impl FromStr for PlatformFamily {
         }
     }
 }
-

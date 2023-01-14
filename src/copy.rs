@@ -1,17 +1,17 @@
-use std::collections::HashSet;
 use async_std::path::Path;
 use async_std::path::PathBuf;
-use globset::{Glob,GlobSet};
-use walkdir::WalkDir;
+use globset::{Glob, GlobSet};
 use regex::RegexSet;
+use std::collections::HashSet;
+use walkdir::WalkDir;
 // use ignore::Walk;
 use crate::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct CopyOptions {
-    pub hidden : bool,
+    pub hidden: bool,
     // pub case_sensitive: bool,
-    pub flatten : bool,
+    pub flatten: bool,
     // pub rename : Option<String>,
 }
 
@@ -38,7 +38,7 @@ impl Default for CopyOptions {
 }
 
 impl CopyOptions {
-    pub fn new(hidden : bool) -> Self {
+    pub fn new(hidden: bool) -> Self {
         CopyOptions {
             hidden,
             // case_sensitive : false,
@@ -51,7 +51,7 @@ impl CopyOptions {
 #[derive(Debug, Clone)]
 pub enum Filter {
     Glob(GlobSet),
-    Regex(RegexSet)
+    Regex(RegexSet),
 }
 
 impl Filter {
@@ -64,45 +64,36 @@ impl Filter {
     }
 
     pub fn try_regex(tpl: &Tpl, regex_list: &Vec<String>) -> Result<Self> {
-        Ok(Filter::Regex(
-            RegexSet::new(
-                regex_list
+        Ok(Filter::Regex(RegexSet::new(
+            regex_list
                 .iter()
-                .map(|s|tpl.transform(s))
-                .collect::<Vec<_>>()
-            )?
-        ))
+                .map(|s| tpl.transform(s))
+                .collect::<Vec<_>>(),
+        )?))
     }
 }
 
-impl TryFrom<(&Tpl,&CopyFilter)> for Filter {
+impl TryFrom<(&Tpl, &CopyFilter)> for Filter {
     type Error = Error;
-    fn try_from((tpl,cf):(&Tpl,&CopyFilter)) -> Result<Filter> {
+    fn try_from((tpl, cf): (&Tpl, &CopyFilter)) -> Result<Filter> {
         match cf {
-            CopyFilter::Glob(glob_list) => {
-                Filter::try_glob(tpl, glob_list)
-            },
-            CopyFilter::Regex(regex_list) => {
-                Filter::try_regex(tpl, regex_list)
-            }
+            CopyFilter::Glob(glob_list) => Filter::try_glob(tpl, glob_list),
+            CopyFilter::Regex(regex_list) => Filter::try_regex(tpl, regex_list),
         }
     }
 }
 
-impl TryFrom<(&Tpl,&Copy)> for Filter {
+impl TryFrom<(&Tpl, &Copy)> for Filter {
     type Error = Error;
-    fn try_from((tpl,copy):(&Tpl,&Copy)) -> Result<Filter> {
-
-        match (&copy.glob,&copy.regex) {
-            (Some(glob), None) => {
-                Filter::try_glob(tpl,&glob)
-            },
-            (None, Some(regex)) => {
-                Filter::try_regex(tpl,&regex)
-            },
-            _ => {
-                Err(format!("copy directive must have one 'glob' or 'regex' property: {:?}", copy).into())
-            }
+    fn try_from((tpl, copy): (&Tpl, &Copy)) -> Result<Filter> {
+        match (&copy.glob, &copy.regex) {
+            (Some(glob), None) => Filter::try_glob(tpl, &glob),
+            (None, Some(regex)) => Filter::try_regex(tpl, &regex),
+            _ => Err(format!(
+                "copy directive must have one 'glob' or 'regex' property: {:?}",
+                copy
+            )
+            .into()),
         }
     }
 }
@@ -111,58 +102,69 @@ impl Filter {
     pub fn is_match(&self, text: &str) -> bool {
         match self {
             Filter::Glob(glob) => glob.is_match(text),
-            Filter::Regex(regex) => regex.is_match(text)
+            Filter::Regex(regex) => regex.is_match(text),
         }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Filters {
-    pub include : Option<Vec<Filter>>,
-    pub exclude : Option<Vec<Filter>>
+    pub include: Option<Vec<Filter>>,
+    pub exclude: Option<Vec<Filter>>,
 }
 
-impl TryFrom<(Option<Filter>,Option<Filter>)> for Filters {
+impl TryFrom<(Option<Filter>, Option<Filter>)> for Filters {
     type Error = Error;
-    fn try_from((include,exclude):(Option<Filter>,Option<Filter>)) -> Result<Filters> {
-
+    fn try_from((include, exclude): (Option<Filter>, Option<Filter>)) -> Result<Filters> {
         let include = if let Some(include) = include {
             Some(vec![include])
-        } else { None };
+        } else {
+            None
+        };
         let exclude = if let Some(exclude) = exclude {
             Some(vec![exclude])
-        } else { None };
+        } else {
+            None
+        };
 
         Ok(Filters { include, exclude })
     }
 }
 
-impl TryFrom<(&Tpl,&Copy)> for Filters {
+impl TryFrom<(&Tpl, &Copy)> for Filters {
     type Error = Error;
-    fn try_from((tpl,copy):(&Tpl,&Copy)) -> Result<Filters> {
-        let filter: Filter = (tpl,copy).try_into()?;
-        Ok(Filters { include: Some(vec![filter]), exclude: None })
+    fn try_from((tpl, copy): (&Tpl, &Copy)) -> Result<Filters> {
+        let filter: Filter = (tpl, copy).try_into()?;
+        Ok(Filters {
+            include: Some(vec![filter]),
+            exclude: None,
+        })
     }
 }
 
-impl TryFrom<(&Tpl,&Option<Vec<CopyFilter>>,&Option<Vec<CopyFilter>>)> for Filters {
+impl TryFrom<(&Tpl, &Option<Vec<CopyFilter>>, &Option<Vec<CopyFilter>>)> for Filters {
     type Error = Error;
-    fn try_from((tpl,include,exclude):(&Tpl,&Option<Vec<CopyFilter>>,&Option<Vec<CopyFilter>>)) -> Result<Filters> {
-
+    fn try_from(
+        (tpl, include, exclude): (&Tpl, &Option<Vec<CopyFilter>>, &Option<Vec<CopyFilter>>),
+    ) -> Result<Filters> {
         let include = if let Some(include) = include {
             let mut include_filters = Vec::new();
             for filter in include {
-                include_filters.push((tpl,filter).try_into()?);
+                include_filters.push((tpl, filter).try_into()?);
             }
             Some(include_filters)
-        } else { None };
+        } else {
+            None
+        };
         let exclude = if let Some(exclude) = exclude {
             let mut exclude_filters = Vec::new();
             for filter in exclude {
-                exclude_filters.push((tpl,filter).try_into()?);
+                exclude_filters.push((tpl, filter).try_into()?);
             }
             Some(exclude_filters)
-        } else { None };
+        } else {
+            None
+        };
 
         Ok(Filters { include, exclude })
     }
@@ -171,19 +173,13 @@ impl TryFrom<(&Tpl,&Option<Vec<CopyFilter>>,&Option<Vec<CopyFilter>>)> for Filte
 impl Filters {
     pub fn is_match(&self, text: &str) -> bool {
         let include = if let Some(include) = &self.include {
-            include
-            .iter()
-            .find(|f|f.is_match(text))
-            .is_some()
+            include.iter().find(|f| f.is_match(text)).is_some()
         } else {
             true
         };
-        
+
         let exclude = if let Some(exclude) = &self.exclude {
-            exclude
-                .iter()
-                .find(|f|f.is_match(text))
-                .is_some()
+            exclude.iter().find(|f| f.is_match(text)).is_some()
         } else {
             false
         };
@@ -201,23 +197,25 @@ impl Filters {
 // }
 
 pub struct Rename {
-    pub stem : Option<String>,
-    pub extension : Option<String>
+    pub stem: Option<String>,
+    pub extension: Option<String>,
 }
 
 impl Rename {
     pub fn try_from(dest: &Path) -> Option<Rename> {
-
         let stem = dest.file_stem();
         let extension = dest.extension();
-    
-        let stem = if stem.map(|s|s.to_str().unwrap() == "*").unwrap_or(false) {
+
+        let stem = if stem.map(|s| s.to_str().unwrap() == "*").unwrap_or(false) {
             Some(stem.unwrap().to_str().unwrap().to_string())
         } else {
             None
         };
 
-        let extension = if extension.map(|s|s.to_str().unwrap() == "*").unwrap_or(false) {
+        let extension = if extension
+            .map(|s| s.to_str().unwrap() == "*")
+            .unwrap_or(false)
+        {
             Some(extension.unwrap().to_str().unwrap().to_string())
         } else {
             None
@@ -231,36 +229,28 @@ impl Rename {
     }
 
     pub fn transform(&self, path: &mut PathBuf) {
-
         let stem = if let Some(stem) = &self.stem {
             Some(stem.clone())
         } else {
-            path
-                .file_stem()
-                .map(|s|
-                    s.to_str()
-                    .unwrap()
-                    .to_string()
-                )
-                // .unwrap()
-                // .to_string()
+            path.file_stem().map(|s| s.to_str().unwrap().to_string())
+            // .unwrap()
+            // .to_string()
         };
 
         let extension = if let Some(extension) = &self.extension {
             Some(extension.clone())
         } else {
-            path
-                .extension()
-                .map(|s|
-                    s.to_str()
-                    .unwrap()
-                    .to_string()
-                )
-                // .unwrap()
-                // .to_string()
+            path.extension().map(|s| s.to_str().unwrap().to_string())
+            // .unwrap()
+            // .to_string()
         };
 
-        let filename = [stem,extension].iter().flatten().cloned().collect::<Vec<String>>().join(".");
+        let filename = [stem, extension]
+            .iter()
+            .flatten()
+            .cloned()
+            .collect::<Vec<String>>()
+            .join(".");
         path.set_file_name(filename);
     }
 }
@@ -272,12 +262,11 @@ pub async fn copy_folder_with_filters(
     filters: Filters,
     options: CopyOptions,
 ) -> Result<()> {
-
     // let list = WalkDir::new(src_folder)
     let list = WalkDir::new(src_folder)
         .into_iter()
         .flatten()
-        .filter_map(|entry|{
+        .filter_map(|entry| {
             let path = entry.path();
             let relative = path.strip_prefix(src_folder).unwrap();
 
@@ -295,7 +284,7 @@ pub async fn copy_folder_with_filters(
     let rename = Rename::try_from(dest_folder);
 
     if options.flatten {
-        let files: Vec::<_> = list.collect();
+        let files: Vec<_> = list.collect();
         if files.len() != 0 {
             std::fs::create_dir_all(dest_folder)?;
         }
@@ -305,63 +294,65 @@ pub async fn copy_folder_with_filters(
             if let Some(rename) = &rename {
                 rename.transform(&mut to_file);
             }
-            log_trace!("Copy","`{}` to `{}`",to_file.display(), dest_folder.display());
-            std::fs::copy(
-                src_folder.join(&file),
-                to_file
-            )?;
+            log_trace!(
+                "Copy",
+                "`{}` to `{}`",
+                to_file.display(),
+                dest_folder.display()
+            );
+            std::fs::copy(src_folder.join(&file), to_file)?;
         }
-
     } else {
         let mut folders = HashSet::new();
-        let list: Vec::<_> = list.collect();
+        let list: Vec<_> = list.collect();
         for path in list.iter() {
             let folder = path.parent().unwrap();
             folders.insert(folder.to_path_buf());
         }
-    
+
         for folder in folders {
-            std::fs::create_dir_all(dest_folder.join(folder))?; 
+            std::fs::create_dir_all(dest_folder.join(folder))?;
         }
-    
+
         for file in list {
             let mut to_file = dest_folder.join(&file);
             if let Some(rename) = &rename {
                 rename.transform(&mut to_file);
             }
             // println!("+{}",file.display());
-            log_trace!("Copy","`{}` to `{}`",file.display(), to_file.display());
-            std::fs::copy(src_folder.join(&file),to_file)?;
+            log_trace!("Copy", "`{}` to `{}`", file.display(), to_file.display());
+            std::fs::copy(src_folder.join(&file), to_file)?;
         }
     }
 
     Ok(())
 }
 
-pub fn is_hidden<P>(path: P) -> bool 
-where P : AsRef<Path>
+pub fn is_hidden<P>(path: P) -> bool
+where
+    P: AsRef<Path>,
 {
     let is_hidden = path
         .as_ref()
         .components()
-        .find(|f|f.as_os_str().to_string_lossy().starts_with("."))
+        .find(|f| f.as_os_str().to_string_lossy().starts_with("."))
         .is_some();
 
     is_hidden
 }
 
-pub async fn copy(tpl: &Tpl, copy: &Copy, src_folder: &Path, target_folder: &Path) -> Result<()> 
-{
+pub async fn copy(tpl: &Tpl, copy: &Copy, src_folder: &Path, target_folder: &Path) -> Result<()> {
     if let Some(file) = &copy.file {
         if copy.glob.is_some() || copy.regex.is_some() || copy.flatten.is_some() {
-            return Err(format!("other options can not be present if `copy.file` is declared").into());
+            return Err(
+                format!("other options can not be present if `copy.file` is declared").into(),
+            );
         }
         let from = src_folder.join(tpl.transform(&file));
         let to = tpl.transform(&copy.to);
 
         std::fs::copy(from, to)?;
     } else {
-        
         let to_folder = target_folder.join(tpl.transform(&copy.to));
         let mut options = CopyOptions::default();
         options.hidden = copy.hidden.unwrap_or(false);
@@ -371,12 +362,11 @@ pub async fn copy(tpl: &Tpl, copy: &Copy, src_folder: &Path, target_folder: &Pat
             // &dep_build_folder,
             // &target_folder,
             &to_folder,
-            (tpl,copy).try_into()?,
+            (tpl, copy).try_into()?,
             options,
-        ).await?;
+        )
+        .await?;
     }
-
-
 
     Ok(())
 }

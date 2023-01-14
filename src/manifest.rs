@@ -1,41 +1,41 @@
-use std::collections::HashSet;
-use async_std::fs::*;
-use async_std::path::{PathBuf, Path};
 use crate::prelude::*;
+use async_std::fs::*;
+use async_std::path::{Path, PathBuf};
 use regex::Regex;
+use std::collections::HashSet;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "kebab-case", deny_unknown_fields)]
 // #[serde(deny_unknown_fields)]
 pub struct Manifest {
     /// Application settings
-    pub application : Application,
+    pub application: Application,
     /// Description settings
-    pub description : Description,
+    pub description: Description,
     /// Package build directives
-    pub package : Package,
+    pub package: Package,
     /// Script for building application dependencies
     #[serde(rename = "dependency")]
-    pub dependencies : Option<Vec<Dependency>>,
+    pub dependencies: Option<Vec<Dependency>>,
     /// Node Webkit directives
     // #[serde(rename = "node-webkit")]
-    pub node_webkit : NodeWebkit,
+    pub node_webkit: NodeWebkit,
     /// Windows-specific settings
-    pub windows : Option<Windows>,
+    pub windows: Option<Windows>,
     /// InnoSetup-specific settings
-    pub innosetup : Option<InnoSetup>,
+    pub innosetup: Option<InnoSetup>,
     /// Firewall settings
-    pub firewall : Option<Firewall>,
+    pub firewall: Option<Firewall>,
     /// Language settings
-    pub languages : Option<Languages>,
+    pub languages: Option<Languages>,
     /// DMG settings
     pub macos_disk_image: Option<MacOsDiskImage>,
     /// Snap settings
-    pub snap : Option<Snap>,
+    pub snap: Option<Snap>,
     /// Custom overrides of default icon paths
-    pub images : Option<Images>,
+    pub images: Option<Images>,
 
-    pub action : Option<Vec<Action>>,
+    pub action: Option<Vec<Action>>,
     // pub innosetup : HashMap<String, InnoSetupManifest>,
 }
 
@@ -55,13 +55,15 @@ pub struct Manifest {
 // }
 
 impl Manifest {
-
     pub async fn locate(location: Option<String>) -> Result<PathBuf> {
         let cwd = current_dir().await;
 
         let location = if let Some(location) = location {
             if location.starts_with("~/") {
-                home::home_dir().expect("unable to get home directory").join(&location[2..]).into()
+                home::home_dir()
+                    .expect("unable to get home directory")
+                    .join(&location[2..])
+                    .into()
             } else {
                 let location = Path::new(&location).to_path_buf();
                 if location.is_absolute() {
@@ -77,49 +79,52 @@ impl Manifest {
         let locations = [
             &location,
             &location.with_extension("toml"),
-            &location.join("nw.toml")
+            &location.join("nw.toml"),
         ];
 
         for location in locations.iter() {
             match location.canonicalize().await {
                 Ok(location) => {
                     if location.is_file().await {
-                        return Ok(location)
+                        return Ok(location);
                     }
-                }, 
-                _ => { }
+                }
+                _ => {}
             }
         }
 
         Err(format!("Unable to locate 'nw.toml' manifest").into())
     }
-    
-    pub async fn load(toml : &PathBuf) -> Result<Manifest> {
+
+    pub async fn load(toml: &PathBuf) -> Result<Manifest> {
         let nw_toml = read_to_string(toml).await?;
         let mut manifest: Manifest = match toml::from_str(&nw_toml) {
             Ok(manifest) => manifest,
             Err(err) => {
                 return Err(format!("Error loading nw.toml: {}", err).into());
             }
-        };    
+        };
 
         let folder = toml.parent().unwrap();
-        resolve_value_paths(folder, &mut [
-            &mut manifest.application.name,
-            &mut manifest.application.title,
-            &mut manifest.application.version,
-            &mut manifest.application.organization,
-            &mut manifest.description.short,
-            &mut manifest.description.long,
-        ]).await?;
+        resolve_value_paths(
+            folder,
+            &mut [
+                &mut manifest.application.name,
+                &mut manifest.application.title,
+                &mut manifest.application.version,
+                &mut manifest.application.organization,
+                &mut manifest.description.short,
+                &mut manifest.description.long,
+            ],
+        )
+        .await?;
 
         manifest.sanity_checks()?;
 
         Ok(manifest)
     }
-    
-    pub fn sanity_checks(&self) -> Result<()> {
 
+    pub fn sanity_checks(&self) -> Result<()> {
         let regex = Regex::new(r"^[^\s]*[a-z0-9-_]*$").unwrap();
         if !regex.is_match(&self.application.name) {
             return Err(format!("invalid application name '{}'", self.application.name).into());
@@ -170,19 +175,17 @@ pub struct Description {
     pub long: String,
 }
 
-
-
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ExecutionContext {
     pub name: Option<String>,
-    pub argv : Option<Vec<String>>,
-    pub cmd : Option<String>,
-    pub cwd : Option<String>,
+    pub argv: Option<Vec<String>>,
+    pub cmd: Option<String>,
+    pub cwd: Option<String>,
     pub platform: Option<Platform>,
     pub arch: Option<Architecture>,
     pub family: Option<PlatformFamily>,
-    pub env : Option<Vec<String>>,
+    pub env: Option<Vec<String>>,
 }
 
 impl ExecutionContext {
@@ -199,7 +202,7 @@ impl ExecutionContext {
         }
     }
     pub fn get_args(&self) -> Result<ExecArgs> {
-        ExecArgs::try_new(&self.cmd,&self.argv)
+        ExecArgs::try_new(&self.cmd, &self.argv)
     }
 
     pub fn display(&self, tpl: &Tpl) -> String {
@@ -219,7 +222,7 @@ impl ExecutionContext {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub enum Execute {
-    /// Executed in the project folder after cleanup operations, before the build proceses. 
+    /// Executed in the project folder after cleanup operations, before the build proceses.
     /// This stage can be used to prepare external dependencies.
     #[serde(rename = "build")]
     Build(ExecutionContext),
@@ -229,20 +232,20 @@ pub enum Execute {
     Pack(ExecutionContext),
     /// Executed after the installation package integration is complete. This stage
     /// can be used to execute an external script that uploads resulting builds.
-    /// 
-    /// For example: 
+    ///
+    /// For example:
     /// ```
     /// scp $OUTPUT/$NAME-$VERSION* user@server:path/
     /// ```
-    /// 
+    ///
     #[serde(rename = "deploy")]
     Deploy(ExecutionContext),
     /// Executed only when `cargo nw` is executed with `publish` action:
-    /// 
+    ///
     /// ```
     /// cargo nw publish
     /// ```
-    /// 
+    ///
     #[serde(rename = "publish")]
     Publish(ExecutionContext),
 }
@@ -254,41 +257,40 @@ pub enum Build {
     /// Run `wasmpack` before the integration.
     WASM {
         /// Runs `cargo clean` before the build.
-        clean : Option<bool>,
+        clean: Option<bool>,
         /// Deletes the `target` folder before the build.
-        purge : Option<bool>,
+        purge: Option<bool>,
         /// Enable `wasmpack` development build.
-        dev : Option<bool>,
-        /// Specify a custom output directory (default `root/wasm`) 
+        dev: Option<bool>,
+        /// Specify a custom output directory (default `root/wasm`)
         /// when running the build command.
-        outdir : Option<String>,
+        outdir: Option<String>,
         /// Shell arguments for the build command.
-        args : Option<String>,
+        args: Option<String>,
         /// Environment variables for the build command in the
         /// form of "VAR=VALUE" per entry.
-        env : Option<Vec<String>>,
+        env: Option<Vec<String>>,
     },
     /// Run `npm` before the integration
     NPM {
         /// Deletes `node_modules` folder before running `npm`.
-        clean : Option<bool>,
+        clean: Option<bool>,
         /// Deletes `package-lock.json` folder before running `npm`.
         #[serde(rename = "clean-package-lock")]
-        clean_package_lock : Option<bool>,
+        clean_package_lock: Option<bool>,
         /// Enables `npm` development build. By default the build
         /// process will include `--omit dev` argument, causing
         /// NPM to produce a release build.
-        dev : Option<bool>,
+        dev: Option<bool>,
         /// Additional command line arguments passed to `npm`.
-        args : Option<String>,
+        args: Option<String>,
         /// Environment variables for the npm build command.
-        env : Option<Vec<String>>,
+        env: Option<Vec<String>>,
     },
     /// Run a custom script/command before the integration
     #[serde(rename = "custom")]
     Custom(ExecutionContext),
 }
-
 
 /// Package directives
 #[derive(Debug, Clone, Deserialize)]
@@ -306,7 +308,7 @@ pub struct Package {
     pub archive: Option<Archive>,
     /// Disables build types except archive (`build all` will result in archive only)
     /// This can be useful for utility projects that do not require interactive installation.
-    pub disable : Option<Vec<Target>>,
+    pub disable: Option<Vec<Target>>,
     /// If present, generates a signature file beside the redistributable.
     /// A signature file like sha256sum contains hex hash of the original file.
     /// Please note that this is a lightweight fingerprinting of the original file contents.
@@ -316,7 +318,7 @@ pub struct Package {
     /// This folder should contain the application icon
     /// as well as images and icons needed by setup generators.
     pub resources: Option<String>,
-    /// Project root relative to the manifest file. All 
+    /// Project root relative to the manifest file. All
     /// integration operations will occur from this folder.
     pub source: Option<String>,
     /// List of inclusion globs used during the project
@@ -326,7 +328,7 @@ pub struct Package {
     pub include: Option<Vec<CopyFilter>>,
     /// List of exclusion globs used during project integration
     /// NOTE: if `gitignore` is true, list of `.gitignore` entries
-    /// is copied into this exclusion list at the start of the 
+    /// is copied into this exclusion list at the start of the
     /// build process.
     pub exclude: Option<Vec<CopyFilter>>,
     /// Copy hidden files (default: false).
@@ -336,7 +338,7 @@ pub struct Package {
     /// Place application inside of the `app.nw` folder in
     /// the redistributable on Windows and Linux (false by default).
     /// This setting is always true for MacOS.
-    pub use_app_nw : Option<bool>,
+    pub use_app_nw: Option<bool>,
 }
 
 /// Copy filter used in `package.include` and `package.exclude` sections
@@ -349,35 +351,34 @@ pub enum CopyFilter {
     Regex(Vec<String>),
 }
 
-
 /// Copy options used as a part of [`Dependency`] directive
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename = "copy", deny_unknown_fields)]
 pub struct Copy {
     /// Glob filter - allows to specify a list of globs for
     /// file copy. For example:
-    /// 
+    ///
     /// * `["app/*","assets/**/{*.html,*.js}"]`
-    /// 
-    pub glob : Option<Vec<String>>,
+    ///
+    pub glob: Option<Vec<String>>,
     /// Regex filter - allows to specify a list of regular
     /// expressions for file matching.
-    /// 
+    ///
     /// For example:
     /// *  `["myprogram(.exe|.lib)?$"]` - will match `myprogram`, `myprogram.exe`, `myprogram.lib`
-    /// 
-    pub regex : Option<Vec<String>>,
+    ///
+    pub regex: Option<Vec<String>>,
     // pub exclude : Option<Vec<CopyFilter>>,
     /// Destination folder relative to the project root
-    pub to : String,
+    pub to: String,
     /// Copy hidden files (files that start with `.`) - default: `false`
-    pub hidden : Option<bool>,
+    pub hidden: Option<bool>,
     /// Copy all source files into the target folder without preserving
     /// subfolders (results in all files being placed in the target folder)
-    pub flatten : Option<bool>,
+    pub flatten: Option<bool>,
     /// Rename files to the target filename/pattern
     // pub rename : Option<String>,
-    pub file : Option<String>,
+    pub file: Option<String>,
 }
 
 /// Git directive used as a part of the [`Dependency`] section
@@ -385,9 +386,9 @@ pub struct Copy {
 #[serde(deny_unknown_fields)]
 pub struct Git {
     /// Git repository url
-    pub url : String,
+    pub url: String,
     /// Repository branch
-    pub branch : Option<String>,
+    pub branch: Option<String>,
 }
 
 /// Dependency section
@@ -395,13 +396,13 @@ pub struct Git {
 #[serde(deny_unknown_fields)]
 pub struct Dependency {
     /// Name of the dependency (will be displayed during the build process)
-    pub name : Option<String>,
-    pub platform : Option<Vec<Platform>>,
-    pub arch : Option<Vec<Architecture>>,
+    pub name: Option<String>,
+    pub platform: Option<Vec<Platform>>,
+    pub arch: Option<Vec<Architecture>>,
     /// Git url of the dependency repository
-    pub git : Option<Git>,
-    pub run : Vec<ExecutionContext>,
-    pub copy : Vec<Copy>,
+    pub git: Option<Git>,
+    pub run: Vec<ExecutionContext>,
+    pub copy: Vec<Copy>,
 }
 
 /// Node Webkit Directives
@@ -411,11 +412,11 @@ pub struct NodeWebkit {
     ///
     /// Node Webkit version. This version must be downloadable
     /// from https://nwjs.io/downloads
-    /// 
+    ///
     /// WARNING: If using FFMPEG builds, the available FFMPEG version
     /// must match the Node Webkit version. FFMPEG downloads are available
     /// at: https://github.com/nwjs-ffmpeg-prebuilt/nwjs-ffmpeg-prebuilt/releases/
-    /// 
+    ///
     pub version: String,
     /// Enable automatic  inregration of FFMPEG libraries.
     pub ffmpeg: Option<bool>,
@@ -432,7 +433,7 @@ pub struct NodeWebkit {
 #[serde(deny_unknown_fields)]
 pub struct InnoSetup {
     /// Wizard file resizing (default: true)
-    pub resize_wizard_files : Option<bool>
+    pub resize_wizard_files: Option<bool>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -441,10 +442,10 @@ pub struct Windows {
     /// UUID string used by InnoSetup for application
     /// registration.
     pub uuid: String,
-    /// Windows Start Menu group name in which the 
+    /// Windows Start Menu group name in which the
     /// application will be places.
     pub group: String,
-    /// Name of the executable file (`my-file.exe`); 
+    /// Name of the executable file (`my-file.exe`);
     /// By default cargo-nw will use  the project name
     /// declared in the application section.
     pub executable: Option<String>,
@@ -457,9 +458,9 @@ pub struct Windows {
     /// Custom path for the setup icon (default `resources/setup/application.png`)
     pub setup_icon: Option<String>,
     /// Custom Windows resource strings that will be added to the
-    /// application executable. Additional information can be 
+    /// application executable. Additional information can be
     /// found here: https://learn.microsoft.com/en-us/windows/win32/menurc/string-str
-    pub resources : Option<Vec<WindowsResourceString>>
+    pub resources: Option<Vec<WindowsResourceString>>,
 }
 
 /// Windows resource strings: https://learn.microsoft.com/en-us/windows/win32/menurc/string-str
@@ -474,46 +475,45 @@ pub enum WindowsResourceString {
     LegalCopyright(String),
     LegalTrademarks(String),
     InternalName(String),
-    Custom { name : String, value : String },
-
+    Custom { name: String, value: String },
 }
 
-/// 
+///
 /// Snap directives
-/// 
+///
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Snap {
     ///
     /// Snap channel: 'stable', 'devel'; default 'stable'
-    /// 
-    pub channel : Option<Channel>,
+    ///
+    pub channel: Option<Channel>,
     ///
     /// Snap confinement: 'strict', 'classic', 'devmode'; default: 'classic'
-    /// 
-    pub confinement : Option<Confinement>,
+    ///
+    pub confinement: Option<Confinement>,
     ///
     /// Specify additional SNAP interfaces that may be required by your application.
     /// List of the interfaces can be found here: https://snapcraft.io/docs/supported-interfaces
     /// Default SNAP interfaces included are: `browser-support`, `network`, `network-bind`.
-    /// 
-    pub interfaces : Option<HashSet<String>>,
+    ///
+    pub interfaces: Option<HashSet<String>>,
     ///    
     /// Additional packages (libraries) that should be included for ELF resolution. Packages can be found using
     /// `apt list | grep <package-substring>`.  This may be needed only if you are including your own additional
     /// binaries in the SNAP distributable.
     ///
-    pub packages : Option<HashSet<String>>,
+    pub packages: Option<HashSet<String>>,
 
     /// SNAP package base (default: `core22`)
-    pub base : Option<String>,
+    pub base: Option<String>,
 }
 
 impl Default for Snap {
     fn default() -> Snap {
         Snap {
-            channel : None,
-            confinement : None,
+            channel: None,
+            confinement: None,
             interfaces: None,
             packages: None,
             base: None,
@@ -523,32 +523,32 @@ impl Default for Snap {
 
 ///
 /// Firewall directives
-/// 
+///
 /// Instructs InnoSetup to run `advfirewall firewall add rule` command
 /// after the application installation on the target computer.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Firewall {
     /// Firewall application settings
-    pub application : Option<FirewallApplication>,
+    pub application: Option<FirewallApplication>,
     /// Additional firewall rules
     /// If you need to define separate ports for in
     /// and out directions, you need to define separate rules
-    pub rules : Option<Vec<FirewallRule>>
+    pub rules: Option<Vec<FirewallRule>>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FirewallApplication {
-    pub direction : Option<String>,
+    pub direction: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FirewallRule {
-    pub name : String,
-    pub program : String,
-    pub direction : Option<String>,
+    pub name: String,
+    pub program: String,
+    pub direction: Option<String>,
 }
 
 /// Language directives
@@ -566,15 +566,16 @@ pub struct Languages {
 /// `package.json` manifest
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PackageJson {
-    pub name : String,
-    pub main : String,
-    pub description : Option<String>,
-    pub version : Option<String>,
+    pub name: String,
+    pub main: String,
+    pub description: Option<String>,
+    pub version: Option<String>,
 }
 
 impl PackageJson {
-    pub fn try_load<P>(filepath : P)-> Result<PackageJson> 
-    where P : AsRef<std::path::Path>
+    pub fn try_load<P>(filepath: P) -> Result<PackageJson>
+    where
+        P: AsRef<std::path::Path>,
     {
         let text = std::fs::read_to_string(filepath)?;
         let package_json: PackageJson = serde_json::from_str(&text)?;
@@ -595,7 +596,7 @@ impl PackageJson {
 // }
 
 // impl CargoToml {
-//     pub fn try_load<P>(filepath : P)-> Result<CargoToml> 
+//     pub fn try_load<P>(filepath : P)-> Result<CargoToml>
 //     where P : AsRef<std::path::Path>
 //     {
 //         let cargo_toml_text = std::fs::read_to_string(filepath)?;
@@ -609,13 +610,12 @@ impl PackageJson {
 //     }
 // }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Algorithm {
     STORE,
     BZIP2,
     DEFLATE,
-    ZSTD
+    ZSTD,
 }
 
 impl Default for Algorithm {
@@ -642,7 +642,8 @@ impl ToString for Algorithm {
             Algorithm::BZIP2 => "BZIP2",
             Algorithm::DEFLATE => "DEFLATE",
             Algorithm::ZSTD => "ZSTD",
-        }.into()
+        }
+        .into()
     }
 }
 
@@ -650,15 +651,15 @@ impl ToString for Algorithm {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Archive {
-    pub include : Option<bool>,
-    pub algorithm : Option<Algorithm>,
-    pub subfolder : Option<bool>,
+    pub include: Option<bool>,
+    pub algorithm: Option<Algorithm>,
+    pub subfolder: Option<bool>,
 }
 
 impl Default for Archive {
     fn default() -> Self {
         Archive {
-            include : Some(true),
+            include: Some(true),
             algorithm: Some(Algorithm::default()),
             subfolder: Some(true),
         }
@@ -673,41 +674,52 @@ pub enum Signature {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct MacOsDiskImage {
-    pub window_caption_height : Option<i32>,
-    pub window_position : Option<[i32;2]>,
-    pub window_size : Option<[i32;2]>,
-    pub icon_size : Option<i32>,
-    pub application_icon_position : Option<[i32;2]>,
-    pub system_applications_folder_position : Option<[i32;2]>
+    pub window_caption_height: Option<i32>,
+    pub window_position: Option<[i32; 2]>,
+    pub window_size: Option<[i32; 2]>,
+    pub icon_size: Option<i32>,
+    pub application_icon_position: Option<[i32; 2]>,
+    pub system_applications_folder_position: Option<[i32; 2]>,
 }
 
 impl Default for MacOsDiskImage {
     fn default() -> Self {
         MacOsDiskImage {
-            window_caption_height : None, 
-            window_position : None,
-            window_size : None,
-            icon_size : None,
-            application_icon_position : None,
-            system_applications_folder_position : None
+            window_caption_height: None,
+            window_position: None,
+            window_size: None,
+            icon_size: None,
+            application_icon_position: None,
+            system_applications_folder_position: None,
         }
     }
 }
 
 impl MacOsDiskImage {
-    pub fn window_caption_height(&self) -> i32 { self.window_caption_height.unwrap_or(60) }
-    pub fn window_position(&self) -> [i32;2] { self.window_position.unwrap_or([200,200]) }
-    pub fn window_size(&self) -> [i32;2] { self.window_size.unwrap_or([485,330]) }
-    pub fn icon_size(&self) -> i32 { self.icon_size.unwrap_or(72) }
-    pub fn application_icon_position(&self) -> [i32;2] { self.application_icon_position.unwrap_or([100,158]) }
-    pub fn system_applications_folder_position(&self) -> [i32;2] { self.system_applications_folder_position.unwrap_or([385,158]) }
+    pub fn window_caption_height(&self) -> i32 {
+        self.window_caption_height.unwrap_or(60)
+    }
+    pub fn window_position(&self) -> [i32; 2] {
+        self.window_position.unwrap_or([200, 200])
+    }
+    pub fn window_size(&self) -> [i32; 2] {
+        self.window_size.unwrap_or([485, 330])
+    }
+    pub fn icon_size(&self) -> i32 {
+        self.icon_size.unwrap_or(72)
+    }
+    pub fn application_icon_position(&self) -> [i32; 2] {
+        self.application_icon_position.unwrap_or([100, 158])
+    }
+    pub fn system_applications_folder_position(&self) -> [i32; 2] {
+        self.system_applications_folder_position
+            .unwrap_or([385, 158])
+    }
 }
-
-
 
 // ~~~
 
-async fn resolve_value_paths(folder: &Path, paths : &mut [&mut String]) -> Result<()> {
+async fn resolve_value_paths(folder: &Path, paths: &mut [&mut String]) -> Result<()> {
     for path in paths.iter_mut() {
         if is_value_path(path) {
             let location = path.clone();
@@ -715,7 +727,13 @@ async fn resolve_value_paths(folder: &Path, paths : &mut [&mut String]) -> Resul
             let value = match load_value_path(folder, &location).await {
                 Ok(value) => value,
                 Err(err) => {
-                    return Err(format!("unable to locate `{}` in `{}`: {}",location,folder.display(),err).into())
+                    return Err(format!(
+                        "unable to locate `{}` in `{}`: {}",
+                        location,
+                        folder.display(),
+                        err
+                    )
+                    .into())
                 }
             };
             path.push_str(&value);
@@ -725,7 +743,7 @@ async fn resolve_value_paths(folder: &Path, paths : &mut [&mut String]) -> Resul
     Ok(())
 }
 
-fn is_value_path(v : &str) -> bool {
+fn is_value_path(v: &str) -> bool {
     v.contains("::")
 }
 
@@ -736,7 +754,10 @@ async fn load_value_path(folder: &Path, location: &str) -> Result<String> {
 
     let extension = filename
         .extension()
-        .expect(&format!("unable to determine file type for file `{}` due to missing extension",filename.display()))
+        .expect(&format!(
+            "unable to determine file type for file `{}` due to missing extension",
+            filename.display()
+        ))
         .to_str()
         .unwrap();
 
@@ -745,29 +766,32 @@ async fn load_value_path(folder: &Path, location: &str) -> Result<String> {
             let text = std::fs::read_to_string(&filename)?;
             let mut v: &toml::Value = &toml::from_str(&text)?;
             for field in value_path.iter() {
-                v = v.get(field)
-                    .ok_or::<Error>(format!(
+                v = v.get(field).ok_or::<Error>(
+                    format!(
                         "unable to resolve the value `{}` in `{}`",
                         value_path.join("."),
                         filename.display()
-                    ).into())?;
+                    )
+                    .into(),
+                )?;
             }
             Ok(v.as_str().unwrap().to_string())
-        }, 
+        }
         "json" => {
             let text = std::fs::read_to_string(&filename)?;
             let mut v: &serde_json::Value = &serde_json::from_str(&text)?;
             for field in value_path.iter() {
-                v = v.get(field)
-                    .ok_or::<Error>(format!(
+                v = v.get(field).ok_or::<Error>(
+                    format!(
                         "unable to resolve the value `{}` in `{}`",
                         value_path.join("."),
                         filename.display()
-                    ).into())?;
+                    )
+                    .into(),
+                )?;
             }
             Ok(v.as_str().unwrap().to_string())
-        },
-        _ => Err(format!("path parser: file extension `{extension}` is not supported").into())
+        }
+        _ => Err(format!("path parser: file extension `{extension}` is not supported").into()),
     }
-
 }

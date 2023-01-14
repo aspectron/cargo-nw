@@ -1,24 +1,23 @@
-use async_std::path::PathBuf;
-use async_std::fs;
-use async_std::task::sleep;
-use duct::cmd;
-use console::style;
 use crate::prelude::*;
+use async_std::fs;
+use async_std::path::PathBuf;
+use async_std::task::sleep;
+use console::style;
+use duct::cmd;
 
 pub struct DMG {
-    app_name : String,
-    app_title : String,
+    app_name: String,
+    app_title: String,
     // app_version : String,
-    app_folder : PathBuf,
-    mount_icon : PathBuf,
-    background_image : PathBuf,
-    build_folder : PathBuf,
+    app_folder: PathBuf,
+    mount_icon: PathBuf,
+    background_image: PathBuf,
+    build_folder: PathBuf,
     // options : Option<MacOsDiskImage>,
-    options : Option<MacOsDiskImage>,
+    options: Option<MacOsDiskImage>,
     // output_folder : PathBuf,
-
-    build_file : PathBuf,
-    output_file : PathBuf,
+    build_file: PathBuf,
+    output_file: PathBuf,
 }
 
 impl DMG {
@@ -31,40 +30,30 @@ impl DMG {
         app_folder: &PathBuf,
         mount_icon: &PathBuf,
         background_image: &PathBuf,
-        options : &Option<MacOsDiskImage>,
+        options: &Option<MacOsDiskImage>,
         build_folder: &PathBuf,
-        output_folder: &PathBuf
+        output_folder: &PathBuf,
     ) -> DMG {
-
-        let filename = format!("{}-{}-{}-{}",
-            app_name,
-            app_version,
-            platform,
-            arch,
-        );
+        let filename = format!("{}-{}-{}-{}", app_name, app_version, platform, arch,);
         let build_file = build_folder.join(format!("{filename}.build.dmg"));
         let output_file = output_folder.join(format!("{filename}.dmg"));
 
-
         DMG {
-            app_name : app_name.to_string(),
-            app_title : app_title.to_string(),
+            app_name: app_name.to_string(),
+            app_title: app_title.to_string(),
             // app_version : app_version.to_string(),
-            mount_icon : mount_icon.to_path_buf(),
-            background_image : background_image.to_path_buf(),
-            app_folder : app_folder.to_path_buf(),
-            build_folder : build_folder.to_path_buf(),
-            options : options.clone(),
+            mount_icon: mount_icon.to_path_buf(),
+            background_image: background_image.to_path_buf(),
+            app_folder: app_folder.to_path_buf(),
+            build_folder: build_folder.to_path_buf(),
+            options: options.clone(),
             // output_folder : output_folder.to_path_buf(),
             build_file,
             output_file,
         }
     }
 
-
-
     async fn configure_finder(&self) -> Result<()> {
-
         let options = self.options.clone().unwrap_or_default();
         let window_caption_height = options.window_caption_height();
         let window_position = options.window_position();
@@ -72,10 +61,10 @@ impl DMG {
         let icon_size = options.icon_size();
         let application_icon_position = options.application_icon_position();
         let system_applications_folder_position = options.system_applications_folder_position();
-        
+
         // let caption_bar_height = 59;
         let window_width = window_size[0];
-        let window_height = window_size[1]+window_caption_height;
+        let window_height = window_size[1] + window_caption_height;
         let window_l = window_position[0];
         let window_t = window_position[1] + window_caption_height;
         let window_r = window_l + window_width;
@@ -91,8 +80,8 @@ impl DMG {
         let app_title = &self.app_title;
 
         // set the bounds of container window to {{{window_t}, {window_l}, {window_r}, {window_b}}}\n\
-        
-        let script = 
+
+        let script =
         format!("\
             tell application \"Finder\"\n\
                 tell disk \"{app_title}\"\n\
@@ -121,10 +110,9 @@ impl DMG {
         let osa_script_file = self.build_folder.join("osa");
         fs::write(&osa_script_file, script).await?;
 
-        cmd!(
-            "osascript",
-            osa_script_file.to_str().unwrap()
-        ).stdout_null().run()?;
+        cmd!("osascript", osa_script_file.to_str().unwrap())
+            .stdout_null()
+            .run()?;
 
         std::fs::remove_file(osa_script_file)?;
 
@@ -137,10 +125,10 @@ impl DMG {
 
         // let from = self.ctx.setup_resources_folder.join("background.png");
         let to = background_folder.join(format!("{}.png", self.app_name));
-        fs::copy(&self.background_image,to).await?;
+        fs::copy(&self.background_image, to).await?;
 
         #[cfg(target_family = "unix")]
-        std::os::unix::fs::symlink("/Applications",mountpoint.join("Applications"))?;
+        std::os::unix::fs::symlink("/Applications", mountpoint.join("Applications"))?;
 
         Ok(())
     }
@@ -148,26 +136,21 @@ impl DMG {
     async fn configure_icon(&self, mountpoint: &PathBuf) -> Result<()> {
         let icns = &self.mount_icon;
         let volume_icns = mountpoint.join(".VolumeIcon.icns");
-        std::fs::copy(icns,&volume_icns)?;
-        cmd!("setfile","-c","icnC", volume_icns).stdout_null().run()?;
-        cmd!("setfile","-a","C", mountpoint).stdout_null().run()?;
+        std::fs::copy(icns, &volume_icns)?;
+        cmd!("setfile", "-c", "icnC", volume_icns)
+            .stdout_null()
+            .run()?;
+        cmd!("setfile", "-a", "C", mountpoint).stdout_null().run()?;
         Ok(())
     }
 
-    pub async fn create(
-        &self,
-    ) -> Result<PathBuf> {
-
-
+    pub async fn create(&self) -> Result<PathBuf> {
         let volume_name = &self.app_title;
         let mountpoint = PathBuf::from(format!("/Volumes/{volume_name}"));
 
         if std::path::Path::new(&mountpoint).exists() {
-            log_info!("DMG","{}",style("detaching existing DMG image").yellow());
-            cmd!(
-                "hdiutil",
-                "detach",&mountpoint
-            ).stdout_null().run()?;
+            log_info!("DMG", "{}", style("detaching existing DMG image").yellow());
+            cmd!("hdiutil", "detach", &mountpoint).stdout_null().run()?;
         }
 
         if std::path::Path::new(&self.build_file).exists() {
@@ -178,65 +161,70 @@ impl DMG {
             std::fs::remove_file(&self.output_file)?;
         }
 
-        log_info!("DMG","creating (UDRW HFS+)");
+        log_info!("DMG", "creating (UDRW HFS+)");
         cmd!(
             "hdiutil",
             "create",
-            "-volname", volume_name,
-            "-srcfolder", &self.app_folder,
+            "-volname",
+            volume_name,
+            "-srcfolder",
+            &self.app_folder,
             "-ov",
-            "-fs","HFS+",
-            "-format","UDRW",
+            "-fs",
+            "HFS+",
+            "-format",
+            "UDRW",
             &self.build_file
-        ).stdout_null().run()?;
+        )
+        .stdout_null()
+        .run()?;
 
         // println!("vvv: {:?}", vvv);
 
-        log_info!("DMG","attaching");
+        log_info!("DMG", "attaching");
         cmd!(
-            "hdiutil", 
+            "hdiutil",
             "attach",
             "-readwrite",
             "-noverify",
             "-noautoopen",
             &self.build_file,
-        ).stdout_null().run()?;
+        )
+        .stdout_null()
+        .run()?;
 
-        log_info!("DMG","configuring DMG window");
+        log_info!("DMG", "configuring DMG window");
         self.copy_aux_files(&mountpoint).await?;
         self.configure_finder().await?;
-        log_info!("DMG","configuring DMG icon");
+        log_info!("DMG", "configuring DMG icon");
         self.configure_icon(&mountpoint).await?;
 
-        log_info!("DMG","sync");
+        log_info!("DMG", "sync");
         cmd!("sync").stdout_null().run()?;
         sleep(std::time::Duration::from_millis(1000)).await;
         cmd!("sync").stdout_null().run()?;
 
-        log_info!("DMG","detaching");
-        cmd!(
-            "hdiutil",
-            "detach",&mountpoint
-        ).stdout_null().run()?;
+        log_info!("DMG", "detaching");
+        cmd!("hdiutil", "detach", &mountpoint).stdout_null().run()?;
 
-        log_info!("DMG","compressing (UDZO)");
+        log_info!("DMG", "compressing (UDZO)");
         cmd!(
             "hdiutil",
             "convert",
-            "-format", "UDZO",
+            "-format",
+            "UDZO",
             "-imagekey",
             "zlib-level=9",
-            "-o",&self.output_file, 
+            "-o",
+            &self.output_file,
             &self.build_file
-        ).stdout_null().run()?;
+        )
+        .stdout_null()
+        .run()?;
 
         // let dmg_size = std::fs::metadata(&self.output_file)?.len() as f64;
         // log!("DMG","resulting DMG size: {:.2}Mb", dmg_size/1024.0/1024.0);
 
         Ok(self.output_file.clone())
     }
-
-
 }
-
-

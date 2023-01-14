@@ -1,11 +1,11 @@
+use crate::prelude::*;
 use async_std::path::Path;
 use async_std::path::PathBuf;
-use crate::prelude::*;
 
 #[derive(Debug)]
 pub struct Options {
-    pub sdk : bool,
-    pub dry_run : bool,
+    pub sdk: bool,
+    pub dry_run: bool,
     pub channel: Option<Channel>,
     pub confinement: Option<Confinement>,
 }
@@ -15,7 +15,7 @@ impl Default for Options {
         Options {
             sdk: false,
             dry_run: false,
-            channel : None,
+            channel: None,
             confinement: None,
         }
     }
@@ -23,62 +23,63 @@ impl Default for Options {
 
 #[derive(Debug)]
 pub struct Context {
-
-    pub manifest : Manifest,
+    pub manifest: Manifest,
     // pub package_json : Option<PackageJson>,
-    pub platform : Platform,
-    pub arch : Architecture,
-    
-    pub home_folder : PathBuf,
+    pub platform: Platform,
+    pub arch: Architecture,
+
+    pub home_folder: PathBuf,
     /// Cargo `target` folder
-    pub cargo_target_folder : PathBuf,
+    pub cargo_target_folder: PathBuf,
     /// Source application folder
-    pub app_root_folder : PathBuf,
+    pub app_root_folder: PathBuf,
     /// Project folder (nw.toml location). Can be the same as [`app_root_folder`]
-    pub project_root_folder : PathBuf,
+    pub project_root_folder: PathBuf,
     /// Folder that contains setup resources
-    pub setup_resources_folder : PathBuf,
+    pub setup_resources_folder: PathBuf,
     // pub app_snake_name : PathBuf,
-    pub cache_folder : PathBuf,
-    pub root_folder : PathBuf,
-    pub build_folder : PathBuf,
-    pub output_folder : PathBuf,
+    pub cache_folder: PathBuf,
+    pub root_folder: PathBuf,
+    pub build_folder: PathBuf,
+    pub output_folder: PathBuf,
     pub temp_folder: PathBuf,
-    pub dependencies_folder : PathBuf,
-    
-    pub app_snake_name : String,
+    pub dependencies_folder: PathBuf,
 
-    pub include : Option<Vec<CopyFilter>>,
-    pub exclude : Option<Vec<CopyFilter>>,
+    pub app_snake_name: String,
 
-    pub images : Images,
+    pub include: Option<Vec<CopyFilter>>,
+    pub exclude: Option<Vec<CopyFilter>>,
 
-    pub sdk : bool,
-    pub dry_run : bool,
-    pub channel : Channel,
-    pub confinement : Confinement,
-    pub deps : Deps,
-    pub tpl : Tpl,
+    pub images: Images,
+
+    pub sdk: bool,
+    pub dry_run: bool,
+    pub channel: Channel,
+    pub confinement: Confinement,
+    pub deps: Deps,
+    pub tpl: Tpl,
 }
 
 impl Context {
     pub async fn create(
-        location : Option<String>,
-        output : Option<String>,
-        platform: Platform, 
-        arch : Architecture,
+        location: Option<String>,
+        output: Option<String>,
+        platform: Platform,
+        arch: Architecture,
         options: Options,
     ) -> Result<Context> {
         // println!("");
 
         let node_platform: NodePlatform = platform.clone().into();
         let nw_platform: NwPlatform = platform.clone().into();
-        let mut tpl : Tpl = [
-            ("$PLATFORM",platform.to_string()),
-            ("$NODE-PLATFORM",node_platform.to_string()),
-            ("$NW-PLATFORM",nw_platform.to_string()),
-            ("$ARCH",arch.to_string()),
-        ].as_slice().try_into()?;
+        let mut tpl: Tpl = [
+            ("$PLATFORM", platform.to_string()),
+            ("$NODE-PLATFORM", node_platform.to_string()),
+            ("$NW-PLATFORM", nw_platform.to_string()),
+            ("$ARCH", arch.to_string()),
+        ]
+        .as_slice()
+        .try_into()?;
         cfg_if! {
             if #[cfg(target_os = "windows")] {
                 tpl.set(&[("$EXE",".exe")]);
@@ -95,53 +96,58 @@ impl Context {
             }
         }
 
-
-
         let home_folder: PathBuf = home::home_dir().unwrap().into();
         let manifest_toml = Manifest::locate(location).await?;
-        log_info!("Manifest","`{}`",manifest_toml.to_str().unwrap());
+        log_info!("Manifest", "`{}`", manifest_toml.to_str().unwrap());
         let manifest_folder = manifest_toml.parent().unwrap().to_path_buf();
         let manifest = Manifest::load(&manifest_toml).await?;
         let project_root = manifest_toml.parent().unwrap();
 
         tpl.set(&[
-            ("$NAME",manifest.application.name.as_str()),
-            ("$TITLE",manifest.application.title.as_str()),
-            ("$ORGANIZATION",manifest.application.organization.as_str()),
-            ("$SHORT",manifest.description.short.as_str()),
-            ("$LONG",manifest.description.long.as_str()),
-            ("$VERSION",manifest.application.version.as_str()),
+            ("$NAME", manifest.application.name.as_str()),
+            ("$TITLE", manifest.application.title.as_str()),
+            ("$ORGANIZATION", manifest.application.organization.as_str()),
+            ("$SHORT", manifest.description.short.as_str()),
+            ("$LONG", manifest.description.long.as_str()),
+            ("$VERSION", manifest.application.version.as_str()),
         ]);
 
         [
-            ("$AUTHORS",&manifest.application.authors),
-            ("$COPYRIGHT",&manifest.application.copyright),
-            ("$TRADEMARKS",&manifest.application.trademarks),
-            ("$EULA",&manifest.application.eula),
-            ("$URL",&manifest.application.url),
-        ].iter().for_each(|(k,v)|{
+            ("$AUTHORS", &manifest.application.authors),
+            ("$COPYRIGHT", &manifest.application.copyright),
+            ("$TRADEMARKS", &manifest.application.trademarks),
+            ("$EULA", &manifest.application.eula),
+            ("$URL", &manifest.application.url),
+        ]
+        .iter()
+        .for_each(|(k, v)| {
             if let Some(v) = v {
-                tpl.set(&[(k,v.as_str())]);
+                tpl.set(&[(k, v.as_str())]);
             }
         });
 
-        let root_folder = search_upwards(&manifest_folder,"Cargo.toml").await
-            .map(|location|location.parent().unwrap().to_path_buf())
+        let root_folder = search_upwards(&manifest_folder, "Cargo.toml")
+            .await
+            .map(|location| location.parent().unwrap().to_path_buf())
             .unwrap_or(manifest_folder.clone());
 
-        let app_snake_name = format!("{}-{}-{}-{}",
-            manifest.application.name,
-            manifest.application.version,
-            platform,
-            arch
+        let app_snake_name = format!(
+            "{}-{}-{}-{}",
+            manifest.application.name, manifest.application.version, platform, arch
         );
 
         let cargo_target_folder = root_folder.join("target");
         let cargo_nw_target_folder = cargo_target_folder.join("nw");
-        let build_folder = Path::new(&cargo_nw_target_folder).join("build").join(&app_snake_name);
-        let cache_folder = Path::new(&cargo_nw_target_folder).join("cache").join(&app_snake_name);
-        let dependencies_folder = Path::new(&cargo_nw_target_folder).join("deps").join(&app_snake_name);
-        
+        let build_folder = Path::new(&cargo_nw_target_folder)
+            .join("build")
+            .join(&app_snake_name);
+        let cache_folder = Path::new(&cargo_nw_target_folder)
+            .join("cache")
+            .join(&app_snake_name);
+        let dependencies_folder = Path::new(&cargo_nw_target_folder)
+            .join("deps")
+            .join(&app_snake_name);
+
         let output_folder = if let Some(output) = output.or(manifest.package.output.clone()) {
             let output = Path::new(&output);
             if output.is_absolute() {
@@ -154,48 +160,63 @@ impl Context {
         };
         let output_folder = PathBuf::from(&tpl.transform(output_folder.to_str().unwrap()));
         tpl.set(&[
-            ("$OUTPUT",output_folder.to_str().unwrap()),
+            ("$OUTPUT", output_folder.to_str().unwrap()),
             // ("$SETUP",output_folder.to_str().unwrap()),
         ]);
 
-        let temp_folder = Path::new(&home_folder).join(".cargo-nw").join("temp").join(&app_snake_name);
-        tpl.set(&[
-            ("$TEMP",temp_folder.to_str().unwrap()),
-        ]);
+        let temp_folder = Path::new(&home_folder)
+            .join(".cargo-nw")
+            .join("temp")
+            .join(&app_snake_name);
+        tpl.set(&[("$TEMP", temp_folder.to_str().unwrap())]);
 
         // let dependencies_folder = temp_folder.join("deps");
 
         let project_root_folder = project_root.to_path_buf();
-        let app_root_folder = manifest.package.source.as_ref()
-            .map(|root|project_root_folder.to_path_buf().join(root))
+        let app_root_folder = manifest
+            .package
+            .source
+            .as_ref()
+            .map(|root| project_root_folder.to_path_buf().join(root))
             .unwrap_or(project_root_folder.clone());
 
-        let app_root_folder: PathBuf = match std::path::PathBuf::from(&app_root_folder).canonicalize() {
-            Ok(path) => path.into(),
-            Err(err) => {
-                return Err(format!("unable to locate application root folder `{}`: {}", app_root_folder.display(),err).into());
-            }
-        };
+        let app_root_folder: PathBuf =
+            match std::path::PathBuf::from(&app_root_folder).canonicalize() {
+                Ok(path) => path.into(),
+                Err(err) => {
+                    return Err(format!(
+                        "unable to locate application root folder `{}`: {}",
+                        app_root_folder.display(),
+                        err
+                    )
+                    .into());
+                }
+            };
 
-        tpl.set(&[
-            ("$SOURCE",app_root_folder.to_str().unwrap()),
-        ]);
+        tpl.set(&[("$SOURCE", app_root_folder.to_str().unwrap())]);
 
-        let setup_resources_folder = manifest_folder.join(&manifest.package.resources.as_ref().unwrap_or(&"resources/setup".to_string())).into();
+        let setup_resources_folder = manifest_folder
+            .join(
+                &manifest
+                    .package
+                    .resources
+                    .as_ref()
+                    .unwrap_or(&"resources/setup".to_string()),
+            )
+            .into();
         let sdk = manifest.node_webkit.sdk.unwrap_or(options.sdk);
         let dry_run = options.dry_run;
         let snap = manifest.snap.clone().unwrap_or_default();
         let channel = options.channel.or(snap.channel).unwrap_or_default();
         let confinement = options.confinement.or(snap.confinement).unwrap_or_default();
-        let deps = Deps::new(&platform,&manifest,sdk);
+        let deps = Deps::new(&platform, &manifest, sdk);
 
-        let include = manifest.package.include.clone();//.unwrap_or(vec![]);
-        let exclude = manifest.package.exclude.clone();//.unwrap_or(vec![]);
+        let include = manifest.package.include.clone(); //.unwrap_or(vec![]);
+        let exclude = manifest.package.exclude.clone(); //.unwrap_or(vec![]);
 
         let images = manifest.images.clone().unwrap_or_default();
 
-        log_info!("Target","`{}`",output_folder.to_str().unwrap());
-
+        log_info!("Target", "`{}`", output_folder.to_str().unwrap());
 
         let ctx = Context {
             manifest,
@@ -250,18 +271,18 @@ impl Context {
 
     pub async fn clean_dependencies(&self) -> Result<()> {
         if self.dependencies_folder.exists().await {
-            log_info!("Cleaning","`{}`",self.dependencies_folder.display());
+            log_info!("Cleaning", "`{}`", self.dependencies_folder.display());
             async_std::fs::remove_dir_all(&self.dependencies_folder).await?;
         }
         Ok(())
     }
     pub async fn clean(&self) -> Result<()> {
         if self.build_folder.exists().await {
-            log_info!("Cleaning","`{}`",self.build_folder.display());
+            log_info!("Cleaning", "`{}`", self.build_folder.display());
             async_std::fs::remove_dir_all(&self.build_folder).await?;
         }
         if self.cache_folder.exists().await {
-            log_info!("Cleaning","`{}`",self.cache_folder.display());
+            log_info!("Cleaning", "`{}`", self.cache_folder.display());
             async_std::fs::remove_dir_all(&self.cache_folder).await?;
         }
         Ok(())
@@ -283,6 +304,4 @@ impl Context {
     // ) -> Result<()> {
     //     execute_with_context(self,ec,cwd,tpl).await
     // }
-
 }
-

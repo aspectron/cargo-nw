@@ -1,7 +1,7 @@
-use async_std::path::PathBuf;
-use async_std::path::Path;
-use regex::Regex;
 use crate::prelude::*;
+use async_std::path::Path;
+use async_std::path::PathBuf;
+use regex::Regex;
 
 pub async fn search_upwards(folder: &PathBuf, filename: &str) -> Option<PathBuf> {
     let mut folder = folder.clone();
@@ -25,7 +25,7 @@ pub async fn current_dir() -> PathBuf {
 }
 
 // pub async fn find_file(folder: &Path,files: &[&str]) -> Result<PathBuf> {
-pub async fn find_file(folder: &Path,files: &[String]) -> Result<PathBuf> {
+pub async fn find_file(folder: &Path, files: &[String]) -> Result<PathBuf> {
     for file in files {
         let path = folder.join(file);
         match path.canonicalize().await {
@@ -33,11 +33,16 @@ pub async fn find_file(folder: &Path,files: &[String]) -> Result<PathBuf> {
                 if path.is_file().await {
                     return Ok(path);
                 }
-            },
-            _ => { }
+            }
+            _ => {}
         }
     }
-    return Err(format!("Unable to locate any of the files: {} \nfrom {:?} directory", files.join(", "), folder.to_str().unwrap_or("")).into())
+    return Err(format!(
+        "Unable to locate any of the files: {} \nfrom {:?} directory",
+        files.join(", "),
+        folder.to_str().unwrap_or("")
+    )
+    .into());
 }
 
 pub fn get_env_defs(strings: &Vec<String>) -> Result<Vec<(String, String)>> {
@@ -58,4 +63,3 @@ pub fn get_env_defs(strings: &Vec<String>) -> Result<Vec<(String, String)>> {
 
     Ok(parsed_strings)
 }
-

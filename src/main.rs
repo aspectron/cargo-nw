@@ -1,28 +1,28 @@
-use std::{sync::Arc, env};
 use async_std::path::PathBuf;
-use clap::{Parser,Subcommand};
+use clap::{Parser, Subcommand};
 use console::style;
+use std::{env, sync::Arc};
 
-pub mod error;
-pub mod result;
-pub mod manifest;
-pub mod images;
-pub mod builder;
-pub mod utils;
+pub mod action;
 pub mod archive;
-pub mod platform;
+pub mod builder;
 pub mod context;
+pub mod copy;
 pub mod deps;
-pub mod prelude;
+pub mod error;
+pub mod exec;
+pub mod images;
+pub mod init;
 pub mod installer;
 pub mod log;
-pub mod init;
+pub mod manifest;
+pub mod platform;
+pub mod prelude;
+pub mod result;
+pub mod script;
 pub mod signatures;
 pub mod tpl;
-pub mod copy;
-pub mod exec;
-pub mod action;
-pub mod script;
+pub mod utils;
 
 cfg_if! {
     if #[cfg(feature = "multiplatform")] {
@@ -61,7 +61,6 @@ enum Cmd {
     Args(Args),
 }
 
-
 #[derive(Debug, clap::Args)]
 struct Args {
     /// Location of the nw.toml manifest file
@@ -69,15 +68,15 @@ struct Args {
     location: Option<String>,
     /// Action to execute (build,clean,init)
     #[clap(subcommand)]
-    action : Action,
+    action: Action,
     /// Enable verbose mode
     #[clap(short, long)]
-    verbose : bool,
-    
+    verbose: bool,
+
     #[cfg(feature = "unix")]
     #[clap(short, long)]
     // #[cfg(feature = "unix")]
-    platform : Option<Platform>,
+    platform: Option<Platform>,
 }
 
 #[derive(Subcommand, Debug)]
@@ -86,53 +85,52 @@ enum Action {
     Build {
         /// Package using Node Webkit SDK edition
         #[clap(short, long)]
-        sdk : bool,
+        sdk: bool,
 
         /// Integrate but do not produce any redistributables
         #[clap(short, long, name = "dry-run")]
-        dry_run : bool,
+        dry_run: bool,
 
-        // /// Node Webkit version (override the manifest setting) 
+        // /// Node Webkit version (override the manifest setting)
         // #[clap(short, long)]
         // version : Option<String>,
-
         #[cfg(any(target_os = "linux", feature = "unix"))]
         #[clap(short, long, help = "Snap distribution channel (linux only)")]
         // #[cfg(any(target_os = "linux", feature = "unix"))]
-        channel : Option<Channel>,
-        
+        channel: Option<Channel>,
+
         #[cfg(any(target_os = "linux", feature = "unix"))]
         #[clap(short, long, help = "Snap package confinement (linux only)")]
         // #[cfg(any(target_os = "linux", feature = "unix"))]
-        confinement : Option<Confinement>,
-        
+        confinement: Option<Confinement>,
+
         /// Target platform architecture (x64,ia32,aarch64)
         #[clap(short, long)]
-        arch : Option<Architecture>,
-        
+        arch: Option<Architecture>,
+
         /// Output folder
         #[clap(short, long)]
-        output : Option<String>,
-        
+        output: Option<String>,
+
         /// Package target (for multi-target output)
         #[clap(short, long)]
-        target : Option<Vec<Target>>,
-        
+        target: Option<Vec<Target>>,
+
         /// Package target
         #[clap(subcommand)]
         default: Option<Target>,
     },
     /// Clean intermediate build folders
-    Clean { 
+    Clean {
         /// Clean downloaded Node Webkit redistributables
         #[clap(long)]
-        dist : bool,
+        dist: bool,
         /// Clean project dependencies
         #[clap(long)]
-        deps : bool,
+        deps: bool,
         /// Clean dependencies and build folders
         #[clap(long)]
-        all : bool,
+        all: bool,
     },
     /// Create NW package template
     Init {
@@ -141,29 +139,27 @@ enum Action {
         name: Option<String>,
         /// JavaScript-only (Do not generate WASM stubs)
         #[clap(long)]
-        js : bool,
+        js: bool,
         /// Create 'nw.toml' manifest file only
         #[clap(long)]
-        manifest : bool,
+        manifest: bool,
         /// Force overwrite existing project files
         #[clap(long)]
-        force : bool,
+        force: bool,
     },
     Publish {
         /// Output folder
         #[clap(short, long)]
-        output : Option<String>,
+        output: Option<String>,
     },
     #[cfg(feature = "test")]
     Test {
         // #[clap(name = "manifest")]
         // manifest: Option<String>,
-    }
+    },
 }
 
-
 pub async fn async_main() -> Result<()> {
-    
     let args = Cmd::parse();
     let Cmd::Args(Args {
         action,
@@ -171,8 +167,7 @@ pub async fn async_main() -> Result<()> {
         verbose,
 
         #[cfg(feature = "unix")]
-        platform
-
+        platform,
     }) = args;
 
     cfg_if! {
@@ -182,7 +177,7 @@ pub async fn async_main() -> Result<()> {
             let platform = platform.unwrap_or_default();
         }
     }
-    
+
     match action {
         Action::Build {
             // verbose,
@@ -197,7 +192,6 @@ pub async fn async_main() -> Result<()> {
             #[cfg(any(target_os = "linux", feature = "unix"))]
             confinement,
         } => {
-
             if verbose {
                 log::enable_verbose();
             }
@@ -225,7 +219,7 @@ pub async fn async_main() -> Result<()> {
                     let confinement = Some(Confinement::default());
                 }
             }
-            
+
             let options = Options {
                 sdk,
                 dry_run,
@@ -234,29 +228,21 @@ pub async fn async_main() -> Result<()> {
             };
 
             let arch = arch.unwrap_or_default();
-            let ctx = Arc::new(Context::create(
-                location,
-                output,
-                platform,
-                arch,
-                options
-            ).await?);
+            let ctx = Arc::new(Context::create(location, output, platform, arch, options).await?);
 
-            let has_archive = 
-                if ctx.manifest.package.archive.is_some()
-                    || targets.contains(&Target::All)
-                    || targets.contains(&Target::Archive) {
-                    true
-                } else {
-                    false
-                };
+            let has_archive = if ctx.manifest.package.archive.is_some()
+                || targets.contains(&Target::All)
+                || targets.contains(&Target::Archive)
+            {
+                true
+            } else {
+                false
+            };
 
             if let Some(list) = &ctx.manifest.package.disable {
                 for disable in list.iter() {
                     match disable {
-                        Target::All => {
-                            targets.clear()
-                        },
+                        Target::All => targets.clear(),
                         _ => {
                             targets.remove(disable);
                         }
@@ -272,22 +258,21 @@ pub async fn async_main() -> Result<()> {
             // installer.check().await?;
             let build = Arc::new(Builder::new(ctx));
             build.execute(&targets, &installer).await?;
-        },
-        Action::Clean { 
-            all, 
-            deps,
-            dist 
-        } => {
+        }
+        Action::Clean { all, deps, dist } => {
             let deps = deps || all;
             let dist = dist || all;
 
-            let ctx = Arc::new(Context::create(
-                location,
-                None,
-                platform,
-                Architecture::default(),
-                Options::default()
-            ).await?);
+            let ctx = Arc::new(
+                Context::create(
+                    location,
+                    None,
+                    platform,
+                    Architecture::default(),
+                    Options::default(),
+                )
+                .await?,
+            );
 
             if dist {
                 ctx.deps.clean().await?;
@@ -298,8 +283,7 @@ pub async fn async_main() -> Result<()> {
             }
 
             ctx.clean().await?;
-
-        },
+        }
         Action::Init {
             name,
             js,
@@ -307,7 +291,7 @@ pub async fn async_main() -> Result<()> {
             force,
         } => {
             // let arch = Architecture::default();
-            let folder : PathBuf = env::current_dir().unwrap().into();
+            let folder: PathBuf = env::current_dir().unwrap().into();
             let name = if let Some(name) = name {
                 name
             } else {
@@ -315,44 +299,32 @@ pub async fn async_main() -> Result<()> {
             };
             // let name = name.as_ref().unwrap_or(folder.file_name().expect("").to_str().expect());
             let options = init::Options {
-                js, manifest, force
+                js,
+                manifest,
+                force,
             };
             let mut project = init::Project::try_new(name, folder)?;
 
             project.generate(options).await?;
-
-        },
-        Action::Publish {
-            output
-        } => {
-
+        }
+        Action::Publish { output } => {
             let arch = Architecture::default();
-            let ctx = Arc::new(Context::create(
-                location,
-                output,
-                platform,
-                arch,
-                Options::default()
-            ).await?);
+            let ctx = Arc::new(
+                Context::create(location, output, platform, arch, Options::default()).await?,
+            );
 
             let installer = create_installer(&ctx);
             let target_folder = installer.target_folder();
-            execute_actions(Stage::Publish,&ctx,&installer.tpl(),&target_folder).await?;
-        },
+            execute_actions(Stage::Publish, &ctx, &installer.tpl(), &target_folder).await?;
+        }
         #[cfg(feature = "test")]
-        Action::Test {
-        } => {
-
+        Action::Test {} => {
             let arch = Architecture::default();
-            let ctx = Arc::new(Context::create(
-                location,
-                None,
-                platform,
-                arch,
-                Options::default()
-            ).await?);
+            let ctx = Arc::new(
+                Context::create(location, None, platform, arch, Options::default()).await?,
+            );
 
-            println!("{:#?}",ctx);
+            println!("{:#?}", ctx);
         }
     }
 
@@ -365,15 +337,16 @@ async fn main() -> Result<()> {
     let result = async_main().await;
     match &result {
         // Err(Error::String(s)) => println!("\n{}", style(s).red()),
-        Err(Error::Warning(warn)) => println!("\nWarning: {}\n",style(format!("{}", warn)).yellow()),
-        Err(err) => println!("\n{}\n",style(format!("{}", err)).red()),
-        Ok(_) => { }
+        Err(Error::Warning(warn)) => {
+            println!("\nWarning: {}\n", style(format!("{}", warn)).yellow())
+        }
+        Err(err) => println!("\n{}\n", style(format!("{}", err)).red()),
+        Ok(_) => {}
     };
 
     if result.is_err() {
         std::process::exit(1);
     }
-    
+
     Ok(())
 }
-

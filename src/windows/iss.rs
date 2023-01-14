@@ -1,22 +1,21 @@
 #![allow(dead_code)]
 
+use super::innosetup::quote;
+use crate::prelude::*;
 use async_std::path::Path;
 use async_std::path::PathBuf;
 use duct::cmd;
 use std::string::ToString;
-use crate::prelude::*;
-use super::innosetup::quote;
 
 pub const INNO_SETUP_COMPIL32: &str = "C:/Program Files (x86)/Inno Setup 6/compil32.exe";
 
-
 pub struct ISS {
     ctx: Arc<Context>,
-    app_name : String,
-    app_title : String,
-    app_group : String,
-    app_version : String,
-    app_uuid : String,
+    app_name: String,
+    app_title: String,
+    app_group: String,
+    app_version: String,
+    app_uuid: String,
     // app_folder : PathBuf,
     app_authors: String,
     app_url: String,
@@ -24,26 +23,29 @@ pub struct ISS {
     run_on_startup: Option<String>,
     run_after_setup: Option<bool>,
     setup_icon_file: PathBuf,
-    wizard_image_files : (Vec<PathBuf>,Vec<PathBuf>),
+    wizard_image_files: (Vec<PathBuf>, Vec<PathBuf>),
     // // setup_icon : PathBuf,
     // // background_image : PathBuf,
-    build_folder : PathBuf,
-    cache_folder : PathBuf,
+    build_folder: PathBuf,
+    cache_folder: PathBuf,
     // // output_folder : PathBuf,
 
     // // build_file : PathBuf,
-    iss_filename : String,
-    output_file : PathBuf,
+    iss_filename: String,
+    output_file: PathBuf,
 }
 
 impl ISS {
     pub fn new(
         ctx: Arc<Context>,
-        setup_icon_file : PathBuf,
-        wizard_image_files : (Vec<PathBuf>,Vec<PathBuf>)
+        setup_icon_file: PathBuf,
+        wizard_image_files: (Vec<PathBuf>, Vec<PathBuf>),
     ) -> ISS {
-
-        let windows = ctx.manifest.windows.as_ref().expect("nwjs.toml missing [windows] section");
+        let windows = ctx
+            .manifest
+            .windows
+            .as_ref()
+            .expect("nwjs.toml missing [windows] section");
 
         let app_name = ctx.manifest.application.name.clone();
         let app_title = ctx.manifest.application.title.clone();
@@ -68,15 +70,13 @@ impl ISS {
         let app_exe_file = if let Some(executable) = windows.executable.as_ref() {
             executable.to_string()
         } else {
-            Path::new(&format!("{app_name}.exe")).to_str().unwrap().to_string()
+            Path::new(&format!("{app_name}.exe"))
+                .to_str()
+                .unwrap()
+                .to_string()
         };
 
-        let iss_filename = format!("{}-{}-{}-{}",
-            app_name,
-            app_version,
-            ctx.platform,
-            ctx.arch,
-        );
+        let iss_filename = format!("{}-{}-{}-{}", app_name, app_version, ctx.platform, ctx.arch,);
         let output_file = ctx.output_folder.join(format!("{iss_filename}.exe"));
 
         let run_on_startup = windows.run_on_startup.clone();
@@ -114,93 +114,117 @@ impl ISS {
         if !std::path::Path::new(INNO_SETUP_COMPIL32).exists() {
             println!("");
             println!("fatal: unable to locate: {}", INNO_SETUP_COMPIL32);
-			println!("please download innosetup 6 at:");
-			println!("https://jrsoftware.org/isdl.php");
+            println!("please download innosetup 6 at:");
+            println!("https://jrsoftware.org/isdl.php");
             println!("");
-            return Err("missing InnoSetup compiler".into())
+            return Err("missing InnoSetup compiler".into());
         }
         Ok(())
-    
     }
 
     pub async fn generate_iss(&self) -> Result<()> {
-
         let mut iss = super::innosetup::InnoSetup::new();
 
-        iss
-            .define("AppName",&self.app_title)
-            .define("AppGroup", &self.app_group) 
-            .define("AppVersion",&self.app_version)
+        iss.define("AppName", &self.app_title)
+            .define("AppGroup", &self.app_group)
+            .define("AppVersion", &self.app_version)
             .define("AppPublisher", &self.app_authors)
-            .define("AppURL",&self.app_url)
-            .define("AppExeName",&self.app_exe_file);
-            
+            .define("AppURL", &self.app_url)
+            .define("AppExeName", &self.app_exe_file);
+
         let wizard_image_small_files = self
             .wizard_image_files
             .0
             .iter()
-            .map(|s|format!("\"{}\"",s.to_str().unwrap().to_string()))
+            .map(|s| format!("\"{}\"", s.to_str().unwrap().to_string()))
             .collect::<Vec<String>>()
-            .join(";")+";";
+            .join(";")
+            + ";";
 
         let wizard_image_large_files = self
             .wizard_image_files
             .1
             .iter()
-            .map(|s|format!("\"{}\"",s.to_str().unwrap().to_string()))
+            .map(|s| format!("\"{}\"", s.to_str().unwrap().to_string()))
             .collect::<Vec<String>>()
-            .join(";")+";";
+            .join(";")
+            + ";";
 
-        iss.setup()
-            .directives(&[
+        iss.setup().directives(&[
+            ("AppId", &self.app_uuid),
+            ("AppName", "{#AppName}"),
+            ("AppVersion", "{#AppVersion}"),
+            ("AppVerName", "{#AppName} {#AppVersion}"), // ?
+            ("AppPublisher", "{#AppPublisher}"),
+            ("AppPublisherURL", "{#AppURL}"),
+            ("AppSupportURL", "{#AppURL}"),
+            ("AppUpdatesURL", "{#AppURL}"),
+            ("DefaultDirName", "{pf64}\\{#AppGroup}\\{#AppName}"),
+            ("DisableDirPage", "yes"),
+            ("UsePreviousAppDir", "no"),
+            ("OutputBaseFilename", &self.iss_filename),
+            (
+                "OutputDir",
+                quote!(self.ctx.output_folder.to_str().unwrap()),
+            ),
+            (
+                "SetupIconFile",
+                quote!(self
+                    .setup_icon_file
+                    .clone()
+                    .into_os_string()
+                    .into_string()?),
+            ),
+            // ("SetupIconFile",quote!(self.ctx.setup_resources_folder.join(format!("{}.ico",self.app_name)).to_str().unwrap())),
+            ("Compression", "lzma/normal"),
+            ("SolidCompression", "yes"),
+            // ;PrivilegesRequired=admin
+            ("AlwaysShowComponentsList", "False"),
+            ("ShowComponentSizes", "False"),
+            ("RestartIfNeededByRun", "False"),
+            ("MinVersion", "0,6.0"),
+            // ;
+            ("UserInfoPage", "False"),
+            ("DefaultGroupName", "{#AppGroup}"),
+            (
+                "UninstallDisplayIcon",
+                &format!("{{app}}\\{}", self.app_exe_file),
+            ),
+            ("CloseApplications", "force"),
+            // ; "ArchitecturesAllowed=x64" specifies that Setup cannot run on
+            // ; anything but x64.
+            ("ArchitecturesAllowed", &self.ctx.arch.to_string()),
+            // ; "ArchitecturesInstallIn64BitMode=x64" requests that the install be
+            // ; done in "64-bit mode" on x64, meaning it should use the native
+            // ; 64-bit Program Files directory and the 64-bit view of the registry.
+            (
+                "ArchitecturesInstallIn64BitMode",
+                &self.ctx.arch.to_string(),
+            ),
+            ("WizardImageFile", &wizard_image_large_files),
+            ("WizardSmallImageFile", &wizard_image_small_files),
+            // ("WizardImageFile",quote!(self.ctx.setup_resources_folder.join("innosetup-wizard-large.bmp").to_str().unwrap().to_string())),
+            // ("WizardSmallImageFile",quote!(self.ctx.setup_resources_folder.join("innosetup-wizard-small.bmp").to_str().unwrap().to_string())),
+            // ("WizardSmallImageFile=<%- path.join(RESOURCES,ident+'-55x58.bmp') %>
+        ]);
 
-                ("AppId",&self.app_uuid),
-                ("AppName","{#AppName}"),
-                ("AppVersion","{#AppVersion}"),
-                ("AppVerName","{#AppName} {#AppVersion}"), // ?
-                ("AppPublisher","{#AppPublisher}"),
-                ("AppPublisherURL","{#AppURL}"),
-                ("AppSupportURL","{#AppURL}"),
-                ("AppUpdatesURL","{#AppURL}"),
-                ("DefaultDirName","{pf64}\\{#AppGroup}\\{#AppName}"),
-                ("DisableDirPage","yes"),
-                ("UsePreviousAppDir","no"),
-                ("OutputBaseFilename",&self.iss_filename),
-                ("OutputDir",quote!(self.ctx.output_folder.to_str().unwrap())),
-                ("SetupIconFile",quote!(self.setup_icon_file.clone().into_os_string().into_string()?)),
-                // ("SetupIconFile",quote!(self.ctx.setup_resources_folder.join(format!("{}.ico",self.app_name)).to_str().unwrap())),
-                ("Compression","lzma/normal"),
-                ("SolidCompression","yes"),
-                // ;PrivilegesRequired=admin
-                ("AlwaysShowComponentsList","False"),
-                ("ShowComponentSizes","False"),
-                ("RestartIfNeededByRun","False"),
-                ("MinVersion","0,6.0"),
-                // ;
-                ("UserInfoPage","False"),
-                ("DefaultGroupName","{#AppGroup}"),
-                ("UninstallDisplayIcon",&format!("{{app}}\\{}",self.app_exe_file)),
-                ("CloseApplications","force"),
-                // ; "ArchitecturesAllowed=x64" specifies that Setup cannot run on
-                // ; anything but x64.
-                ("ArchitecturesAllowed",&self.ctx.arch.to_string()),
-                // ; "ArchitecturesInstallIn64BitMode=x64" requests that the install be
-                // ; done in "64-bit mode" on x64, meaning it should use the native
-                // ; 64-bit Program Files directory and the 64-bit view of the registry.
-                ("ArchitecturesInstallIn64BitMode",&self.ctx.arch.to_string()),
-                ("WizardImageFile",&wizard_image_large_files),
-                ("WizardSmallImageFile",&wizard_image_small_files),
-                // ("WizardImageFile",quote!(self.ctx.setup_resources_folder.join("innosetup-wizard-large.bmp").to_str().unwrap().to_string())),
-                // ("WizardSmallImageFile",quote!(self.ctx.setup_resources_folder.join("innosetup-wizard-small.bmp").to_str().unwrap().to_string())),
-                // ("WizardSmallImageFile=<%- path.join(RESOURCES,ident+'-55x58.bmp') %>
-            ]);
-
-        iss
-            .icons()
-            .icon("{group}\\{#AppName}","{app}\\{#AppExeName}",None)
-            .icon("{group}\\{cm:UninstallProgram,{#AppName}}","{uninstallexe}",None)
-            .icon("{commondesktop}\\{#AppName}","{app}\\{#AppExeName}",Some("desktopicon"))
-            .icon("{userappdata}\\Microsoft\\Internet Explorer\\Quick Launch\\{#AppName}","{app}\\{#AppExeName}",Some("quicklaunchicon"));
+        iss.icons()
+            .icon("{group}\\{#AppName}", "{app}\\{#AppExeName}", None)
+            .icon(
+                "{group}\\{cm:UninstallProgram,{#AppName}}",
+                "{uninstallexe}",
+                None,
+            )
+            .icon(
+                "{commondesktop}\\{#AppName}",
+                "{app}\\{#AppExeName}",
+                Some("desktopicon"),
+            )
+            .icon(
+                "{userappdata}\\Microsoft\\Internet Explorer\\Quick Launch\\{#AppName}",
+                "{app}\\{#AppExeName}",
+                Some("quicklaunchicon"),
+            );
 
         iss.tasks()
             .task(
@@ -208,31 +232,29 @@ impl ISS {
                 "{cm:CreateDesktopIcon}",
                 "{cm:AdditionalIcons}",
                 None,
-                None
+                None,
             )
             .task(
                 "quicklaunchicon",
                 "{cm:CreateQuickLaunchIcon}",
                 "{cm:AdditionalIcons}",
                 Some("unchecked"),
-                Some(&[("OnlyBelowVersion","0,6.1")])
+                Some(&[("OnlyBelowVersion", "0,6.1")]),
             );
 
-
-        iss.files()
-            .replicate(
-                // self.app_folder.to_str().unwrap(),
-                &format!("{}\\*",self.build_folder.to_str().unwrap()),
-                "{app}",
-                Some("recursesubdirs ignoreversion")
-            );
+        iss.files().replicate(
+            // self.app_folder.to_str().unwrap(),
+            &format!("{}\\*", self.build_folder.to_str().unwrap()),
+            "{app}",
+            Some("recursesubdirs ignoreversion"),
+        );
 
         iss.install_delete()
-            .args(&[&[("Type","filesandordirs"),("Name","\"{app}\"")]]);
+            .args(&[&[("Type", "filesandordirs"), ("Name", "\"{app}\"")]]);
 
         if let Some(languages) = self.ctx.manifest.languages.as_ref() {
             let languages = languages.languages.as_ref().unwrap();
-            let languages = languages.iter().map(|l|l.as_str()).collect::<Vec<&str>>(); 
+            let languages = languages.iter().map(|l| l.as_str()).collect::<Vec<&str>>();
             iss.languages(&languages);
         } else {
             iss.languages(&["english"]);
@@ -240,48 +262,47 @@ impl ISS {
 
         if let Some(run_on_startup) = self.run_on_startup.as_ref() {
             let root = match run_on_startup.to_lowercase().as_str() {
-                "user" | "hkcu" => { "HKCU" },
-                "system" | "everyone" | "hklm" => { "HKLM"},
+                "user" | "hkcu" => "HKCU",
+                "system" | "everyone" | "hklm" => "HKLM",
                 _ => {
                     panic!("nwjs.toml - unsupported 'run_on_startup' value '{}' must be 'user' or 'everyone'", run_on_startup);
                 }
             };
 
-            iss.registry()
-            .register(
+            iss.registry().register(
                 root,
                 "Software\\Microsoft\\Windows\\CurrentVersion\\Run",
                 "string",
                 &self.app_title,
-                &format!("\"\"{{app}}\\{}\"\"",self.app_exe_file),
-                Some("uninsdeletevalue")
+                &format!("\"\"{{app}}\\{}\"\"", self.app_exe_file),
+                Some("uninsdeletevalue"),
             );
         }
 
         if let Some(firewall) = &self.ctx.manifest.firewall {
-
             let issfw = iss.firewall();
             if let Some(application) = &firewall.application {
                 issfw.clone().add_rule(
                     &format!("{} App", self.app_title),
                     "{#AppExeName}",
                     //"in+out"
-                    &application.direction.clone().unwrap_or("in+out".to_string())
+                    &application
+                        .direction
+                        .clone()
+                        .unwrap_or("in+out".to_string()),
                 );
             }
-            
+
             if let Some(rules) = &firewall.rules {
                 for rule in rules.iter() {
                     issfw.clone().add_rule(
                         &rule.name,
-                        &rule.program.replace("/","\\"),
-                        &rule.direction.clone().unwrap_or("in+out".to_string())
+                        &rule.program.replace("/", "\\"),
+                        &rule.direction.clone().unwrap_or("in+out".to_string()),
                     );
                 }
             }
         }
-
-
 
         if self.run_after_setup.unwrap_or(false) {
             let run = iss.run();
@@ -289,23 +310,28 @@ impl ISS {
                 "{#AppExeName}",
                 None,
                 Some("{cm:LaunchProgram,{#StringChange(AppName, '&', '&&')}}"),
-                Some("nowait postinstall")
+                Some("nowait postinstall"),
             );
         }
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         let iss_text = iss.to_string();
-        let iss_file = self.cache_folder.join(format!("{}.iss",self.app_name));
+        let iss_file = self.cache_folder.join(format!("{}.iss", self.app_name));
         std::fs::write(&iss_file, &iss_text)?;
 
-        log_info!("InnoSetup","building...");
-        cmd!(INNO_SETUP_COMPIL32, "/cc", iss_file).stdin_null().run()?;
+        log_info!("InnoSetup", "building...");
+        cmd!(INNO_SETUP_COMPIL32, "/cc", iss_file)
+            .stdin_null()
+            .run()?;
         let setup_size = std::fs::metadata(&self.output_file)?.len() as f64;
-        log_info!("InnoSetup","resulting setup size: {:.2}Mb", setup_size/1024.0/1024.0);
+        log_info!(
+            "InnoSetup",
+            "resulting setup size: {:.2}Mb",
+            setup_size / 1024.0 / 1024.0
+        );
         // let code = await this.utils.spawn(,['/cc', path.join(this.TEMP,this.ident+'-impl.iss')], { cwd : this.ROOT, stdio : 'inherit' });
-			
+
         Ok(())
     }
-
 }
