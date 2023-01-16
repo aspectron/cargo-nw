@@ -21,6 +21,7 @@ pub struct DMG {
 }
 
 impl DMG {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         app_name: &str,
         app_title: &str,

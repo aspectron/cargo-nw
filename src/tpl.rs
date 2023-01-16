@@ -12,7 +12,7 @@ impl TryFrom<&[(&str, String)]> for Tpl {
     type Error = Error;
     fn try_from(value: &[(&str, String)]) -> Result<Self> {
         let map: HashMap<String, String> = value
-            .into_iter()
+            .iter()
             .map(|(k, v)| (k.to_string(), v.to_string()))
             .collect();
         Ok(Tpl { map })
@@ -23,10 +23,16 @@ impl TryFrom<&[(&str, &PathBuf)]> for Tpl {
     type Error = Error;
     fn try_from(value: &[(&str, &PathBuf)]) -> Result<Self> {
         let map: HashMap<String, String> = value
-            .into_iter()
+            .iter()
             .map(|(k, v)| (k.to_string(), v.to_string_lossy().to_string()))
             .collect();
         Ok(Tpl { map })
+    }
+}
+
+impl Default for Tpl {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

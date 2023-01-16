@@ -230,14 +230,9 @@ pub async fn async_main() -> Result<()> {
             let arch = arch.unwrap_or_default();
             let ctx = Arc::new(Context::create(location, output, platform, arch, options).await?);
 
-            let has_archive = if ctx.manifest.package.archive.is_some()
+            let has_archive = ctx.manifest.package.archive.is_some()
                 || targets.contains(&Target::All)
-                || targets.contains(&Target::Archive)
-            {
-                true
-            } else {
-                false
-            };
+                || targets.contains(&Target::Archive);
 
             if let Some(list) = &ctx.manifest.package.disable {
                 for disable in list.iter() {
@@ -338,9 +333,9 @@ async fn main() -> Result<()> {
     match &result {
         // Err(Error::String(s)) => println!("\n{}", style(s).red()),
         Err(Error::Warning(warn)) => {
-            println!("\nWarning: {}\n", style(format!("{}", warn)).yellow())
+            println!("\nWarning: {}\n", style(warn).yellow())
         }
-        Err(err) => println!("\n{}\n", style(format!("{}", err)).red()),
+        Err(err) => println!("\n{}\n", style(err).red()),
         Ok(_) => {}
     };
 

@@ -2,7 +2,7 @@ use crate::prelude::*;
 use async_std::path::Path;
 use async_std::path::PathBuf;
 
-#[derive(Debug)]
+#[derive(Default, Debug)]
 pub struct Options {
     pub sdk: bool,
     pub dry_run: bool,
@@ -10,16 +10,16 @@ pub struct Options {
     pub confinement: Option<Confinement>,
 }
 
-impl Default for Options {
-    fn default() -> Self {
-        Options {
-            sdk: false,
-            dry_run: false,
-            channel: None,
-            confinement: None,
-        }
-    }
-}
+// impl Default for Options {
+//     fn default() -> Self {
+//         Options {
+//             sdk: false,
+//             dry_run: false,
+//             channel: None,
+//             confinement: None,
+//         }
+//     }
+// }
 
 #[derive(Debug)]
 pub struct Context {
@@ -129,7 +129,7 @@ impl Context {
         let root_folder = search_upwards(&manifest_folder, "Cargo.toml")
             .await
             .map(|location| location.parent().unwrap().to_path_buf())
-            .unwrap_or(manifest_folder.clone());
+            .unwrap_or_else(|| manifest_folder.clone());
 
         let app_snake_name = format!(
             "{}-{}-{}-{}",
@@ -148,7 +148,8 @@ impl Context {
             .join("deps")
             .join(&app_snake_name);
 
-        let output_folder = if let Some(output) = output.or(manifest.package.output.clone()) {
+        let output_folder = if let Some(output) = output.or_else(|| manifest.package.output.clone())
+        {
             let output = Path::new(&output);
             if output.is_absolute() {
                 output.to_owned()
@@ -178,7 +179,7 @@ impl Context {
             .source
             .as_ref()
             .map(|root| project_root_folder.to_path_buf().join(root))
-            .unwrap_or(project_root_folder.clone());
+            .unwrap_or_else(|| project_root_folder.clone());
 
         let app_root_folder: PathBuf =
             match std::path::PathBuf::from(&app_root_folder).canonicalize() {
@@ -195,15 +196,13 @@ impl Context {
 
         tpl.set(&[("$SOURCE", app_root_folder.to_str().unwrap())]);
 
-        let setup_resources_folder = manifest_folder
-            .join(
-                &manifest
-                    .package
-                    .resources
-                    .as_ref()
-                    .unwrap_or(&"resources/setup".to_string()),
-            )
-            .into();
+        let setup_resources_folder = manifest_folder.join(
+            manifest
+                .package
+                .resources
+                .as_ref()
+                .unwrap_or(&"resources/setup".to_string()),
+        );
         let sdk = manifest.node_webkit.sdk.unwrap_or(options.sdk);
         let dry_run = options.dry_run;
         let snap = manifest.snap.clone().unwrap_or_default();

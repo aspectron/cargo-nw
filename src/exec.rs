@@ -20,18 +20,18 @@ impl ExecArgs {
         } else if let Some(argv) = argv {
             Ok(ExecArgs::Argv(argv.clone()))
         } else {
-            Err(format!("ExecArgs::try_new() cmd or argv must be present").into())
+            Err("ExecArgs::try_new() cmd or argv must be present".into())
         }
     }
 
     pub fn get(&self, tpl: &Tpl) -> Vec<String> {
         match self {
             ExecArgs::String(cmd) => tpl
-                .transform(&cmd)
-                .split(" ")
+                .transform(cmd)
+                .split(' ')
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>(),
-            ExecArgs::Argv(argv) => argv.into_iter().map(|v| tpl.transform(&v)).collect(),
+            ExecArgs::Argv(argv) => argv.iter().map(|v| tpl.transform(v)).collect(),
         }
     }
 }
@@ -66,7 +66,7 @@ pub async fn execute_with_context(
                 cwd.join(folder)
             }
         })
-        .unwrap_or(cwd.to_path_buf());
+        .unwrap_or_else(|| cwd.to_path_buf());
 
     execute(
         ctx,
@@ -81,6 +81,7 @@ pub async fn execute_with_context(
     .await
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn execute(
     ctx: &Context,
     // ctx: &Context,
@@ -122,7 +123,7 @@ pub async fn execute(
         .expect("missing program (frist argument) in the execution config");
     let args = argv[1..].to_vec();
 
-    let mut proc = duct::cmd(program, args).dir(&cwd);
+    let mut proc = duct::cmd(program, args).dir(cwd);
     if let Some(env) = env {
         let defs = get_env_defs(env)?;
         for (k, v) in defs.iter() {

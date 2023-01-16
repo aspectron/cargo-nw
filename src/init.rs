@@ -426,8 +426,8 @@ impl Project {
         let name = name.to_case(Case::Kebab);
         let title = name.from_case(Case::Lower).to_case(Case::Title);
         let group = title.clone();
-        let version = format!("0.1.0");
-        let description = format!("...");
+        let version = "0.1.0".to_string();
+        let description = "...".to_string();
         let uuid = Uuid::new_v4();
 
         let project = Project {
@@ -450,13 +450,13 @@ impl Project {
 
         if Path::new("package.json").exists().await {
             let package_json = PackageJson::try_load("package.json")?;
-            self.name = package_json.name.to_lowercase().replace(" ", "-");
+            self.name = package_json.name.to_lowercase().replace(' ', "-");
             self.title = package_json.name;
             if let Some(version) = package_json.version {
-                self.version = version.to_string();
+                self.version = version;
             }
             if let Some(description) = package_json.description {
-                self.description = description.to_string();
+                self.description = description;
             }
 
             log_info!("Project", "detected existing 'package.json' manifest");
@@ -476,7 +476,7 @@ impl Project {
             .ask();
             if let Some(Answer::RESPONSE(name)) = name {
                 if !name.is_empty() {
-                    if name.contains(" ") {
+                    if name.contains(' ') {
                         println!(
                             "{}",
                             style("\nError: project name can not contain spaces\n").red()
@@ -488,7 +488,7 @@ impl Project {
                     if name != self.name {
                         // self.title = name.from_case(Case::Kebab).to_case(Case::Camel);
                         self.title = name
-                            .replace("-", " ")
+                            .replace('-', " ")
                             .from_case(Case::Kebab)
                             .to_case(Case::Title);
                     }
@@ -508,9 +508,9 @@ impl Project {
             }
         }
 
-        println!("");
+        println!();
         log_info!("Init", "creating '{}'", self.name);
-        println!("");
+        println!();
 
         println!("{:?}", self);
 
@@ -571,8 +571,7 @@ impl Project {
             .iter()
             .map(|(f, _)| f)
             .chain(images.iter().map(|(f, _)| f))
-            .map(|path| Path::new(path).parent())
-            .flatten()
+            .filter_map(|path| Path::new(path).parent())
             .collect();
 
         for folder in folders {
@@ -602,7 +601,7 @@ impl Project {
 
         println!("Please run 'build' script to build the project");
         println!("Following this, you can run 'nw .' to start run the application");
-        println!("");
+        println!();
 
         Ok(())
     }

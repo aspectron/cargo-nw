@@ -52,7 +52,7 @@ async fn extract_zip(file: &PathBuf, dir: &PathBuf) -> Result<()> {
     //     return 1;
     // }
     // let fname = std::path::Path::new(&*args[1]);
-    let file_reader = std::fs::File::open(&file).unwrap();
+    let file_reader = std::fs::File::open(file).unwrap();
     let mut archive = zip::ZipArchive::new(file_reader).unwrap();
 
     for i in 0..archive.len() {
@@ -137,7 +137,7 @@ where
             let mut f = File::open(path)?;
 
             f.read_to_end(&mut buffer)?;
-            zip.write_all(&*buffer)?;
+            zip.write_all(&buffer)?;
             bytes += buffer.len();
             buffer.clear();
             // zip.fl
@@ -198,14 +198,14 @@ pub fn compress_folder(
     let it = walkdir.into_iter();
     let mut nb_files = 0;
     for _ in it {
-        nb_files = nb_files + 1;
+        nb_files += 1;
     }
 
     let walkdir = WalkDir::new(src_dir);
     let it = walkdir.into_iter();
 
     let prefix = if subfolder {
-        src_dir.parent().unwrap().into()
+        src_dir.parent().unwrap()
     } else {
         src_dir
     };

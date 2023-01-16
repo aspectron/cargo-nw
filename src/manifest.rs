@@ -59,10 +59,10 @@ impl Manifest {
         let cwd = current_dir().await;
 
         let location = if let Some(location) = location {
-            if location.starts_with("~/") {
+            if let Some(stripped) = location.strip_prefix("~/") {
                 home::home_dir()
                     .expect("unable to get home directory")
-                    .join(&location[2..])
+                    .join(stripped)
                     .into()
             } else {
                 let location = Path::new(&location).to_path_buf();
@@ -83,17 +83,14 @@ impl Manifest {
         ];
 
         for location in locations.iter() {
-            match location.canonicalize().await {
-                Ok(location) => {
-                    if location.is_file().await {
-                        return Ok(location);
-                    }
+            if let Ok(location) = location.canonicalize().await {
+                if location.is_file().await {
+                    return Ok(location);
                 }
-                _ => {}
             }
         }
 
-        Err(format!("Unable to locate 'nw.toml' manifest").into())
+        Err("Unable to locate 'nw.toml' manifest".into())
     }
 
     pub async fn load(toml: &PathBuf) -> Result<Manifest> {
@@ -191,7 +188,7 @@ pub struct ExecutionContext {
 impl ExecutionContext {
     pub fn validate(&self) -> Result<()> {
         if self.argv.is_none() && self.cmd.is_none() {
-            Err(format!("no command or arguments specified").into())
+            Err("no command or arguments specified".into())
         } else if self.argv.is_some() && self.cmd.is_some() {
             Err(format!("invalid execution arguments - both 'argv' and 'cmd' are not allowed argv: {:?} cmd: {:?}",
                 self.argv.as_ref().unwrap(),
@@ -481,7 +478,7 @@ pub enum WindowsResourceString {
 ///
 /// Snap directives
 ///
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Default, Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Snap {
     ///
@@ -507,18 +504,6 @@ pub struct Snap {
 
     /// SNAP package base (default: `core22`)
     pub base: Option<String>,
-}
-
-impl Default for Snap {
-    fn default() -> Snap {
-        Snap {
-            channel: None,
-            confinement: None,
-            interfaces: None,
-            packages: None,
-            base: None,
-        }
-    }
 }
 
 ///
@@ -624,9 +609,9 @@ impl Default for Algorithm {
     }
 }
 
-impl Into<zip::CompressionMethod> for Algorithm {
-    fn into(self) -> zip::CompressionMethod {
-        match self {
+impl From<Algorithm> for zip::CompressionMethod {
+    fn from(algorithm: Algorithm) -> zip::CompressionMethod {
+        match algorithm {
             Algorithm::STORE => zip::CompressionMethod::Stored,
             Algorithm::BZIP2 => zip::CompressionMethod::Bzip2,
             Algorithm::DEFLATE => zip::CompressionMethod::Deflated,
@@ -671,7 +656,7 @@ pub enum Signature {
     SHA256,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct MacOsDiskImage {
     pub window_caption_height: Option<i32>,
@@ -680,19 +665,6 @@ pub struct MacOsDiskImage {
     pub icon_size: Option<i32>,
     pub application_icon_position: Option<[i32; 2]>,
     pub system_applications_folder_position: Option<[i32; 2]>,
-}
-
-impl Default for MacOsDiskImage {
-    fn default() -> Self {
-        MacOsDiskImage {
-            window_caption_height: None,
-            window_position: None,
-            window_size: None,
-            icon_size: None,
-            application_icon_position: None,
-            system_applications_folder_position: None,
-        }
-    }
 }
 
 impl MacOsDiskImage {
@@ -750,14 +722,16 @@ fn is_value_path(v: &str) -> bool {
 async fn load_value_path(folder: &Path, location: &str) -> Result<String> {
     let parts = location.split("::").collect::<Vec<_>>();
     let filename = folder.join(parts[0]).canonicalize().await?;
-    let value_path = parts[1].split(".").collect::<Vec<_>>();
+    let value_path = parts[1].split('.').collect::<Vec<_>>();
 
     let extension = filename
         .extension()
-        .expect(&format!(
-            "unable to determine file type for file `{}` due to missing extension",
-            filename.display()
-        ))
+        .unwrap_or_else(|| {
+            panic!(
+                "unable to determine file type for file `{}` due to missing extension",
+                filename.display()
+            )
+        })
         .to_str()
         .unwrap();
 
@@ -766,14 +740,13 @@ async fn load_value_path(folder: &Path, location: &str) -> Result<String> {
             let text = std::fs::read_to_string(&filename)?;
             let mut v: &toml::Value = &toml::from_str(&text)?;
             for field in value_path.iter() {
-                v = v.get(field).ok_or::<Error>(
-                    format!(
+                v = v.get(field).ok_or_else(|| {
+                    Error::String(format!(
                         "unable to resolve the value `{}` in `{}`",
                         value_path.join("."),
                         filename.display()
-                    )
-                    .into(),
-                )?;
+                    ))
+                })?;
             }
             Ok(v.as_str().unwrap().to_string())
         }
@@ -781,14 +754,14 @@ async fn load_value_path(folder: &Path, location: &str) -> Result<String> {
             let text = std::fs::read_to_string(&filename)?;
             let mut v: &serde_json::Value = &serde_json::from_str(&text)?;
             for field in value_path.iter() {
-                v = v.get(field).ok_or::<Error>(
-                    format!(
+                // v = v.get(field).ok_or::<Error>(
+                v = v.get(field).ok_or_else(|| {
+                    Error::String(format!(
                         "unable to resolve the value `{}` in `{}`",
                         value_path.join("."),
                         filename.display()
-                    )
-                    .into(),
-                )?;
+                    ))
+                })?;
             }
             Ok(v.as_str().unwrap().to_string())
         }

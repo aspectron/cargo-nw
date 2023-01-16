@@ -28,21 +28,18 @@ pub async fn current_dir() -> PathBuf {
 pub async fn find_file(folder: &Path, files: &[String]) -> Result<PathBuf> {
     for file in files {
         let path = folder.join(file);
-        match path.canonicalize().await {
-            Ok(path) => {
-                if path.is_file().await {
-                    return Ok(path);
-                }
+        if let Ok(path) = path.canonicalize().await {
+            if path.is_file().await {
+                return Ok(path);
             }
-            _ => {}
         }
     }
-    return Err(format!(
+    Err(format!(
         "Unable to locate any of the files: {} \nfrom {:?} directory",
         files.join(", "),
         folder.to_str().unwrap_or("")
     )
-    .into());
+    .into())
 }
 
 pub fn get_env_defs(strings: &Vec<String>) -> Result<Vec<(String, String)>> {
@@ -51,7 +48,7 @@ pub fn get_env_defs(strings: &Vec<String>) -> Result<Vec<(String, String)>> {
     let mut parsed_strings = Vec::new();
 
     for string in strings {
-        let captures = regex.captures(&string).unwrap();
+        let captures = regex.captures(string).unwrap();
         if captures.len() != 2 {
             return Err(format!("Error parsing the environment string: '{string}'").into());
         }

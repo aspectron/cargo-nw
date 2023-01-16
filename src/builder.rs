@@ -21,15 +21,17 @@ impl Builder {
         }
     }
 
+    #[allow(clippy::borrowed_box)]
     pub async fn execute(
         self: &Arc<Self>,
         targets: &TargetSet,
+        // installer: &Box<dyn Installer>,
         installer: &Box<dyn Installer>,
     ) -> Result<()> {
         // println!("{:#?}", self.ctx.manifest);
         // return Ok(());
 
-        if targets.len() == 0 {
+        if targets.is_empty() {
             return Err("no build targets selected".into());
         }
 
@@ -41,7 +43,7 @@ impl Builder {
         self.ctx.deps.ensure().await?;
         self.ctx.ensure_folders().await?;
 
-        installer.init(&targets).await?;
+        installer.init(targets).await?;
         // let installer = create_installer(&self.ctx);
 
         self.process_dependencies(&tpl, installer.target_folder())
@@ -51,7 +53,7 @@ impl Builder {
 
         if let Some(builds) = &self.ctx.manifest.package.build {
             log_info!("Build", "building...");
-            println!("");
+            println!();
 
             for build in builds.iter() {
                 match build {
@@ -75,7 +77,7 @@ impl Builder {
                             fs::remove_dir_all(&self.ctx.cargo_target_folder).await?;
                         }
 
-                        let outdir = outdir.clone().unwrap_or("root/wasm".to_string());
+                        let outdir = outdir.clone().unwrap_or_else(|| "root/wasm".to_string());
                         let name = &self.ctx.manifest.application.name;
                         let mut argv = vec!["wasmpack", "build"];
                         if dev.unwrap_or(false) {
@@ -90,7 +92,7 @@ impl Builder {
                             outdir.as_str(),
                         ]);
                         if let Some(args) = args {
-                            argv.extend(args.split(" ").collect::<Vec<_>>());
+                            argv.extend(args.split(' ').collect::<Vec<_>>());
                         }
 
                         log_info!("WasmPack", "building WASM target");
@@ -129,7 +131,7 @@ impl Builder {
                             argv.extend_from_slice(&["--omit", "dev"]);
                         }
                         if let Some(args) = args {
-                            argv.extend(args.split(" ").collect::<Vec<_>>());
+                            argv.extend(args.split(' ').collect::<Vec<_>>());
                         }
                         log_info!("NPM", "installing");
                         // let argv = argv.iter().map(|s|s.to_string()).collect();
@@ -152,7 +154,7 @@ impl Builder {
                 }
             }
 
-            println!("");
+            println!();
         }
 
         let ts_start = Instant::now();
@@ -170,7 +172,7 @@ impl Builder {
         log_info!(
             "Build",
             "redistributable type: {}",
-            style(format!("{}", target_list)).cyan()
+            style(target_list).cyan()
         );
 
         let target_folder = installer.target_folder();
@@ -190,7 +192,7 @@ impl Builder {
 
         // installer execution
 
-        let files = installer.create(&targets).await?;
+        let files = installer.create(targets).await?;
 
         if self.ctx.dry_run {
             log_warn!("Integration", "dry-run completed successfully");
@@ -209,12 +211,12 @@ impl Builder {
         if let Some(signatures) = &self.ctx.manifest.package.signatures {
             log_info!("Build", "generating signatures (SHA)");
             for (_, path) in files.iter() {
-                generate_signatures(&path, signatures).await?;
+                generate_signatures(path, signatures).await?;
             }
         }
 
         for (_file, path) in files.iter() {
-            let package_size = (std::fs::metadata(&path)?.len() as f64) / 1024.0 / 1024.0;
+            let package_size = (std::fs::metadata(path)?.len() as f64) / 1024.0 / 1024.0;
             let path = path.strip_prefix(&self.ctx.root_folder)?;
             log_info!(
                 "Package",
@@ -246,7 +248,7 @@ impl Builder {
         //     }
         // }
 
-        println!("");
+        println!();
 
         Ok(())
     }
@@ -275,7 +277,7 @@ impl Builder {
                 log_info!(
                     "Dependency",
                     "skipping `{}` on platform `{}`",
-                    name.unwrap_or("dependency".to_string()),
+                    name.unwrap_or_else(|| "dependency".to_string()),
                     self.ctx.platform.to_string()
                 );
                 return Ok(());
@@ -287,7 +289,7 @@ impl Builder {
                 log_info!(
                     "Dependency",
                     "skipping `{}` on arch `{}`",
-                    name.unwrap_or("dependency".to_string()),
+                    name.unwrap_or_else(|| "dependency".to_string()),
                     self.ctx.arch.to_string()
                 );
                 return Ok(());
@@ -298,7 +300,7 @@ impl Builder {
             let repo = Path::new(&git.url).file_name().unwrap().to_str().unwrap();
             let repo_folder = self.ctx.dependencies_folder.join(repo);
             let status_file = self.ctx.dependencies_folder.join(format!("{repo}.status"));
-            name = name.or(Some(repo.to_string()));
+            name = name.or_else(|| Some(repo.to_string()));
 
             if repo_folder.is_dir().await {
                 log_info!("Git", "pulling `{}`", name.as_ref().unwrap());
@@ -326,7 +328,7 @@ impl Builder {
             (true, self.ctx.dependencies_folder.clone(), None)
         };
 
-        let name = name.map(|s| s.to_string()).unwrap_or_else(|| "...".into());
+        let name = name.unwrap_or_else(|| "...".into());
         if rebuild {
             log_info!("Dependency", "building `{}`", name);
             for ec in dep.run.iter() {
@@ -339,7 +341,7 @@ impl Builder {
         // let tpl = self.ctx.tpl_clone();
 
         for copy_settings in dep.copy.iter() {
-            copy(&tpl, copy_settings, &dep_build_folder, target_folder).await?;
+            copy(tpl, copy_settings, &dep_build_folder, target_folder).await?;
         }
 
         if let Some((status_file, status_data)) = status {

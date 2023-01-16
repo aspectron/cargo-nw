@@ -63,7 +63,7 @@ pub fn get_nwjs_ffmpeg_meta(platform: &Platform, manifest: &Manifest, target: &P
     let url = format!(
         "https://github.com/iteufel/nwjs-ffmpeg-prebuilt/releases/download/{version}/{file}"
     );
-    Meta::new(&file, &folder, &url, &target, false)
+    Meta::new(&file, &folder, &url, target, false)
 }
 
 pub fn get_nwjs_sdk_meta(platform: &Platform, manifest: &Manifest, target: &PathBuf) -> Meta {
@@ -73,7 +73,7 @@ pub fn get_nwjs_sdk_meta(platform: &Platform, manifest: &Manifest, target: &Path
     let archive_extension = get_nwjs_archive_extension(platform);
     let file = format!("{folder}.{archive_extension}");
     let url = format!("https://dl.nwjs.io/{version}/{file}");
-    Meta::new(&file, &folder, &url, &target, true)
+    Meta::new(&file, &folder, &url, target, true)
 }
 
 pub fn get_nwjs_meta(platform: &Platform, manifest: &Manifest, target: &PathBuf) -> Meta {
@@ -83,7 +83,7 @@ pub fn get_nwjs_meta(platform: &Platform, manifest: &Manifest, target: &PathBuf)
     let archive_extension = get_nwjs_archive_extension(platform);
     let file = format!("{folder}.{archive_extension}");
     let url = format!("https://dl.nwjs.io/{version}/{file}");
-    Meta::new(&file, &folder, &url, &target, true)
+    Meta::new(&file, &folder, &url, target, true)
 }
 
 #[derive(Debug)]
@@ -146,13 +146,13 @@ impl Deps {
             // println!("");
 
             self.download(&downloads).await?;
-            println!("");
+            println!();
 
             for meta in downloads {
                 log_info!("Dependencies", "extracting {}", &meta.file);
                 let file = Path::new(&self.dir).join(&meta.file);
                 // let target_dir = meta.get_extract_path(&self.dir);
-                extract(&file.into(), &meta.target.clone().into()).await?;
+                extract(&file, &meta.target.clone()).await?;
             }
         } else {
             // log!("Dependencies","ok");
@@ -161,7 +161,7 @@ impl Deps {
         Ok(())
     }
 
-    async fn download(&self, list: &Vec<&Meta>) -> Result<()> {
+    async fn download(&self, list: &[&Meta]) -> Result<()> {
         let downloads: Vec<Download> = list
             .iter()
             .map(|meta| Download::try_from(meta.url.as_str()).unwrap())

@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
 /// Application image and icon names (overrides)
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Default, Debug, Clone, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Images {
     pub document: Option<String>,
@@ -16,25 +16,6 @@ pub struct Images {
     pub innosetup_icon: Option<String>,
     pub innosetup_wizard_small: Option<String>,
     pub innosetup_wizard_large: Option<String>,
-}
-
-impl Default for Images {
-    fn default() -> Self {
-        Self {
-            document: None,
-            windows_document: None,
-            linux_document: None,
-            macos_document: None,
-            application: None,
-            windows_application: None,
-            linux_application: None,
-            macos_application: None,
-            macos_disk_image: None,
-            innosetup_icon: None,
-            innosetup_wizard_small: None,
-            innosetup_wizard_large: None,
-        }
-    }
 }
 
 fn list(user: &[Option<String>], defaults: &[&str]) -> Vec<String> {

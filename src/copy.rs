@@ -7,7 +7,7 @@ use walkdir::WalkDir;
 // use ignore::Walk;
 use crate::prelude::*;
 
-#[derive(Debug, Clone)]
+#[derive(Default, Debug, Clone)]
 pub struct CopyOptions {
     pub hidden: bool,
     // pub case_sensitive: bool,
@@ -22,17 +22,6 @@ impl From<Copy> for CopyOptions {
             // case_sensitive: options.case_sensitive.unwrap_or(false),
             flatten: options.flatten.unwrap_or(false),
             // rename : options.rename.clone(),
-        }
-    }
-}
-
-impl Default for CopyOptions {
-    fn default() -> Self {
-        CopyOptions {
-            hidden: false,
-            // case_sensitive: false,
-            flatten: false,
-            // rename: None,
         }
     }
 }
@@ -63,7 +52,7 @@ impl Filter {
         Ok(Filter::Glob(builder.build()?))
     }
 
-    pub fn try_regex(tpl: &Tpl, regex_list: &Vec<String>) -> Result<Self> {
+    pub fn try_regex(tpl: &Tpl, regex_list: &[String]) -> Result<Self> {
         Ok(Filter::Regex(RegexSet::new(
             regex_list
                 .iter()
@@ -87,8 +76,8 @@ impl TryFrom<(&Tpl, &Copy)> for Filter {
     type Error = Error;
     fn try_from((tpl, copy): (&Tpl, &Copy)) -> Result<Filter> {
         match (&copy.glob, &copy.regex) {
-            (Some(glob), None) => Filter::try_glob(tpl, &glob),
-            (None, Some(regex)) => Filter::try_regex(tpl, &regex),
+            (Some(glob), None) => Filter::try_glob(tpl, glob),
+            (None, Some(regex)) => Filter::try_regex(tpl, regex),
             _ => Err(format!(
                 "copy directive must have one 'glob' or 'regex' property: {:?}",
                 copy
@@ -116,17 +105,8 @@ pub struct Filters {
 impl TryFrom<(Option<Filter>, Option<Filter>)> for Filters {
     type Error = Error;
     fn try_from((include, exclude): (Option<Filter>, Option<Filter>)) -> Result<Filters> {
-        let include = if let Some(include) = include {
-            Some(vec![include])
-        } else {
-            None
-        };
-        let exclude = if let Some(exclude) = exclude {
-            Some(vec![exclude])
-        } else {
-            None
-        };
-
+        let include = include.map(|include| vec![include]);
+        let exclude = exclude.map(|exclude| vec![exclude]);
         Ok(Filters { include, exclude })
     }
 }
@@ -173,13 +153,13 @@ impl TryFrom<(&Tpl, &Option<Vec<CopyFilter>>, &Option<Vec<CopyFilter>>)> for Fil
 impl Filters {
     pub fn is_match(&self, text: &str) -> bool {
         let include = if let Some(include) = &self.include {
-            include.iter().find(|f| f.is_match(text)).is_some()
+            include.iter().any(|f| f.is_match(text))
         } else {
             true
         };
 
         let exclude = if let Some(exclude) = &self.exclude {
-            exclude.iter().find(|f| f.is_match(text)).is_some()
+            exclude.iter().any(|f| f.is_match(text))
         } else {
             false
         };
@@ -285,12 +265,12 @@ pub async fn copy_folder_with_filters(
 
     if options.flatten {
         let files: Vec<_> = list.collect();
-        if files.len() != 0 {
+        if !files.is_empty() {
             std::fs::create_dir_all(dest_folder)?;
         }
 
         for file in files {
-            let mut to_file = dest_folder.join(&file.file_name().unwrap());
+            let mut to_file = dest_folder.join(file.file_name().unwrap());
             if let Some(rename) = &rename {
                 rename.transform(&mut to_file);
             }
@@ -332,40 +312,27 @@ pub fn is_hidden<P>(path: P) -> bool
 where
     P: AsRef<Path>,
 {
-    let is_hidden = path
-        .as_ref()
+    path.as_ref()
         .components()
-        .find(|f| f.as_os_str().to_string_lossy().starts_with("."))
-        .is_some();
-
-    is_hidden
+        .any(|f| f.as_os_str().to_string_lossy().starts_with('.'))
 }
 
 pub async fn copy(tpl: &Tpl, copy: &Copy, src_folder: &Path, target_folder: &Path) -> Result<()> {
     if let Some(file) = &copy.file {
         if copy.glob.is_some() || copy.regex.is_some() || copy.flatten.is_some() {
-            return Err(
-                format!("other options can not be present if `copy.file` is declared").into(),
-            );
+            return Err("other options can not be present if `copy.file` is declared".into());
         }
-        let from = src_folder.join(tpl.transform(&file));
+        let from = src_folder.join(tpl.transform(file));
         let to = tpl.transform(&copy.to);
 
         std::fs::copy(from, to)?;
     } else {
         let to_folder = target_folder.join(tpl.transform(&copy.to));
-        let mut options = CopyOptions::default();
-        options.hidden = copy.hidden.unwrap_or(false);
-        options.flatten = true;
-        copy_folder_with_filters(
-            &src_folder,
-            // &dep_build_folder,
-            // &target_folder,
-            &to_folder,
-            (tpl, copy).try_into()?,
-            options,
-        )
-        .await?;
+        let options = CopyOptions {
+            hidden: copy.hidden.unwrap_or(false),
+            flatten: true,
+        };
+        copy_folder_with_filters(src_folder, &to_folder, (tpl, copy).try_into()?, options).await?;
     }
 
     Ok(())

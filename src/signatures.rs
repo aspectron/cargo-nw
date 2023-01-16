@@ -4,7 +4,7 @@ use sha2::{Digest, Sha256};
 use async_std::fs;
 use async_std::path::Path;
 
-pub async fn generate_signatures(file: &Path, signatures: &Vec<Signature>) -> Result<()> {
+pub async fn generate_signatures(file: &Path, signatures: &[Signature]) -> Result<()> {
     let data = fs::read(file)
         .await
         .map_err(|_| format!("Unable to read {}", file.to_string_lossy()))?;
@@ -14,7 +14,7 @@ pub async fn generate_signatures(file: &Path, signatures: &Vec<Signature>) -> Re
             Signature::SHA256 => {
                 let extension =
                     format!("{}.sha256sum", file.extension().unwrap().to_string_lossy());
-                let mut signature_file = file.clone().to_path_buf();
+                let mut signature_file = file.to_path_buf();
                 signature_file.set_extension(extension);
                 let mut hasher = Sha256::new();
                 hasher.update(&data);

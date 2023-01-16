@@ -75,21 +75,25 @@ impl Script {
             .name
             .clone()
             .map(|s| format!("'{}'", s))
-            .unwrap_or("".to_string());
+            .unwrap_or_else(|| "".to_string());
         log_info!("Script", "running script {}", name);
         let file = format!(
             "{}.{}",
-            self.name.clone().unwrap_or(Uuid::new_v4().to_string()),
+            self.name
+                .clone()
+                .unwrap_or_else(|| Uuid::new_v4().to_string()),
             self.kind.to_string()
         );
         let mut argv = self
             .interpreter
             .clone()
-            .or(self.kind.interpreter())
-            .expect(&format!(
-                "unable to determine interpreter for script `{}`; please specify explicitly",
-                file
-            ));
+            .or_else(|| self.kind.interpreter())
+            .unwrap_or_else(|| {
+                panic!(
+                    "unable to determine interpreter for script `{}`; please specify explicitly",
+                    file
+                )
+            });
         let file = cwd.join(&file);
         async_std::fs::write(&file, &self.script).await?;
         argv.push(file.to_str().unwrap().to_string());

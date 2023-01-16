@@ -96,7 +96,7 @@ impl Installer for MacOS {
             );
 
             let dmg_file = dmg.create().await?; // self.create_dmg().await?;
-            files.push(dmg_file.into());
+            files.push(dmg_file);
         }
 
         Ok(files)
@@ -259,7 +259,8 @@ impl MacOS {
     }
 
     async fn generate_icns_internal(&self, png: &PathBuf, icns: &PathBuf) -> Result<()> {
-        let mut src = image::open(png).expect(&format!("Unable to open {:?}", png));
+        let mut src =
+            image::open(png).unwrap_or_else(|err| panic!("Unable to open {:?}: {}", png, err));
 
         let dimensions = src.dimensions();
         if dimensions.0 != 1024 || dimensions.1 != 1024 {
@@ -374,12 +375,10 @@ impl MacOS {
 
         let resources_folder = app_contents_folder.join("Resources");
         let paths = std::fs::read_dir(&resources_folder)
-            .expect(&format!("unable to iterate {:?}", &resources_folder));
-        for file in paths {
-            if let Ok(entry) = file {
-                if entry.file_name().into_string().unwrap().ends_with(".lproj") {
-                    fs::write(entry.path().join("InfoPlist.strings"), &resource_text).await?;
-                }
+            .unwrap_or_else(|_| panic!("unable to iterate {:?}", &resources_folder));
+        for file in paths.flatten() {
+            if file.file_name().into_string().unwrap().ends_with(".lproj") {
+                fs::write(file.path().join("InfoPlist.strings"), &resource_text).await?;
             }
         }
 

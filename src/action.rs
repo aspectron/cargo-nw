@@ -113,11 +113,11 @@ impl ActionItem {
         }
 
         if let Some(execution_context) = &self.run {
-            execute_with_context(&ctx, execution_context, Some(src_folder), tpl).await?;
+            execute_with_context(ctx, execution_context, Some(src_folder), tpl).await?;
         }
 
         if let Some(copy_settings) = &self.copy {
-            copy(tpl, copy_settings, &src_folder, &dest_folder).await?;
+            copy(tpl, copy_settings, src_folder, dest_folder).await?;
         }
 
         if let Some(write) = &self.write {
@@ -167,7 +167,7 @@ pub async fn execute_actions(
         for action in actions {
             // println!("execution action: {:?}", action);
             action
-                .execute(&stage, ctx, tpl, &ctx.project_root_folder, &target_folder)
+                .execute(&stage, ctx, tpl, &ctx.project_root_folder, target_folder)
                 .await?;
         }
     }
