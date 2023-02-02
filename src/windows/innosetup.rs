@@ -161,8 +161,9 @@ impl fmt::Display for DirectivesSection {
     }
 }
 
+pub type Args = Rc<RefCell<Vec<Vec<(String, String)>>>>;
 pub struct ArgsSection {
-    args: Rc<RefCell<Vec<Vec<(String, String)>>>>,
+    args: Args,
 }
 
 impl ArgsSection {
