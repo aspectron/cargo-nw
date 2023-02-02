@@ -19,10 +19,10 @@ test = []
 unix = []
 standalone = []
 multiplatform = []
-default = []
+# default = []
 # default = ["test"]
 # default = ["test","unix"]
-# default = ["test","unix","multiplatform"]
+default = ["test","unix","multiplatform"]
 
 [dependencies]
 async-std = "1.12.0"

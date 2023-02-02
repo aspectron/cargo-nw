@@ -84,7 +84,7 @@ impl Part {
     pub fn new_with_source(source: &str, plugin: Plugin) -> Part {
         Part {
             source: Some(source.to_string()),
-            plugin: plugin,
+            plugin,
             stage_packages: None,
         }
     }
@@ -186,8 +186,8 @@ impl App {
         }
 
         App {
-            command: format!("./{}/{}", folder, name),
-            desktop: format!("./{}/{}.desktop", folder, name),
+            command: format!("./{folder}/{name}"),
+            desktop: format!("./{folder}/{name}.desktop"),
             plugs: Some(plugs),
         }
     }
@@ -275,7 +275,7 @@ impl Snap {
 
         // let archive_filename =
         let snap = Snap {
-            data: SnapData::new(&ctx, archive_filename),
+            data: SnapData::new(ctx, archive_filename),
             archive_filepath: archive_filepath.to_path_buf(),
             archive_filename: archive_filename.to_string(),
             ctx: ctx.clone(),

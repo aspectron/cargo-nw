@@ -8,7 +8,7 @@ use duct::cmd;
 use std::string::ToString;
 
 pub const INNO_SETUP_COMPIL32: &str = "C:/Program Files (x86)/Inno Setup 6/compil32.exe";
-
+#[allow(clippy::upper_case_acronyms)]
 pub struct ISS {
     ctx: Arc<Context>,
     app_name: String,
@@ -80,7 +80,7 @@ impl ISS {
         let output_file = ctx.output_folder.join(format!("{iss_filename}.exe"));
 
         let run_on_startup = windows.run_on_startup.clone();
-        let run_after_setup = windows.run_after_setup.clone();
+        let run_after_setup = windows.run_after_setup;
 
         ISS {
             ctx,
@@ -112,11 +112,11 @@ impl ISS {
 
     pub fn check_innosetup_compiler(&self) -> Result<()> {
         if !std::path::Path::new(INNO_SETUP_COMPIL32).exists() {
-            println!("");
-            println!("fatal: unable to locate: {}", INNO_SETUP_COMPIL32);
+            println!();
+            println!("fatal: unable to locate: {INNO_SETUP_COMPIL32}");
             println!("please download innosetup 6 at:");
             println!("https://jrsoftware.org/isdl.php");
-            println!("");
+            println!();
             return Err("missing InnoSetup compiler".into());
         }
         Ok(())
@@ -136,7 +136,7 @@ impl ISS {
             .wizard_image_files
             .0
             .iter()
-            .map(|s| format!("\"{}\"", s.to_str().unwrap().to_string()))
+            .map(|s| format!("\"{}\"", s.to_str().unwrap()))
             .collect::<Vec<String>>()
             .join(";")
             + ";";
@@ -145,7 +145,7 @@ impl ISS {
             .wizard_image_files
             .1
             .iter()
-            .map(|s| format!("\"{}\"", s.to_str().unwrap().to_string()))
+            .map(|s| format!("\"{}\"", s.to_str().unwrap()))
             .collect::<Vec<String>>()
             .join(";")
             + ";";
@@ -265,7 +265,7 @@ impl ISS {
                 "user" | "hkcu" => "HKCU",
                 "system" | "everyone" | "hklm" => "HKLM",
                 _ => {
-                    panic!("nwjs.toml - unsupported 'run_on_startup' value '{}' must be 'user' or 'everyone'", run_on_startup);
+                    panic!("nwjs.toml - unsupported 'run_on_startup' value '{run_on_startup}' must be 'user' or 'everyone'");
                 }
             };
 
@@ -297,7 +297,7 @@ impl ISS {
                 for rule in rules.iter() {
                     issfw.clone().add_rule(
                         &rule.name,
-                        &rule.program.replace("/", "\\"),
+                        &rule.program.replace('/', "\\"),
                         &rule.direction.clone().unwrap_or("in+out".to_string()),
                     );
                 }
@@ -318,7 +318,7 @@ impl ISS {
 
         let iss_text = iss.to_string();
         let iss_file = self.cache_folder.join(format!("{}.iss", self.app_name));
-        std::fs::write(&iss_file, &iss_text)?;
+        std::fs::write(&iss_file, iss_text)?;
 
         log_info!("InnoSetup", "building...");
         cmd!(INNO_SETUP_COMPIL32, "/cc", iss_file)

@@ -77,8 +77,7 @@ impl InnoSetup {
     }
 
     pub fn install_delete(&mut self) -> Rc<ArgsSection> {
-        let section = self.section("InstallDelete").as_args();
-        section
+        self.section("InstallDelete").as_args()
     }
 
     pub fn languages(&mut self, languages: &[&str]) {
@@ -125,7 +124,7 @@ impl Definitions {
 impl fmt::Display for Definitions {
     fn fmt(&self, f: &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
         for (k, v) in self.args.borrow().iter() {
-            writeln!(f, "#define {} \"{}\"", k, v)?;
+            writeln!(f, "#define {k} \"{v}\"")?;
         }
 
         Ok(())
@@ -155,7 +154,7 @@ impl DirectivesSection {
 impl fmt::Display for DirectivesSection {
     fn fmt(&self, f: &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
         for (k, v) in self.args.borrow().iter() {
-            writeln!(f, "{} = {}", k, v)?;
+            writeln!(f, "{k} = {v}")?;
         }
 
         Ok(())
@@ -194,9 +193,9 @@ impl fmt::Display for ArgsSection {
     fn fmt(&self, f: &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
         for entries in self.args.borrow().iter() {
             for (k, v) in entries.iter() {
-                write!(f, "{}: {}; ", k, v)?;
+                write!(f, "{k}: {v}; ")?;
             }
-            writeln!(f, "")?;
+            writeln!(f)?;
         }
 
         Ok(())
@@ -405,16 +404,16 @@ impl Section {
 
 impl fmt::Display for InnoSetup {
     fn fmt(&self, f: &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
-        writeln!(f, "{}", self.definitions.to_string())?;
+        writeln!(f, "{}", self.definitions)?;
         for section in &self.sections {
             writeln!(f, "[{}]", section.name)?;
             if let Some(section) = section.args.borrow().as_ref() {
                 match section {
                     SectionArgs::Directive(section) => {
-                        writeln!(f, "{}", section.to_string())?;
+                        writeln!(f, "{section}")?;
                     }
                     SectionArgs::MultiArg(section) => {
-                        writeln!(f, "{}", section.to_string())?;
+                        writeln!(f, "{section}")?;
                     }
                 }
             } else {

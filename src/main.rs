@@ -319,7 +319,7 @@ pub async fn async_main() -> Result<()> {
                 Context::create(location, None, platform, arch, Options::default()).await?,
             );
 
-            println!("{:#?}", ctx);
+            println!("{ctx:#?}");
         }
     }
 

@@ -10,7 +10,7 @@ impl DesktopFile {
     pub fn new(filename: PathBuf) -> DesktopFile {
         DesktopFile {
             list: Vec::new(),
-            filename: filename,
+            filename,
         }
     }
 }

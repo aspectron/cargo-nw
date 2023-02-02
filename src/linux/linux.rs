@@ -14,7 +14,7 @@ impl Linux {
     pub fn new(ctx: Arc<Context>) -> Linux {
         let nwjs_root_folder = ctx.build_folder.join(&ctx.app_snake_name);
         let target_folder = if ctx.manifest.package.use_app_nw.unwrap_or(false) {
-            nwjs_root_folder.clone()
+            nwjs_root_folder
         } else {
             nwjs_root_folder.join("app.nw")
         };
@@ -38,7 +38,7 @@ impl Installer for Linux {
     async fn check(&self, targets: &TargetSet) -> Result<()> {
         if targets.contains(&Target::Snap) {
             if let Err(err) = cmd("snapcraft", ["--version"]).run() {
-                println!("{}", err);
+                println!("{err}");
                 return Err(
                     "Unable to run `snapcraft`, please install using `sudo apt install snapcraft`"
                         .into(),

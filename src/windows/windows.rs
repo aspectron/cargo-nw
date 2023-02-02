@@ -24,7 +24,7 @@ impl Windows {
         let nwjs_root_folder = ctx.build_folder.join(&ctx.app_snake_name);
         // let nwjs_root_folder = ctx.build_folder.clone(); // ctx.build_folder.join(&ctx.manifest.application.title);
         let target_folder = if ctx.manifest.package.use_app_nw.unwrap_or(false) {
-            nwjs_root_folder.clone()
+            nwjs_root_folder
         } else {
             nwjs_root_folder.join("app.nw")
         };
@@ -37,7 +37,7 @@ impl Windows {
         {
             ctx.app_root_folder.join(setup_icon)
         } else {
-            ctx.cache_folder.join(&format!("{app_name}-setup.ico"))
+            ctx.cache_folder.join(format!("{app_name}-setup.ico"))
         };
 
         let app_exe_file = match ctx.manifest.windows {
@@ -70,18 +70,16 @@ impl Installer for Windows {
     }
 
     async fn check(&self, targets: &TargetSet) -> Result<()> {
-        if targets.contains(&Target::InnoSetup) {
-            if !std::path::Path::new(super::iss::INNO_SETUP_COMPIL32).exists() {
-                println!("");
-                println!(
-                    "fatal: unable to locate: `{}`",
-                    super::iss::INNO_SETUP_COMPIL32
-                );
-                println!("please download innosetup 6 at:");
-                println!("https://jrsoftware.org/isdl.php");
-                println!("");
-                return Err("missing InnoSetup compiler".into());
-            }
+        if targets.contains(&Target::InnoSetup) && !std::path::Path::new(super::iss::INNO_SETUP_COMPIL32).exists() {
+            println!();
+            println!(
+                "fatal: unable to locate: `{}`",
+                super::iss::INNO_SETUP_COMPIL32
+            );
+            println!("please download innosetup 6 at:");
+            println!("https://jrsoftware.org/isdl.php");
+            println!();
+            return Err("missing InnoSetup compiler".into());
         }
 
         Ok(())
@@ -113,7 +111,7 @@ impl Installer for Windows {
                 .clone()
                 .unwrap_or_default();
             let filename = Path::new(&format!("{}.zip", self.ctx.app_snake_name)).to_path_buf();
-            let target_file = self.ctx.output_folder.join(&filename);
+            let target_file = self.ctx.output_folder.join(filename);
             compress_folder(&self.target_folder, &target_file, level)?;
 
             files.push(target_file);
@@ -156,7 +154,7 @@ impl Windows {
         log_info!("Integrating", "NW binaries");
 
         dir::copy(
-            &Path::new(&self.ctx.deps.nwjs.target()),
+            Path::new(&self.ctx.deps.nwjs.target()),
             &self.target_folder,
             &options,
         )?;
@@ -263,7 +261,7 @@ impl Windows {
         }
 
         list.into_iter()
-            .map(|(k, v)| (self.tpl.transform(&k), self.tpl.transform(&v)))
+            .map(|(k, v)| (self.tpl.transform(k), self.tpl.transform(&v)))
             .collect()
     }
 
@@ -277,11 +275,11 @@ impl Windows {
             .setup_resources_folder
             .join("innosetup-wizard-small.png");
         let mut small_src = image::open(&small_file_png)
-            .expect(&format!("Unable to open {:?}", small_file_png.display()));
+            .unwrap_or_else(|err| panic!("Unable to open '{}': {err}", small_file_png.display()));
         if !small_file_bmp.exists().await {
             small_src
                 .save(&small_file_bmp)
-                .expect(&format!("Unable to save {:?}", small_file_bmp.display()));
+                .unwrap_or_else(|err| panic!("Unable to save '{}': {err}", small_file_bmp.display()));
         }
         small_files.push(small_file_bmp.clone());
 
@@ -292,11 +290,11 @@ impl Windows {
             .setup_resources_folder
             .join("innosetup-wizard-large.png");
         let mut large_src = image::open(&large_file_png)
-            .expect(&format!("Unable to open {:?}", large_file_png.display()));
+            .unwrap_or_else(|err| panic!("Unable to open '{}': {err}", large_file_png.display()));
         if !large_file_bmp.exists().await {
             large_src
                 .save(&large_file_bmp)
-                .expect(&format!("Unable to save {:?}", large_file_bmp.display()));
+                .unwrap_or_else(|err|panic!("Unable to save '{}': {err}", large_file_bmp.display()));
         }
         large_files.push(large_file_bmp.clone());
 
@@ -347,7 +345,7 @@ impl Windows {
                     small_src = small_src.resize(*width, *height, resize_filter_type);
                     small_src
                         .save(&filename)
-                        .expect(&format!("Unable to save {:?}", filename.display()));
+                        .unwrap_or_else(|err| panic!("Unable to save '{}': {err}", filename.display()));
                 }
                 small_files.push(filename);
             }
@@ -364,7 +362,7 @@ impl Windows {
                     large_src = large_src.resize(*width, *height, resize_filter_type);
                     large_src
                         .save(&filename)
-                        .expect(&format!("Unable to save {:?}", filename.display()));
+                        .unwrap_or_else(|err|panic!("Unable to save '{}': {err}", filename.display()));
                 }
                 large_files.push(filename);
             }
@@ -387,19 +385,19 @@ impl Windows {
         .await?;
 
         let mut src =
-            image::open(&app_icon_png).expect(&format!("Unable to open {:?}", app_icon_png));
+            image::open(&app_icon_png).unwrap_or_else(|err| panic!("Unable to open '{app_icon_png:?}': {err}"));
         let dimensions = src.dimensions();
         if dimensions.0 != 1024 || dimensions.1 != 1024 {
-            println!("");
+            println!();
             println!(
                 "WARNING: {}",
-                app_icon_png.clone().file_name().unwrap().to_str().unwrap()
+                app_icon_png.file_name().unwrap().to_str().unwrap()
             );
             println!(
                 "         ^^^ icon dimensions are {}x{}; must be 1024x1024",
                 dimensions.0, dimensions.1
             );
-            println!("");
+            println!();
         }
 
         cfg_if! {
@@ -442,7 +440,7 @@ impl Windows {
             .application
             .version
             .trim()
-            .split(".")
+            .split('.')
             .map(|s| s.parse::<u16>().unwrap())
             .collect::<Vec<u16>>();
 
@@ -459,7 +457,7 @@ impl Windows {
         let version: [u16; 4] = version
             .clone()
             .try_into()
-            .map_err(|_| format!("Unable to parse version '{:?}'", version))?;
+            .map_err(|_| format!("Unable to parse version '{version:?}'"))?;
 
         // ~~~
 
@@ -470,7 +468,7 @@ impl Windows {
         .await?;
 
         let mut app_icon_image =
-            image::open(&app_icon_png).expect(&format!("Unable to open {:?}", app_icon_png));
+            image::open(&app_icon_png).unwrap_or_else(|err| panic!("Unable to open '{app_icon_png:?}': {err}"));
 
         if app_icon_image.width() < 256 || app_icon_image.height() < 256 {
             log_warn!(
@@ -497,12 +495,12 @@ impl Windows {
         let app_icon_encoded = ico::IconDirEntry::encode(&app_icon_image_ico).unwrap();
         let app_res_file = self.ctx.build_folder.join(&self.app_exe_file);
         let mut resources = Resources::new(&app_res_file.clone().into());
-        resources.load().expect(&format!(
-            "Unable to load resources from '{}'",
+        resources.load().unwrap_or_else(|err| panic!(
+            "Unable to load resources from '{}': {err}",
             app_res_file.display()
         ));
-        resources.open().expect(&format!(
-            "Unable to open resource file '{}' for updates",
+        resources.open().unwrap_or_else(|err|panic!(
+            "Unable to open resource file '{}' for updates: {err}",
             app_res_file.display()
         ));
 
