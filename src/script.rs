@@ -74,9 +74,9 @@ impl Script {
         let name = self
             .name
             .clone()
-            .map(|s| format!("'{}'", s))
+            .map(|s| format!("'{s}'"))
             .unwrap_or_else(|| "".to_string());
-        log_info!("Script", "running script {}", name);
+        log_info!("Script", "running script {name}");
         let file = format!(
             "{}.{}",
             self.name
@@ -90,8 +90,7 @@ impl Script {
             .or_else(|| self.kind.interpreter())
             .unwrap_or_else(|| {
                 panic!(
-                    "unable to determine interpreter for script `{}`; please specify explicitly",
-                    file
+                    "unable to determine interpreter for script `{file}`; please specify explicitly"
                 )
             });
         let file = cwd.join(&file);

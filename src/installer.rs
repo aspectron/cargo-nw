@@ -53,7 +53,7 @@ impl FromStr for Target {
             "innosetup" => Ok(Target::InnoSetup),
             #[cfg(any(target_os = "linux", feature = "unix"))]
             "snap" => Ok(Target::Snap),
-            _ => Err(format!("Unsupported target: {}", s).into()),
+            _ => Err(format!("Unsupported target: {s}").into()),
         }
     }
 }
@@ -114,7 +114,7 @@ impl FromStr for Channel {
         match s {
             "stable" => Ok(Channel::Stable),
             "devel" => Ok(Channel::Devel),
-            _ => Err(format!("unsupported channel: {} (must be 'stable' or 'devel')", s).into()),
+            _ => Err(format!("unsupported channel: {s} (must be 'stable' or 'devel')").into()),
         }
     }
 }
@@ -155,8 +155,7 @@ impl FromStr for Confinement {
             "classic" => Ok(Confinement::Classic),
             "devmode" => Ok(Confinement::Devmode),
             _ => Err(format!(
-                "unsupported confinement: {} (must be one of: 'strict','classic','devmode')",
-                s
+                "unsupported confinement: {s} (must be one of: 'strict','classic','devmode')"
             )
             .into()),
         }

@@ -512,7 +512,7 @@ impl Project {
         log_info!("Init", "creating '{}'", self.name);
         println!();
 
-        println!("{:?}", self);
+        println!("{self:?}");
 
         let tpl = self.tpl()?;
         let files = if options.manifest {

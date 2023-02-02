@@ -19,7 +19,7 @@ pub async fn generate_signatures(file: &Path, signatures: &[Signature]) -> Resul
                 let mut hasher = Sha256::new();
                 hasher.update(&data);
                 let hash = hasher.finalize();
-                (signature_file, format!("{:x}", hash))
+                (signature_file, format!("{hash:x}"))
             }
         };
         std::fs::write(&signature_file, hex).expect("Failed to write hash to file");

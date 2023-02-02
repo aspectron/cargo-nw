@@ -222,7 +222,7 @@ impl Builder {
                 "Package",
                 "{} - {}",
                 style(path.to_str().unwrap()).cyan(),
-                style(format!("{:.2}Mb", package_size)).cyan()
+                style(format!("{package_size:.2}Mb")).cyan()
             );
         }
 

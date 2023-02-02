@@ -98,7 +98,7 @@ impl Manifest {
         let mut manifest: Manifest = match toml::from_str(&nw_toml) {
             Ok(manifest) => manifest,
             Err(err) => {
-                return Err(format!("Error loading nw.toml: {}", err).into());
+                return Err(format!("Error loading nw.toml: {err}").into());
             }
         };
 

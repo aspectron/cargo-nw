@@ -132,7 +132,7 @@ pub async fn execute(
     }
 
     if let Err(e) = proc.run() {
-        println!("Error executing: {:?}", argv);
+        println!("Error executing: {argv:?}");
         Err(e.into())
     } else {
         Ok(())

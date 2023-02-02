@@ -35,7 +35,7 @@ impl DMG {
         build_folder: &PathBuf,
         output_folder: &PathBuf,
     ) -> DMG {
-        let filename = format!("{}-{}-{}-{}", app_name, app_version, platform, arch,);
+        let filename = format!("{app_name}-{app_version}-{platform}-{arch}");
         let build_file = build_folder.join(format!("{filename}.build.dmg"));
         let output_file = output_folder.join(format!("{filename}.dmg"));
 

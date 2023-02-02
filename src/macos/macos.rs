@@ -66,7 +66,7 @@ impl Installer for MacOS {
                 .clone()
                 .unwrap_or_default();
             let filename = Path::new(&format!("{}.zip", self.ctx.app_snake_name)).to_path_buf();
-            let target_file = self.ctx.output_folder.join(&filename);
+            let target_file = self.ctx.output_folder.join(filename);
             compress_folder(&self.nwjs_root_folder, &target_file, level)?;
 
             files.push(target_file);
@@ -222,7 +222,7 @@ impl MacOS {
         let sizes = vec![512, 256, 128, 64, 32, 16];
         for size in sizes {
             let raw = size * 2;
-            let name = format!("icon_{}x{}@2.png", size, size);
+            let name = format!("icon_{size}x{size}@2.png");
             cmd!(
                 "sips",
                 "-z",
@@ -235,7 +235,7 @@ impl MacOS {
             .stdin_null()
             .read()?;
 
-            let name = format!("icon_{}x{}.png", size, size);
+            let name = format!("icon_{size}x{size}.png");
             cmd!(
                 "sips",
                 "-z",
@@ -260,7 +260,7 @@ impl MacOS {
 
     async fn generate_icns_internal(&self, png: &PathBuf, icns: &PathBuf) -> Result<()> {
         let mut src =
-            image::open(png).unwrap_or_else(|err| panic!("Unable to open {:?}: {}", png, err));
+            image::open(png).unwrap_or_else(|err| panic!("Unable to open {png:?}: {err}"));
 
         let dimensions = src.dimensions();
         if dimensions.0 != 1024 || dimensions.1 != 1024 {
@@ -289,10 +289,10 @@ impl MacOS {
         let sizes = vec![512, 256, 128, 64, 32, 16];
         for size in sizes {
             let dest = src.resize(size * 2, size * 2, resize_filter_type);
-            let name = format!("icon_{}x{}@2.png", size, size);
+            let name = format!("icon_{size}x{size}@2.png");
             dest.save(iconset_folder.join(name)).unwrap();
             let dest = src.resize(size, size, resize_filter_type);
-            let name = format!("icon_{}x{}.png", size, size);
+            let name = format!("icon_{size}x{size}.png");
             dest.save(iconset_folder.join(name)).unwrap();
             src = dest;
         }

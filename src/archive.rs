@@ -30,7 +30,7 @@ pub async fn extract(
     } else if file_str.ends_with(".zip") {
         extract_zip(&file.into(), &dir.into()).await?;
     } else {
-        return Err(format!("extract(): unsupported file type: {}", file_str).into());
+        return Err(format!("extract(): unsupported file type: {file_str}").into());
     }
 
     Ok(())
@@ -151,7 +151,7 @@ where
 
         count += 1;
         let pos = count as f64 / nb_files as f64 * 100.0;
-        let percent = style(format!("{:1.2}%", pos)).cyan();
+        let percent = style(format!("{pos:1.2}%")).cyan();
         let size = style(format!("{:1.2} Mb", bytes as f64 / 1024.0 / 1024.0)).cyan();
         let files = style(format!("{count}/{nb_files} files")).cyan();
         log_state!(

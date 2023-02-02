@@ -78,11 +78,9 @@ impl TryFrom<(&Tpl, &Copy)> for Filter {
         match (&copy.glob, &copy.regex) {
             (Some(glob), None) => Filter::try_glob(tpl, glob),
             (None, Some(regex)) => Filter::try_regex(tpl, regex),
-            _ => Err(format!(
-                "copy directive must have one 'glob' or 'regex' property: {:?}",
-                copy
-            )
-            .into()),
+            _ => Err(
+                format!("copy directive must have one 'glob' or 'regex' property: {copy:?}").into(),
+            ),
         }
     }
 }
