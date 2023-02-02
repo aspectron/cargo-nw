@@ -49,14 +49,14 @@ use prelude::*;
 #[clap(bin_name = "cargo")]
 #[clap(
     // setting = AppSettings::SubcommandRequiredElseHelp,
-    setting = clap::AppSettings::DeriveDisplayOrder,
+    // setting = clap::AppSettings::DeriveDisplayOrder,
     dont_collapse_args_in_usage = true,
 )]
 enum Cmd {
     #[clap(name = "nw")]
     #[clap(about, author, version)]
     #[clap(
-        setting = clap::AppSettings::DeriveDisplayOrder,
+        // setting = clap::AppSettings::DeriveDisplayOrder,
     )]
     Args(Args),
 }
@@ -75,7 +75,7 @@ struct Args {
 
     #[cfg(feature = "unix")]
     #[clap(short, long)]
-    // #[cfg(feature = "unix")]
+    #[cfg(feature = "unix")]
     platform: Option<Platform>,
 }
 
@@ -96,12 +96,12 @@ enum Action {
         // version : Option<String>,
         #[cfg(any(target_os = "linux", feature = "unix"))]
         #[clap(short, long, help = "Snap distribution channel (linux only)")]
-        // #[cfg(any(target_os = "linux", feature = "unix"))]
+        #[cfg(any(target_os = "linux", feature = "unix", feature = "multiplatform"))]
         channel: Option<Channel>,
 
         #[cfg(any(target_os = "linux", feature = "unix"))]
         #[clap(short, long, help = "Snap package confinement (linux only)")]
-        // #[cfg(any(target_os = "linux", feature = "unix"))]
+        #[cfg(any(target_os = "linux", feature = "unix"))]
         confinement: Option<Confinement>,
 
         /// Target platform architecture (x64,ia32,aarch64)
