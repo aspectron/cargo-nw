@@ -70,7 +70,9 @@ impl Installer for Windows {
     }
 
     async fn check(&self, targets: &TargetSet) -> Result<()> {
-        if targets.contains(&Target::InnoSetup) && !std::path::Path::new(super::iss::INNO_SETUP_COMPIL32).exists() {
+        if targets.contains(&Target::InnoSetup)
+            && !std::path::Path::new(super::iss::INNO_SETUP_COMPIL32).exists()
+        {
             println!();
             println!(
                 "fatal: unable to locate: `{}`",
@@ -277,9 +279,9 @@ impl Windows {
         let mut small_src = image::open(&small_file_png)
             .unwrap_or_else(|err| panic!("Unable to open '{}': {err}", small_file_png.display()));
         if !small_file_bmp.exists().await {
-            small_src
-                .save(&small_file_bmp)
-                .unwrap_or_else(|err| panic!("Unable to save '{}': {err}", small_file_bmp.display()));
+            small_src.save(&small_file_bmp).unwrap_or_else(|err| {
+                panic!("Unable to save '{}': {err}", small_file_bmp.display())
+            });
         }
         small_files.push(small_file_bmp.clone());
 
@@ -292,9 +294,9 @@ impl Windows {
         let mut large_src = image::open(&large_file_png)
             .unwrap_or_else(|err| panic!("Unable to open '{}': {err}", large_file_png.display()));
         if !large_file_bmp.exists().await {
-            large_src
-                .save(&large_file_bmp)
-                .unwrap_or_else(|err|panic!("Unable to save '{}': {err}", large_file_bmp.display()));
+            large_src.save(&large_file_bmp).unwrap_or_else(|err| {
+                panic!("Unable to save '{}': {err}", large_file_bmp.display())
+            });
         }
         large_files.push(large_file_bmp.clone());
 
@@ -343,9 +345,9 @@ impl Windows {
                     .join(format!("innosetup-wizard-small-{}x{}.bmp", *width, *height));
                 if !filename.exists().await {
                     small_src = small_src.resize(*width, *height, resize_filter_type);
-                    small_src
-                        .save(&filename)
-                        .unwrap_or_else(|err| panic!("Unable to save '{}': {err}", filename.display()));
+                    small_src.save(&filename).unwrap_or_else(|err| {
+                        panic!("Unable to save '{}': {err}", filename.display())
+                    });
                 }
                 small_files.push(filename);
             }
@@ -360,9 +362,9 @@ impl Windows {
                     .join(format!("innosetup-wizard-large-{}x{}.bmp", *width, *height));
                 if !filename.exists().await {
                     large_src = large_src.resize(*width, *height, resize_filter_type);
-                    large_src
-                        .save(&filename)
-                        .unwrap_or_else(|err|panic!("Unable to save '{}': {err}", filename.display()));
+                    large_src.save(&filename).unwrap_or_else(|err| {
+                        panic!("Unable to save '{}': {err}", filename.display())
+                    });
                 }
                 large_files.push(filename);
             }
@@ -384,8 +386,8 @@ impl Windows {
         )
         .await?;
 
-        let mut src =
-            image::open(&app_icon_png).unwrap_or_else(|err| panic!("Unable to open '{app_icon_png:?}': {err}"));
+        let mut src = image::open(&app_icon_png)
+            .unwrap_or_else(|err| panic!("Unable to open '{app_icon_png:?}': {err}"));
         let dimensions = src.dimensions();
         if dimensions.0 != 1024 || dimensions.1 != 1024 {
             println!();
@@ -467,8 +469,8 @@ impl Windows {
         )
         .await?;
 
-        let mut app_icon_image =
-            image::open(&app_icon_png).unwrap_or_else(|err| panic!("Unable to open '{app_icon_png:?}': {err}"));
+        let mut app_icon_image = image::open(&app_icon_png)
+            .unwrap_or_else(|err| panic!("Unable to open '{app_icon_png:?}': {err}"));
 
         if app_icon_image.width() < 256 || app_icon_image.height() < 256 {
             log_warn!(
@@ -495,14 +497,18 @@ impl Windows {
         let app_icon_encoded = ico::IconDirEntry::encode(&app_icon_image_ico).unwrap();
         let app_res_file = self.ctx.build_folder.join(&self.app_exe_file);
         let mut resources = Resources::new(&app_res_file.clone().into());
-        resources.load().unwrap_or_else(|err| panic!(
-            "Unable to load resources from '{}': {err}",
-            app_res_file.display()
-        ));
-        resources.open().unwrap_or_else(|err|panic!(
-            "Unable to open resource file '{}' for updates: {err}",
-            app_res_file.display()
-        ));
+        resources.load().unwrap_or_else(|err| {
+            panic!(
+                "Unable to load resources from '{}': {err}",
+                app_res_file.display()
+            )
+        });
+        resources.open().unwrap_or_else(|err| {
+            panic!(
+                "Unable to open resource file '{}' for updates: {err}",
+                app_res_file.display()
+            )
+        });
 
         resources
             .find(resource_type::ICON, Id::Integer(1))
