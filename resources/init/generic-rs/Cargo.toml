@@ -12,20 +12,22 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 
 # Make sure to update crate versions before production use
-# Use https://crates.io to get the latest versions
+# You can use https://crates.io to get the latest versions
+# or you can install `cargo install cargo-emanate` and run
+# `cargo emanate check`
 
-js-sys = "0.3.56"
-wasm-bindgen = "0.2.79"
+js-sys = "0.3.61"
+wasm-bindgen = "0.2.84"
 workflow-dom = "0.3.10"
 workflow-log = "0.3.10"
 workflow-wasm = "0.3.10"
 # workflow-nw = "0.3.10"
-# nw-sys = "0.1.0"
+nw-sys = "0.1.2"
 workflow-nw = { path = "../../../../workflow-rs/nw" }
-nw-sys = { path = "../../../../nw-sys" }
+# nw-sys = { path = "../../../../nw-sys" }
 
 [dependencies.web-sys]
-version = "0.3.60"
+version = "0.3.61"
 features = [
     'console',
     'Document',

@@ -11,7 +11,17 @@ pub struct ExampleApp {
     pub inner: Arc<Application>,
 }
 
+fn app() -> Option<Arc<ExampleApp>> {
+    unsafe { APP.clone() }
+}
+
+
 impl ExampleApp {
+
+    pub fn global() -> Option<Arc<ExampleApp>> {
+        unsafe { APP.clone() }
+    }
+    
     fn new() -> Result<Arc<Self>> {
         let app = Arc::new(Self {
             inner: Application::new()?,
@@ -153,9 +163,6 @@ impl ExampleApp {
     }
 }
 
-fn app() -> Option<Arc<ExampleApp>> {
-    unsafe { APP.clone() }
-}
 
 #[wasm_bindgen]
 pub fn create_context_menu() -> Result<()> {
