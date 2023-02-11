@@ -4,25 +4,21 @@ use workflow_log::{log_info, log_trace};
 use workflow_nw::prelude::*;
 use workflow_nw::result::Result;
 
-static mut APP: Option<Arc<ExampleApp>> = None;
+static mut APP: Option<Arc<App>> = None;
 
 #[derive(Clone)]
-pub struct ExampleApp {
+pub struct App {
     pub inner: Arc<Application>,
 }
 
-fn app() -> Option<Arc<ExampleApp>> {
-    unsafe { APP.clone() }
-}
 
+impl App {
 
-impl ExampleApp {
-
-    pub fn global() -> Option<Arc<ExampleApp>> {
+    pub fn global() -> Option<Arc<App>> {
         unsafe { APP.clone() }
     }
     
-    fn new() -> Result<Arc<Self>> {
+    pub fn new() -> Result<Arc<Self>> {
         let app = Arc::new(Self {
             inner: Application::new()?,
         });
@@ -166,7 +162,7 @@ impl ExampleApp {
 
 #[wasm_bindgen]
 pub fn create_context_menu() -> Result<()> {
-    if let Some(app) = app() {
+    if let Some(app) = App::global() {
         app.create_context_menu()?;
     } else {
         let is_nw = initialize_app()?;
@@ -174,7 +170,7 @@ pub fn create_context_menu() -> Result<()> {
             log_info!("TODO: initialize web-app");
             return Ok(());
         }
-        let app = app().expect("Unable to create app");
+        let app = App::global().expect("Unable to create app");
         app.create_context_menu()?;
     }
     Ok(())
@@ -184,7 +180,7 @@ pub fn create_context_menu() -> Result<()> {
 pub fn initialize_app() -> Result<bool> {
     let is_nw = is_nw();
 
-    let _app = ExampleApp::new()?;
+    let _app = App::new()?;
     Ok(is_nw)
 }
 
@@ -196,7 +192,7 @@ pub fn initialize() -> Result<()> {
         return Ok(());
     }
 
-    let app = app().expect("Unable to create app");
+    let app = App::global().expect("Unable to create app");
 
     app.inner.create_window_with_callback(
         "/root/index.html",
