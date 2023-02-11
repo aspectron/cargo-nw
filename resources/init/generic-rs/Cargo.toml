@@ -19,10 +19,10 @@ wasm-bindgen = "0.2.79"
 workflow-dom = "0.3.10"
 workflow-log = "0.3.10"
 workflow-wasm = "0.3.10"
-workflow-nw = "0.3.10"
-nw-sys = "0.1.0"
-# workflow-nw = { path = "../../../../workflow-" }
-# nw-sys = { path = "" }
+# workflow-nw = "0.3.10"
+# nw-sys = "0.1.0"
+workflow-nw = { path = "../../../../workflow-rs/nw" }
+nw-sys = { path = "../../../../nw-sys" }
 
 [dependencies.web-sys]
 version = "0.3.60"
