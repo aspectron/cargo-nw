@@ -1,9 +1,8 @@
 use nw_sys::prelude::*;
-use nw_sys::result::Result;
 use wasm_bindgen::prelude::*;
-use workflow_dom::utils::window;
 use workflow_log::{log_info, log_trace};
 use workflow_nw::prelude::*;
+use workflow_nw::result::Result;
 
 static mut APP: Option<Arc<ExampleApp>> = None;
 
@@ -92,7 +91,7 @@ impl ExampleApp {
     }
 
     pub fn create_tray_icon(&self) -> Result<()> {
-        let _tray = TrayIconBuilder::new()
+        let _tray = TrayMenuBuilder::new()
             .icon("resources/icons/tray-icon@2x.png")
             .icons_are_templates(false)
             .callback(|_| {
@@ -122,7 +121,7 @@ impl ExampleApp {
             })
             .build()?;
 
-        let _tray = TrayIconBuilder::new()
+        let _tray = TrayMenuBuilder::new()
             .icon("resources/icons/tray-icon@2x.png")
             .icons_are_templates(false)
             .submenus(vec![submenu_1, menu_separator(), exit_menu])
@@ -201,7 +200,7 @@ pub fn initialize() -> Result<()> {
         },
     )?;
 
-    let window = Window::get();
+    let window = window::get();
     log_trace!("nw.Window.get(): {:?}", window);
 
     app.create_menu()?;
