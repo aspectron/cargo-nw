@@ -19,6 +19,7 @@ pub mod manifest;
 pub mod platform;
 pub mod prelude;
 pub mod result;
+pub mod runner;
 pub mod script;
 pub mod signatures;
 pub mod tpl;
@@ -152,6 +153,7 @@ enum Action {
         #[clap(short, long)]
         output: Option<String>,
     },
+    Run {},
     #[cfg(feature = "test")]
     Test {
         // #[clap(name = "manifest")]
@@ -311,6 +313,12 @@ pub async fn async_main() -> Result<()> {
             let installer = create_installer(&ctx);
             let target_folder = installer.target_folder();
             execute_actions(Stage::Publish, &ctx, &installer.tpl(), &target_folder).await?;
+        }
+        Action::Run {} => {
+            let arch = Architecture::default();
+            let ctx = Arc::new(
+                Context::create(location, None, platform, arch, Options::default()).await?,
+            );
         }
         #[cfg(feature = "test")]
         Action::Test {} => {

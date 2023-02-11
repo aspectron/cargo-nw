@@ -73,26 +73,26 @@ impl Context {
         let node_platform: NodePlatform = platform.clone().into();
         let nw_platform: NwPlatform = platform.clone().into();
         let mut tpl: Tpl = [
-            ("$PLATFORM", platform.to_string()),
-            ("$NODE-PLATFORM", node_platform.to_string()),
-            ("$NW-PLATFORM", nw_platform.to_string()),
-            ("$ARCH", arch.to_string()),
+            ("PLATFORM", platform.to_string()),
+            ("NODE-PLATFORM", node_platform.to_string()),
+            ("NW-PLATFORM", nw_platform.to_string()),
+            ("ARCH", arch.to_string()),
         ]
         .as_slice()
         .try_into()?;
         cfg_if! {
             if #[cfg(target_os = "windows")] {
-                tpl.set(&[("$EXE",".exe")]);
-                tpl.set(&[("$BAT",".bat")]);
-                tpl.set(&[("$CMD",".cmd")]);
-                tpl.set(&[("$PS1",".ps1")]);
-                tpl.set(&[("$SH","")]);
+                tpl.set(&[("EXE",".exe")]);
+                tpl.set(&[("BAT",".bat")]);
+                tpl.set(&[("CMD",".cmd")]);
+                tpl.set(&[("PS1",".ps1")]);
+                tpl.set(&[("SH","")]);
             } else {
-                tpl.set(&[("$EXE","")]);
-                tpl.set(&[("$BAT","")]);
-                tpl.set(&[("$CMD","")]);
-                tpl.set(&[("$PS1","")]);
-                tpl.set(&[("$SH",".sh")]);
+                tpl.set(&[("EXE","")]);
+                tpl.set(&[("BAT","")]);
+                tpl.set(&[("CMD","")]);
+                tpl.set(&[("PS1","")]);
+                tpl.set(&[("SH",".sh")]);
             }
         }
 
@@ -104,20 +104,20 @@ impl Context {
         let project_root = manifest_toml.parent().unwrap();
 
         tpl.set(&[
-            ("$NAME", manifest.application.name.as_str()),
-            ("$TITLE", manifest.application.title.as_str()),
-            ("$ORGANIZATION", manifest.application.organization.as_str()),
-            ("$SHORT", manifest.description.short.as_str()),
-            ("$LONG", manifest.description.long.as_str()),
-            ("$VERSION", manifest.application.version.as_str()),
+            ("NAME", manifest.application.name.as_str()),
+            ("TITLE", manifest.application.title.as_str()),
+            ("ORGANIZATION", manifest.application.organization.as_str()),
+            ("SHORT", manifest.description.short.as_str()),
+            ("LONG", manifest.description.long.as_str()),
+            ("VERSION", manifest.application.version.as_str()),
         ]);
 
         [
-            ("$AUTHORS", &manifest.application.authors),
-            ("$COPYRIGHT", &manifest.application.copyright),
-            ("$TRADEMARKS", &manifest.application.trademarks),
-            ("$EULA", &manifest.application.eula),
-            ("$URL", &manifest.application.url),
+            ("AUTHORS", &manifest.application.authors),
+            ("COPYRIGHT", &manifest.application.copyright),
+            ("TRADEMARKS", &manifest.application.trademarks),
+            ("EULA", &manifest.application.eula),
+            ("URL", &manifest.application.url),
         ]
         .iter()
         .for_each(|(k, v)| {
@@ -161,7 +161,7 @@ impl Context {
         };
         let output_folder = PathBuf::from(&tpl.transform(output_folder.to_str().unwrap()));
         tpl.set(&[
-            ("$OUTPUT", output_folder.to_str().unwrap()),
+            ("OUTPUT", output_folder.to_str().unwrap()),
             // ("$SETUP",output_folder.to_str().unwrap()),
         ]);
 
@@ -169,7 +169,7 @@ impl Context {
             .join(".cargo-nw")
             .join("temp")
             .join(&app_snake_name);
-        tpl.set(&[("$TEMP", temp_folder.to_str().unwrap())]);
+        tpl.set(&[("TEMP", temp_folder.to_str().unwrap())]);
 
         // let dependencies_folder = temp_folder.join("deps");
 
@@ -194,7 +194,7 @@ impl Context {
                 }
             };
 
-        tpl.set(&[("$SOURCE", app_root_folder.to_str().unwrap())]);
+        tpl.set(&[("SOURCE", app_root_folder.to_str().unwrap())]);
 
         let setup_resources_folder = manifest_folder.join(
             manifest

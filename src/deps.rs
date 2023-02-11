@@ -17,6 +17,7 @@ pub struct Meta {
     pub file: String,
     pub folder: String,
     pub url: String,
+    // pub executable: String,
     target: PathBuf,
     has_folder: bool,
 }

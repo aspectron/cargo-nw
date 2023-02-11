@@ -8,401 +8,40 @@ use convert_case::{Case, Casing};
 use question::{Answer, Question};
 use uuid::Uuid;
 
-const DEFAULT_APPLICATION_ICON: &[u8] = include_bytes!("../resources/default-application-icon.png");
+const DEFAULT_APPLICATION_ICON: &[u8] =
+    include_bytes!("../resources/images/default-application-icon.png");
 const MACOS_DISK_IMAGE_BACKGROUND: &[u8] =
-    include_bytes!("../resources/macos-disk-image-background.png");
+    include_bytes!("../resources/images/macos-disk-image-background.png");
 const INNOSETUP_WIZARD_SMALL_IMAGE: &[u8] =
-    include_bytes!("../resources/innosetup-wizard-small.png");
+    include_bytes!("../resources/images/innosetup-wizard-small.png");
 const INNOSETUP_WIZARD_LARGE_IMAGE: &[u8] =
-    include_bytes!("../resources/innosetup-wizard-large.png");
-const TRAY_ICON: &[u8] = include_bytes!("../resources/tray-icon@2x.png");
+    include_bytes!("../resources/images/innosetup-wizard-large.png");
+const TRAY_ICON: &[u8] = include_bytes!("../resources/images/tray-icon@2x.png");
 
-const GITIGNORE: &str = r###"
-target
-Cargo.lock
-"###;
-
-const INDEX_JS: &str = r###"
-(async()=>{
-    window.$$SNAKE = await import('/root/wasm/$NAME.js');
-    // window.$$SNAKE = $$NAME;
-    const wasm = await window.$$SNAKE.default('/root/wasm/$NAME_bg.wasm');
-    //console.log("wasm", wasm, workflow)
-    //$$SNAKE.init_console_panic_hook();
-    //$$SNAKE.show_panic_hook_logs();
-    window.$$SNAKE.initialize();
-})();
-
-"###;
-
-const INDEX_HTML: &str = r###"
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>$TITLE</title>
-        <style>
-            html{
-                background-color:#FFF;
-                height:100%;
-                width:100%;
-                margin:0px;
-                padding:0px;
-            }
-            body{
-                min-height:100px;
-                height:100%;
-                background-color:#cbcbcb;
-                position: absolute;
-                left:0px;
-                right:0px;
-                top:0px;
-                bottom:0px;
-                padding:15px;
-                margin:0px;
-            }
-        </style>
-    </head>
-    <body>
-        <h1>$TITLE</h1>
-        <script>
-            (async()=>{
-                window.$$SNAKE = await import('/root/wasm/$NAME.js');
-                const wasm = await window.$$SNAKE.default('/root/wasm/$NAME_bg.wasm');
-                window.$$SNAKE.create_context_menu();
-            })();
-        </script>
-    </body>
-</html>
-"###;
-
-const PAGE2_HTML: &str = r###"
-<!DOCTYPE html>
-<html>
-    <head>
-        <!--title>new window test</title-->
-    </head>
-    <body>
-        <h1>$TITLE (Window 2)</h1>
-        <script>
-            console.log("nw", nw);
-        </script>
-    </body>
-</html>
-"###;
-
-const NW_TOML: &str = r###"
-
-# nw.toml - for additional properties please see https://github.com/aspectron/cargo-nw
-
-[application]
-name = "$NAME"
-version = "$VERSION"
-title = "$TITLE"
-organization = "Your Organization Name"
-
-[description]
-short = "..."
-long = """
-$DESCRIPTION
-""""
-
-[package]
-# root = ""
-# resources = "resources/setup"
-# exclude = ["resources/setup"]
-exclude = [{ glob = ["{src/*,target/*,test/*,resources/setup/*,*.lock,*.toml,.git*}"] }]
-
-[node-webkit]
-version = "0.71.0"
-ffmpeg = false
-
-[dmg]
-# window = ["0,0,300,300"]
-# icon = ["0,0"]
-# applications = ["0,0"]
-
-[windows]
-uuid = "$UUID"
-group = "$GROUP"
-# run_on_startup = "everyone"
-run_after_setup = true
-
-# [languages]
-# languages = ["english"]
-
-# [firewall]
-# application = "in:out"
-
-"###;
-
-const CARGO_TOML: &str = r###"
-[package]
-name = "$NAME"
-version = "$VERSION"
-edition = "2021"
-
-[lib]
-crate-type = ["cdylib", "rlib"]
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-
-# Make sure to update crate versions before production use
-# Use https://crates.io to get the latest versions
-
-wasm-bindgen = "0.2.79"
-js-sys = "0.3.56"
-nw-sys={path="../nw-sys"}
-workflow-log="*"
-workflow-wasm = {path="../workflow-wasm"}
-workflow-dom ={path="../workflow-dom"}
-workflow-nw ={path="../workflow-nw"}
-
-[dependencies.web-sys]
-version = "0.3.60"
-features = [
-    'console',
-    'Document',
-    'Window',
-    'HtmlElement',
-    'CustomEvent',
-    'MouseEvent'
-]
-
-"###;
-
-const LIB_RS: &str = r###"
-use wasm_bindgen::prelude::*;
-use workflow_log::{log_trace, log_info};
-use workflow_dom::utils::window;
-use nw_sys::result::Result;
-use nw_sys::prelude::*;
-use workflow_nw::prelude::*;
-
-static mut APP:Option<Arc<ExampleApp>> = None;
-
-#[derive(Clone)]
-pub struct ExampleApp{
-    pub inner:Arc<App>
-}
+const GITIGNORE: &str = include_str!("../resources/init/generic-rs/.gitignore");
+const INDEX_JS: &str = include_str!("../resources/init/generic-rs/index.js");
+const INDEX_HTML: &str = include_str!("../resources/init/generic-rs/index.html");
+const NW_TOML: &str = include_str!("../resources/init/generic-rs/nw.toml");
+const CARGO_TOML: &str = include_str!("../resources/init/generic-rs/Cargo.toml");
+const LIB_RS: &str = include_str!("../resources/init/generic-rs/src/lib.rs");
+const BUILD_SH: &str = include_str!("../resources/init/generic-rs/build.sh");
+const BUILD_PS1: &str = include_str!("../resources/init/generic-rs/build.ps1");
 
 
-impl ExampleApp{
-    fn new()->Result<Arc<Self>>{
-        let app = Arc::new(Self{
-            inner: App::new()?
-        });
-
-        unsafe{
-            APP = Some(app.clone());
-        };
-
-        Ok(app)
-    }
-
-    fn create_window(&self)->Result<()>{
-        let options = nw::window::Options::new()
-            .title("Test page")
-            .width(200)
-            .height(200)
-            .left(0);
-
-        self.inner.create_window_with_callback(
-            "/root/page2.html", 
-            &options,
-            |win:nw::Window|->std::result::Result<(), JsValue>{
-                log_trace!("win: {:?}", win);
-                log_trace!("win.x: {:?}", win.x());
-                win.move_by(300, 0);
-                win.set_x(100);
-                win.set_y(100);
-
-                log_trace!("win.title: {}", win.title());
-                win.set_title("Another Window");
-                log_trace!("win.set_title(\"Another Window\")");
-                log_trace!("win.title: {}", win.title());
-
-                Ok(())
-            }
-        )?;
-
-        Ok(())
-    }
-
-    fn create_menu(&self)->Result<()>{
-
-        let this = self.clone();
-        let submenu_1 = MenuItemBuilder::new()
-            .label("Create window")
-            .key("8")
-            .modifiers("ctrl")
-            .callback(move |_|->std::result::Result<(), JsValue>{
-                log_trace!("Create window : menu clicked");
-                this.create_window()?;
-                Ok(())
-            }).build()?;
-        
-        let submenu_2 = MenuItemBuilder::new()
-            .label("Say hello")
-            .key("9")
-            .modifiers("ctrl")
-            .callback(move |_|->std::result::Result<(), JsValue>{
-                window().alert_with_message("Hello")?;
-                Ok(())
-            }).build()?;
-        
-        let item = MenuItemBuilder::new()
-            .label("Top Menu")
-            .submenus(vec![submenu_1, menu_separator(), submenu_2])
-            .build()?;
-
-        
-        MenubarBuilder::new("$TITLE")
-            .mac_hide_edit(true)
-            .mac_hide_window(true)
-            .append(item)
-            .build(true)?;
-        
-        Ok(())
-    }
-
-    pub fn create_tray_icon(&self)->Result<()>{
-        let _tray = TrayIconBuilder::new()
-            .icon("resources/icons/tray-icon@2x.png")
-            .icons_are_templates(false)
-            .callback(|_|{
-                window().alert_with_message("Tray Icon click")?;
-                Ok(())
-            })
-            .build()?;
-        Ok(())
-    }
-
-    pub fn create_tray_icon_with_menu(&self)->Result<()>{
-
-        let submenu_1 = MenuItemBuilder::new()
-            .label("Say hi")
-            .key("6")
-            .modifiers("ctrl")
-            .callback(move |_|->std::result::Result<(), JsValue>{
-                window().alert_with_message("hi")?;
-                Ok(())
-            }).build()?;
-
-        let exit_menu = MenuItemBuilder::new()
-            .label("Exit")
-            .callback(move |_|->std::result::Result<(), JsValue>{
-                window().alert_with_message("TODO: Exit")?;
-                Ok(())
-            }).build()?;
-
-        let _tray = TrayIconBuilder::new()
-            .icon("resources/icons/tray-icon@2x.png")
-            .icons_are_templates(false)
-            .submenus(vec![submenu_1, menu_separator(), exit_menu])
-            .build()?;
-
-        Ok(())
-    }
-
-    pub fn create_context_menu(self:Arc<Self>)->Result<()>{
-
-        let item_1 = MenuItemBuilder::new()
-            .label("Sub Menu 1")
-            .callback(move |_|->std::result::Result<(), JsValue>{
-                window().alert_with_message("Context menu 1 clicked")?;
-                Ok(())
-            }).build()?;
-
-        let item_2 = MenuItemBuilder::new()
-            .label("Sub Menu 2")
-            .callback(move |_|->std::result::Result<(), JsValue>{
-                window().alert_with_message("Context menu 2 clicked")?;
-                Ok(())
-            }).build()?;
-
-
-        self.inner.create_context_menu(vec![item_1, item_2])?;
-
-        Ok(())
-    }
-}
-
-fn app()->Option<Arc<ExampleApp>>{
-    unsafe{APP.clone()}
-}
-
-#[wasm_bindgen]
-pub fn create_context_menu()->Result<()>{
-    if let Some(app) = app(){
-        app.create_context_menu()?;
-    }else{
-        let is_nw = initialize_app()?;
-        if !is_nw{
-            log_info!("TODO: initialize web-app");
-            return Ok(());
-        }
-        let app = app().expect("Unable to create app");
-        app.create_context_menu()?;
-    }
-    Ok(())
-}
-
-#[wasm_bindgen]
-pub fn initialize_app()->Result<bool>{
-    let is_nw = nw::is_nw();
-
-    let _app = ExampleApp::new()?;
-    Ok(is_nw)
-}
-
-#[wasm_bindgen]
-pub fn initialize()->Result<()>{
-    let is_nw = initialize_app()?;
-    if !is_nw{
-        log_info!("TODO: initialize web-app");
-        return Ok(());
-    }
-
-    let app = app().expect("Unable to create app");
-
-    app.inner.create_window_with_callback(
-        "/root/index.html",
-        &nw::window::Options::new().new_instance(false),
-        |_win:nw::Window|->std::result::Result<(), JsValue>{
-            //app.create_context_menu()?;
-            Ok(())
-        }
-    )?;
-
-    let window = nw::Window::get();
-    log_trace!("nw.Window.get(): {:?}", window);
-
-    app.create_menu()?;
-    app.create_tray_icon()?;
-    app.create_tray_icon_with_menu()?;
-    
-    Ok(())
-}
-
-"###;
-
-const BUILD_SH: &str = r###"
-if [ "$1" = "--dev" ]; then
-    wasm-pack build --dev --target web --out-name $NAME --out-dir root/wasm
-else
-    wasm-pack build --target web --out-name $NAME --out-dir root/wasm
-fi
-"###;
-
-const BUILD_PS1: &str = r###"
-if ($args.Contains("--dev")) {
-    & "wasm-pack build --dev --target web --out-name $NAME --out-dir root/wasm"
-} else {
-    & "wasm-pack build --target web --out-name $NAME --out-dir root/wasm"
-}
-"###;
+// const PAGE2_HTML: &str = r###"
+// <!DOCTYPE html>
+// <html>
+//     <head>
+//         <!--title>new window test</title-->
+//     </head>
+//     <body>
+//         <h1>$TITLE (Window 2)</h1>
+//         <script>
+//             console.log("nw", nw);
+//         </script>
+//     </body>
+// </html>
+// "###;
 
 pub struct Options {
     pub manifest: bool,
@@ -486,7 +125,6 @@ impl Project {
 
                     let name = name.to_case(Case::Kebab);
                     if name != self.name {
-                        // self.title = name.from_case(Case::Kebab).to_case(Case::Camel);
                         self.title = name
                             .replace('-', " ")
                             .from_case(Case::Kebab)
@@ -512,7 +150,7 @@ impl Project {
         log_info!("Init", "creating '{}'", self.name);
         println!();
 
-        println!("{self:?}");
+        // println!("{self:?}");
 
         let tpl = self.tpl()?;
         let files = if options.manifest {
@@ -520,7 +158,7 @@ impl Project {
         } else {
             let package = PackageJson {
                 name: self.title.clone(),
-                main: "root/index.js".to_string(),
+                main: "app/index.js".to_string(),
                 version: Some(self.version.clone()),
                 description: Some("".to_string()),
             };
@@ -529,9 +167,9 @@ impl Project {
             [
                 (".gitignore", GITIGNORE.to_string()),
                 ("package.json", tpl.transform(&package_json)),
-                ("root/index.js", tpl.transform(INDEX_JS)),
-                ("root/index.html", tpl.transform(INDEX_HTML)),
-                ("root/page2.html", tpl.transform(PAGE2_HTML)),
+                ("app/index.js", tpl.transform(INDEX_JS)),
+                ("app/index.html", tpl.transform(INDEX_HTML)),
+                // ("root/page2.html", tpl.transform(PAGE2_HTML)),
                 ("src/lib.rs", tpl.transform(LIB_RS)),
                 ("nw.toml", tpl.transform(NW_TOML)),
                 ("Cargo.toml", tpl.transform(CARGO_TOML)),
@@ -600,7 +238,7 @@ impl Project {
         }
 
         println!("Please run 'build' script to build the project");
-        println!("Following this, you can run 'nw .' to start run the application");
+        println!("Following this, you can run 'nw .' or 'cargo nw run' to start run the application");
         println!();
 
         Ok(())
@@ -608,15 +246,15 @@ impl Project {
 
     fn tpl(&self) -> Result<Tpl> {
         let tpl: Tpl = [
-            ("$NAME", self.name.clone()),
+            ("NAME", self.name.clone()),
             (
-                "$SNAKE",
+                "SNAKE",
                 self.name.from_case(Case::Kebab).to_case(Case::Snake),
             ),
-            ("$TITLE", self.title.clone()),
-            ("$UUID", self.uuid.to_string()),
-            ("$VERSION", self.version.to_string()),
-            ("$DESCRIPTION", self.description.to_string()),
+            ("TITLE", self.title.clone()),
+            ("UUID", self.uuid.to_string()),
+            ("VERSION", self.version.to_string()),
+            ("DESCRIPTION", self.description.to_string()),
         ]
         .as_slice()
         .try_into()?;

@@ -66,7 +66,8 @@ impl Tpl {
     pub fn transform(&self, text: &str) -> String {
         let mut text = text.to_string();
         for (k, v) in self.map.iter() {
-            text = text.replace(k, v);
+            text = text.replace(&format!("${k}"), v);
+            text = text.replace(&format!("__{k}__"), v);
         }
         text
     }
