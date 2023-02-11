@@ -67,8 +67,16 @@ pub fn get_nwjs_ffmpeg_meta(platform: &Platform, manifest: &Manifest, target: &P
     Meta::new(&file, &folder, &url, target, false)
 }
 
-pub fn get_nwjs_sdk_meta(platform: &Platform, manifest: &Manifest, target: &PathBuf) -> Meta {
-    let version = format!("v{}", manifest.node_webkit.version);
+pub fn get_nwjs_sdk_meta(
+    platform: &Platform,
+    manifest: &Manifest,
+    target: &PathBuf,
+    version_override: Option<String>,
+) -> Meta {
+    let version = format!(
+        "v{}",
+        version_override.unwrap_or(manifest.node_webkit.version.clone())
+    );
     let suffix = get_nwjs_suffix(platform);
     let folder = format!("nwjs-sdk-{version}-{suffix}-x64");
     let archive_extension = get_nwjs_archive_extension(platform);
@@ -77,8 +85,16 @@ pub fn get_nwjs_sdk_meta(platform: &Platform, manifest: &Manifest, target: &Path
     Meta::new(&file, &folder, &url, target, true)
 }
 
-pub fn get_nwjs_meta(platform: &Platform, manifest: &Manifest, target: &PathBuf) -> Meta {
-    let version = format!("v{}", manifest.node_webkit.version);
+pub fn get_nwjs_meta(
+    platform: &Platform,
+    manifest: &Manifest,
+    target: &PathBuf,
+    version_override: Option<String>,
+) -> Meta {
+    let version = format!(
+        "v{}",
+        version_override.unwrap_or(manifest.node_webkit.version.clone())
+    );
     let suffix = get_nwjs_suffix(platform);
     let folder = format!("nwjs-{version}-{suffix}-x64");
     let archive_extension = get_nwjs_archive_extension(platform);
@@ -95,14 +111,19 @@ pub struct Deps {
 }
 
 impl Deps {
-    pub fn new(platform: &Platform, manifest: &Manifest, sdk: bool) -> Deps {
+    pub fn new(
+        platform: &Platform,
+        manifest: &Manifest,
+        sdk: bool,
+        nwjs_version_override: Option<String>,
+    ) -> Deps {
         let home_dir: PathBuf = home::home_dir().unwrap().into();
         let dir: PathBuf = Path::new(&home_dir).join(".cargo-nw");
 
         let nwjs = if sdk {
-            get_nwjs_sdk_meta(platform, manifest, &dir)
+            get_nwjs_sdk_meta(platform, manifest, &dir, nwjs_version_override)
         } else {
-            get_nwjs_meta(platform, manifest, &dir)
+            get_nwjs_meta(platform, manifest, &dir, nwjs_version_override)
         };
 
         let ffmpeg = if manifest.node_webkit.ffmpeg.unwrap_or(false) {

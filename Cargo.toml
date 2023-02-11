@@ -2,7 +2,7 @@
 name = "cargo-nw"
 version = "0.1.0"
 edition = "2021"
-license = "GPL-3.0"
+license = "MIT OR Apache-2.0"
 repository = "https://github.com/aspectron/cargo-nw"
 documentation = "https://cargo-nw.aspectron.org"
 authors = ["Anton Yemelyanov <anton.yemelyanov@gmail.com>", "Surinder Singh Matoo Mattaur <surinder83singh@gmail.com>"]

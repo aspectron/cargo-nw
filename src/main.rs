@@ -82,11 +82,15 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Action {
-    /// Build Node Webkit Application package
+    /// Build Node Webkit application package
     Build {
         /// Package using Node Webkit SDK edition
         #[clap(short, long)]
         sdk: bool,
+
+        /// Package using a custom Node Webkit version
+        #[clap(short, long, name = "nwjs-version")]
+        nwjs_version_override: Option<String>,
 
         /// Integrate but do not produce any redistributables
         #[clap(short, long, name = "dry-run")]
@@ -133,7 +137,7 @@ enum Action {
         #[clap(long)]
         all: bool,
     },
-    /// Create NW package template
+    /// Create Node Webkit application template
     Init {
         /// The name of the project
         #[clap(name = "name")]
@@ -148,12 +152,18 @@ enum Action {
         #[clap(long)]
         force: bool,
     },
+    /// Run `publish` action defined in `nw.toml`
     Publish {
         /// Output folder
         #[clap(short, long)]
         output: Option<String>,
     },
-    Run {},
+    /// Run the Node Webkit application
+    Run {
+        /// Override NWJS version
+        #[clap(short, long, name = "nwjs-version")]
+        nwjs_version_override: Option<String>,
+    },
     #[cfg(feature = "test")]
     Test {
         // #[clap(name = "manifest")]
@@ -184,6 +194,7 @@ pub async fn async_main() -> Result<()> {
         Action::Build {
             // verbose,
             sdk,
+            nwjs_version_override,
             dry_run,
             arch,
             target,
@@ -224,6 +235,7 @@ pub async fn async_main() -> Result<()> {
 
             let options = Options {
                 sdk,
+                nwjs_version_override,
                 dry_run,
                 channel,
                 confinement,
@@ -314,11 +326,15 @@ pub async fn async_main() -> Result<()> {
             let target_folder = installer.target_folder();
             execute_actions(Stage::Publish, &ctx, &installer.tpl(), &target_folder).await?;
         }
-        Action::Run {} => {
+        Action::Run {
+            nwjs_version_override,
+        } => {
             let arch = Architecture::default();
-            let ctx = Arc::new(
-                Context::create(location, None, platform, arch, Options::default()).await?,
-            );
+            let options = Options {
+                nwjs_version_override,
+                ..Options::default()
+            };
+            let ctx = Arc::new(Context::create(location, None, platform, arch, options).await?);
             let runner = Runner::new(ctx);
             runner.run().await?;
         }

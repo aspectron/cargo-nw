@@ -5,6 +5,7 @@ use async_std::path::PathBuf;
 #[derive(Default, Debug)]
 pub struct Options {
     pub sdk: bool,
+    pub nwjs_version_override: Option<String>,
     pub dry_run: bool,
     pub channel: Option<Channel>,
     pub confinement: Option<Confinement>,
@@ -208,7 +209,7 @@ impl Context {
         let snap = manifest.snap.clone().unwrap_or_default();
         let channel = options.channel.or(snap.channel).unwrap_or_default();
         let confinement = options.confinement.or(snap.confinement).unwrap_or_default();
-        let deps = Deps::new(&platform, &manifest, sdk);
+        let deps = Deps::new(&platform, &manifest, sdk, options.nwjs_version_override);
 
         let include = manifest.package.include.clone(); //.unwrap_or(vec![]);
         let exclude = manifest.package.exclude.clone(); //.unwrap_or(vec![]);
