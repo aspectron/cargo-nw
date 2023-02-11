@@ -28,8 +28,8 @@
         <h1>$TITLE</h1>
         <script>
             (async()=>{
-                window.$$SNAKE = await import('/root/wasm/$NAME.js');
-                const wasm = await window.$$SNAKE.default('/root/wasm/$NAME_bg.wasm');
+                window.$$SNAKE = await import('/root/wasm/___NAME___.js');
+                const wasm = await window.$$SNAKE.default('/root/wasm/___NAME____bg.wasm');
                 window.$$SNAKE.create_context_menu();
             })();
         </script>

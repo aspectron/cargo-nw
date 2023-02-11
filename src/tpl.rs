@@ -67,7 +67,8 @@ impl Tpl {
         let mut text = text.to_string();
         for (k, v) in self.map.iter() {
             text = text.replace(&format!("${k}"), v);
-            text = text.replace(&format!("__{k}__"), v);
+            // text = text.replace(&format!("__{k}__"), v);
+            text = text.replace(&format!("___{k}___"), v);
         }
         text
     }

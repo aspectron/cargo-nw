@@ -20,13 +20,12 @@ const TRAY_ICON: &[u8] = include_bytes!("../resources/images/tray-icon@2x.png");
 
 const GITIGNORE: &str = include_str!("../resources/init/generic-rs/.gitignore");
 const INDEX_JS: &str = include_str!("../resources/init/generic-rs/index.js");
-const INDEX_HTML: &str = include_str!("../resources/init/generic-rs/index.html");
+const INDEX_HTML: &str = include_str!("../resources/init/generic-rs/app/index.html");
 const NW_TOML: &str = include_str!("../resources/init/generic-rs/nw.toml");
 const CARGO_TOML: &str = include_str!("../resources/init/generic-rs/Cargo.toml");
 const LIB_RS: &str = include_str!("../resources/init/generic-rs/src/lib.rs");
 const BUILD_SH: &str = include_str!("../resources/init/generic-rs/build.sh");
 const BUILD_PS1: &str = include_str!("../resources/init/generic-rs/build.ps1");
-
 
 // const PAGE2_HTML: &str = r###"
 // <!DOCTYPE html>
@@ -167,7 +166,8 @@ impl Project {
             [
                 (".gitignore", GITIGNORE.to_string()),
                 ("package.json", tpl.transform(&package_json)),
-                ("app/index.js", tpl.transform(INDEX_JS)),
+                // ("app/index.js", tpl.transform(INDEX_JS)),
+                ("index.js", tpl.transform(INDEX_JS)),
                 ("app/index.html", tpl.transform(INDEX_HTML)),
                 // ("root/page2.html", tpl.transform(PAGE2_HTML)),
                 ("src/lib.rs", tpl.transform(LIB_RS)),
@@ -238,7 +238,9 @@ impl Project {
         }
 
         println!("Please run 'build' script to build the project");
-        println!("Following this, you can run 'nw .' or 'cargo nw run' to start run the application");
+        println!(
+            "Following this, you can run 'nw .' or 'cargo nw run' to start run the application"
+        );
         println!();
 
         Ok(())

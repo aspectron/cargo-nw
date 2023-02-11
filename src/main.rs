@@ -319,6 +319,8 @@ pub async fn async_main() -> Result<()> {
             let ctx = Arc::new(
                 Context::create(location, None, platform, arch, Options::default()).await?,
             );
+            let runner = Runner::new(ctx);
+            runner.run().await?;
         }
         #[cfg(feature = "test")]
         Action::Test {} => {

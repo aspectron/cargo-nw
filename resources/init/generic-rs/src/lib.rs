@@ -11,13 +11,11 @@ pub struct App {
     pub inner: Arc<Application>,
 }
 
-
 impl App {
-
     pub fn global() -> Option<Arc<App>> {
         unsafe { APP.clone() }
     }
-    
+
     pub fn new() -> Result<Arc<Self>> {
         let app = Arc::new(Self {
             inner: Application::new()?,
@@ -159,7 +157,6 @@ impl App {
     }
 }
 
-
 #[wasm_bindgen]
 pub fn create_context_menu() -> Result<()> {
     if let Some(app) = App::global() {
@@ -195,7 +192,7 @@ pub fn initialize() -> Result<()> {
     let app = App::global().expect("Unable to create app");
 
     app.inner.create_window_with_callback(
-        "/root/index.html",
+        "/app/index.html",
         &window::Options::new().new_instance(false),
         |_win: Window| -> std::result::Result<(), JsValue> {
             //app.create_context_menu()?;
