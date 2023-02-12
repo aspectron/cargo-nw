@@ -319,9 +319,9 @@ pub async fn async_main() -> Result<()> {
                 manifest,
                 force,
             };
-            let mut project = init::Project::try_new(name, folder)?;
+            let mut project = init::Project::try_new(name, folder, options)?;
 
-            project.generate(options).await?;
+            project.generate().await?;
         }
         Action::Publish { output } => {
             let arch = Architecture::default();

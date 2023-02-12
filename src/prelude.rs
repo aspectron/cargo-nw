@@ -1,7 +1,7 @@
 pub use crate::{
     action::*, archive::*, builder::*, context::*, copy::*, deps::*, error::*, exec::*, images::*,
-    installer::*, log::*, manifest::*, platform::*, result::*, runner::*, script::*, signatures::*,
-    tpl::*, utils::*, utils::*, init::TemplateKind,
+    init::TemplateKind, installer::*, log::*, manifest::*, platform::*, result::*, runner::*,
+    script::*, signatures::*, tpl::*, utils::*, utils::*,
 };
 
 pub use crate::result::Result;
