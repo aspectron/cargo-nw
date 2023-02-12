@@ -1,5 +1,6 @@
 {
     "name" : "___NAME___",
     "version" : "___VERSION___",
-    "description" : "___DESCRIPTION___"
+    "description" : "___DESCRIPTION___",
+    "main" : "index.js"
 }

@@ -307,8 +307,15 @@ pub async fn async_main() -> Result<()> {
                 folder.file_name().unwrap().to_str().unwrap().to_string()
             };
             // let name = name.as_ref().unwrap_or(folder.file_name().expect("").to_str().expect());
+
+            let template_kind = if js {
+                TemplateKind::GenericJs
+            } else {
+                TemplateKind::GenericRs
+            };
+
             let options = init::Options {
-                js,
+                template_kind,
                 manifest,
                 force,
             };
