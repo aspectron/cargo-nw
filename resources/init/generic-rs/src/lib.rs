@@ -4,18 +4,23 @@ use workflow_log::{log_info, log_trace};
 use workflow_nw::prelude::*;
 use workflow_nw::result::Result;
 
+/// Global application object created on application initialization.
 static mut APP: Option<Arc<App>> = None;
 
+/// Application struct wrapping `workflow_nw::Application` as an inner.
 #[derive(Clone)]
 pub struct App {
     pub inner: Arc<Application>,
 }
 
 impl App {
+
+    /// Get access to the global application object
     pub fn global() -> Option<Arc<App>> {
         unsafe { APP.clone() }
     }
 
+    /// Create a new application instance
     pub fn new() -> Result<Arc<Self>> {
         let app = Arc::new(Self {
             inner: Application::new()?,
@@ -28,6 +33,7 @@ impl App {
         Ok(app)
     }
 
+    /// Create a test page window
     fn create_window(&self) -> Result<()> {
         let options = window::Options::new()
             .title("Test page")
@@ -57,6 +63,7 @@ impl App {
         Ok(())
     }
 
+    /// Create application menu
     fn create_menu(&self) -> Result<()> {
         let this = self.clone();
         let submenu_1 = MenuItemBuilder::new()
@@ -94,6 +101,7 @@ impl App {
         Ok(())
     }
 
+    /// Create application tray icon
     pub fn create_tray_icon(&self) -> Result<()> {
         let _tray = TrayMenuBuilder::new()
             .icon("resources/icons/tray-icon@2x.png")
@@ -106,6 +114,7 @@ impl App {
         Ok(())
     }
 
+    /// Create application tray icon and tray menu
     pub fn create_tray_icon_with_menu(&self) -> Result<()> {
         let submenu_1 = MenuItemBuilder::new()
             .label("Say hi")
@@ -134,6 +143,7 @@ impl App {
         Ok(())
     }
 
+    /// Create a custom application context menu
     pub fn create_context_menu(self: Arc<Self>) -> Result<()> {
         let item_1 = MenuItemBuilder::new()
             .label("Sub Menu 1")
@@ -157,6 +167,7 @@ impl App {
     }
 }
 
+/// Creates the application context menu
 #[wasm_bindgen]
 pub fn create_context_menu() -> Result<()> {
     if let Some(app) = App::global() {
@@ -173,6 +184,7 @@ pub fn create_context_menu() -> Result<()> {
     Ok(())
 }
 
+/// Crteates the application instance
 #[wasm_bindgen]
 pub fn initialize_app() -> Result<bool> {
     let is_nw = is_nw();
@@ -181,6 +193,9 @@ pub fn initialize_app() -> Result<bool> {
     Ok(is_nw)
 }
 
+/// This function is called from the main `/index.js` file 
+/// and creates the main application window containing
+/// `index.html`
 #[wasm_bindgen]
 pub fn initialize() -> Result<()> {
     let is_nw = initialize_app()?;
