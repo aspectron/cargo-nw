@@ -1,5 +1,6 @@
-mod generic_js;
-mod generic_rs;
+mod basic_js;
+mod basic_rs;
+mod advanced_rs;
 
 use crate::prelude::*;
 use async_std::fs;
@@ -21,25 +22,11 @@ const INNOSETUP_WIZARD_LARGE_IMAGE: &[u8] =
     include_bytes!("../../resources/images/innosetup-wizard-large.png");
 const TRAY_ICON: &[u8] = include_bytes!("../../resources/images/tray-icon@2x.png");
 
-// const PAGE2_HTML: &str = r###"
-// <!DOCTYPE html>
-// <html>
-//     <head>
-//         <!--title>new window test</title-->
-//     </head>
-//     <body>
-//         <h1>$TITLE (Window 2)</h1>
-//         <script>
-//             console.log("nw", nw);
-//         </script>
-//     </body>
-// </html>
-// "###;
-
 #[derive(Debug)]
 pub enum TemplateKind {
-    GenericRs,
-    GenericJs,
+    BasicRs,
+    BasicJs,
+    AdvancedRs,
 }
 
 #[derive(Debug)]
@@ -157,11 +144,14 @@ impl Project {
 
         let manifest = self.manifest.load(Ordering::SeqCst);
         match self.options.template_kind {
-            TemplateKind::GenericJs => {
-                generic_js::generate(self, manifest).await?;
+            TemplateKind::BasicJs => {
+                basic_js::generate(self, manifest).await?;
             }
-            TemplateKind::GenericRs => {
-                generic_rs::generate(self, manifest).await?;
+            TemplateKind::BasicRs => {
+                basic_rs::generate(self, manifest).await?;
+            }
+            TemplateKind::AdvancedRs => {
+                advanced_rs::generate(self, manifest).await?;
             }
         }
         Ok(())

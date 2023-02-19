@@ -1,0 +1,38 @@
+[package]
+name = "___NAME___"
+version = "0.1.0"
+# version = "$VERSION"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+# Make sure to update crate versions before production use
+# You can use https://crates.io to get the latest versions
+# or you can install `cargo install cargo-emanate` and run
+# `cargo emanate check`
+
+js-sys = "0.3.61"
+wasm-bindgen = "0.2.84"
+workflow-dom = "0.3.10"
+workflow-log = "0.3.10"
+workflow-wasm = "0.3.10"
+# workflow-nw = "0.3.10"
+nw-sys = "0.1.2"
+workflow-nw = { path = "../../../../workflow-rs/nw" }
+# nw-sys = { path = "../../../../nw-sys" }
+
+[dependencies.web-sys]
+version = "0.3.61"
+features = [
+    'console',
+    'Document',
+    'Window',
+    'HtmlElement',
+    'CustomEvent',
+    'MouseEvent'
+]

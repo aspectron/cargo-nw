@@ -309,9 +309,9 @@ pub async fn async_main() -> Result<()> {
             // let name = name.as_ref().unwrap_or(folder.file_name().expect("").to_str().expect());
 
             let template_kind = if js {
-                TemplateKind::GenericJs
+                TemplateKind::BasicJs
             } else {
-                TemplateKind::GenericRs
+                TemplateKind::BasicRs
             };
 
             let options = init::Options {

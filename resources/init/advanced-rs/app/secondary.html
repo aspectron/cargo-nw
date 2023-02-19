@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <!--title>new window test</title-->
+        <script>
+            (async()=>{
+                window.$$SNAKE = await import('/app/wasm/___NAME___.js');
+                const wasm = await window.$$SNAKE.default('/app/wasm/___NAME____bg.wasm');
+                window.$$SNAKE.create_context_menu();
+            })();
+        </script>
+
+    </head>
+    <body>
+        <h1>$TITLE (Window 2)</h1>
+        <script>
+            console.log("nw", nw);
+        </script>
+    </body>
+</html>
