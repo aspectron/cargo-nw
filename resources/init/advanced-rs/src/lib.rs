@@ -14,7 +14,6 @@ pub struct App {
 }
 
 impl App {
-
     /// Get access to the global application object
     pub fn global() -> Option<Arc<App>> {
         unsafe { APP.clone() }
@@ -36,6 +35,7 @@ impl App {
     /// Create a test page window
     fn create_window(&self) -> Result<()> {
         let options = window::Options::new()
+            // .new_instance(true)
             .title("Test page")
             .width(200)
             .height(200)
@@ -193,7 +193,7 @@ pub fn initialize_app() -> Result<bool> {
     Ok(is_nw)
 }
 
-/// This function is called from the main `/index.js` file 
+/// This function is called from the main `/index.js` file
 /// and creates the main application window containing
 /// `index.html`
 #[wasm_bindgen]

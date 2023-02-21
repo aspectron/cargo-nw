@@ -6,7 +6,7 @@
             (async()=>{
                 window.$$SNAKE = await import('/app/wasm/___NAME___.js');
                 const wasm = await window.$$SNAKE.default('/app/wasm/___NAME____bg.wasm');
-                window.$$SNAKE.create_context_menu();
+                // window.$$SNAKE.create_context_menu();
             })();
         </script>
 
