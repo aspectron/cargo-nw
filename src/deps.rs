@@ -56,11 +56,11 @@ pub fn get_nwjs_archive_extension(platform: &Platform) -> String {
     .into()
 }
 
-pub fn get_nwjs_ffmpeg_meta(platform: &Platform, manifest: &Manifest, target: &PathBuf) -> Meta {
+pub fn get_nwjs_ffmpeg_meta(platform: &Platform, arch: &Architecture, manifest: &Manifest, target: &PathBuf) -> Meta {
     let version = &manifest.node_webkit.version;
     let suffix = get_nwjs_suffix(platform);
-    let folder = format!("ffmpeg-{version}-{suffix}-x64");
-    let file = format!("{version}-{suffix}-x64.zip");
+    let folder = format!("ffmpeg-{version}-{suffix}-{arch}");
+    let file = format!("{version}-{suffix}-{arch}.zip");
     let url = format!(
         "https://github.com/iteufel/nwjs-ffmpeg-prebuilt/releases/download/{version}/{file}"
     );
@@ -69,6 +69,7 @@ pub fn get_nwjs_ffmpeg_meta(platform: &Platform, manifest: &Manifest, target: &P
 
 pub fn get_nwjs_sdk_meta(
     platform: &Platform,
+    arch: &Architecture,
     manifest: &Manifest,
     target: &PathBuf,
     version_override: Option<String>,
@@ -78,7 +79,7 @@ pub fn get_nwjs_sdk_meta(
         version_override.unwrap_or(manifest.node_webkit.version.clone())
     );
     let suffix = get_nwjs_suffix(platform);
-    let folder = format!("nwjs-sdk-{version}-{suffix}-x64");
+    let folder = format!("nwjs-sdk-{version}-{suffix}-{arch}");
     let archive_extension = get_nwjs_archive_extension(platform);
     let file = format!("{folder}.{archive_extension}");
     let url = format!("https://dl.nwjs.io/{version}/{file}");
@@ -87,6 +88,7 @@ pub fn get_nwjs_sdk_meta(
 
 pub fn get_nwjs_meta(
     platform: &Platform,
+    arch: &Architecture,
     manifest: &Manifest,
     target: &PathBuf,
     version_override: Option<String>,
@@ -96,7 +98,7 @@ pub fn get_nwjs_meta(
         version_override.unwrap_or(manifest.node_webkit.version.clone())
     );
     let suffix = get_nwjs_suffix(platform);
-    let folder = format!("nwjs-{version}-{suffix}-x64");
+    let folder = format!("nwjs-{version}-{suffix}-{arch}");
     let archive_extension = get_nwjs_archive_extension(platform);
     let file = format!("{folder}.{archive_extension}");
     let url = format!("https://dl.nwjs.io/{version}/{file}");
@@ -113,6 +115,7 @@ pub struct Deps {
 impl Deps {
     pub fn new(
         platform: &Platform,
+        arch: &Architecture,
         manifest: &Manifest,
         sdk: bool,
         nwjs_version_override: Option<String>,
@@ -121,13 +124,13 @@ impl Deps {
         let dir: PathBuf = Path::new(&home_dir).join(".cargo-nw");
 
         let nwjs = if sdk {
-            get_nwjs_sdk_meta(platform, manifest, &dir, nwjs_version_override)
+            get_nwjs_sdk_meta(platform, arch, manifest, &dir, nwjs_version_override)
         } else {
-            get_nwjs_meta(platform, manifest, &dir, nwjs_version_override)
+            get_nwjs_meta(platform, arch, manifest, &dir, nwjs_version_override)
         };
 
         let ffmpeg = if manifest.node_webkit.ffmpeg.unwrap_or(false) {
-            Some(get_nwjs_ffmpeg_meta(platform, manifest, &dir))
+            Some(get_nwjs_ffmpeg_meta(platform, arch, manifest, &dir))
         } else {
             None
         };

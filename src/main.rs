@@ -82,13 +82,13 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Action {
-    /// Build Node Webkit application package
+    /// Build NW application package
     Build {
-        /// Package using Node Webkit SDK edition
+        /// Package using NW SDK edition
         #[clap(short, long)]
         sdk: bool,
 
-        /// Package using a custom Node Webkit version
+        /// Package using a custom NW version
         #[clap(short, long, name = "nwjs-version")]
         nwjs_version_override: Option<String>,
 
@@ -96,7 +96,7 @@ enum Action {
         #[clap(short, long, name = "dry-run")]
         dry_run: bool,
 
-        // /// Node Webkit version (override the manifest setting)
+        // /// NW version (override the manifest setting)
         // #[clap(short, long)]
         // version : Option<String>,
         #[cfg(any(target_os = "linux", feature = "unix"))]
@@ -109,7 +109,7 @@ enum Action {
         #[cfg(any(target_os = "linux", feature = "unix"))]
         confinement: Option<Confinement>,
 
-        /// Target platform architecture (x64,ia32,aarch64)
+        /// Target platform architecture (x64,ia32,arm64)
         #[clap(short, long)]
         arch: Option<Architecture>,
 
@@ -127,7 +127,7 @@ enum Action {
     },
     /// Clean intermediate build folders
     Clean {
-        /// Clean downloaded Node Webkit redistributables
+        /// Clean downloaded NW redistributables
         #[clap(long)]
         dist: bool,
         /// Clean project dependencies
@@ -137,7 +137,7 @@ enum Action {
         #[clap(long)]
         all: bool,
     },
-    /// Create Node Webkit application template
+    /// Create NW application template
     Init {
         /// The name of the project
         #[clap(name = "name")]
@@ -158,8 +158,12 @@ enum Action {
         #[clap(short, long)]
         output: Option<String>,
     },
-    /// Run the Node Webkit application
+    /// Run the NW application
     Run {
+        /// Use NW SDK edition
+        #[clap(short, long)]
+        sdk: bool,
+
         /// Override NWJS version
         #[clap(short, long, name = "nwjs-version")]
         nwjs_version_override: Option<String>,
@@ -241,7 +245,12 @@ pub async fn async_main() -> Result<()> {
                 confinement,
             };
 
-            let arch = arch.unwrap_or_default();
+            let arch = if let Some(arch) = arch {
+                arch
+            } else {
+                Architecture::detect()?
+            };
+
             let ctx = Arc::new(Context::create(location, output, platform, arch, options).await?);
 
             let has_archive = ctx.manifest.package.archive.is_some()
@@ -272,12 +281,16 @@ pub async fn async_main() -> Result<()> {
             let deps = deps || all;
             let dist = dist || all;
 
+            // let arch = if let Some(arch) = arch {
+            //     arch
+            // } else { Architecture::detect()? };
+
             let ctx = Arc::new(
                 Context::create(
                     location,
                     None,
                     platform,
-                    Architecture::default(),
+                    Architecture::detect()?,
                     Options::default(),
                 )
                 .await?,
@@ -324,7 +337,7 @@ pub async fn async_main() -> Result<()> {
             project.generate().await?;
         }
         Action::Publish { output } => {
-            let arch = Architecture::default();
+            let arch = Architecture::detect()?;
             let ctx = Arc::new(
                 Context::create(location, output, platform, arch, Options::default()).await?,
             );
@@ -334,10 +347,12 @@ pub async fn async_main() -> Result<()> {
             execute_actions(Stage::Publish, &ctx, &installer.tpl(), &target_folder).await?;
         }
         Action::Run {
+            sdk,
             nwjs_version_override,
         } => {
-            let arch = Architecture::default();
+            let arch = Architecture::detect()?;
             let options = Options {
+                sdk,
                 nwjs_version_override,
                 ..Options::default()
             };
@@ -347,7 +362,7 @@ pub async fn async_main() -> Result<()> {
         }
         #[cfg(feature = "test")]
         Action::Test {} => {
-            let arch = Architecture::default();
+            let arch = Architecture::detect()?;
             let ctx = Arc::new(
                 Context::create(location, None, platform, arch, Options::default()).await?,
             );

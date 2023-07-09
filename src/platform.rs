@@ -1,6 +1,8 @@
 use crate::error::Error;
+use crate::result::Result;
 use cfg_if::cfg_if;
 use clap::Subcommand;
+use duct::cmd;
 use serde::{Deserialize, Serialize};
 use std::{fmt, str::FromStr};
 
@@ -112,12 +114,28 @@ impl fmt::Display for NwPlatform {
 pub enum Architecture {
     x64,
     ia32,
-    aarch64,
+    arm64,
 }
 
-impl Default for Architecture {
-    fn default() -> Self {
-        Architecture::x64
+// impl Default for Architecture {
+//     fn default() -> Self {
+//         Architecture::x64
+//     }
+// }
+
+impl Architecture {
+    pub fn detect() -> Result<Self> {
+        cfg_if! {
+            if #[cfg(target_os = "macos")] {
+                let uname = cmd!("uname", "-m").read()?;
+                match uname.trim() {
+                    "x86_64" => Ok(Architecture::x64),
+                    "arm64" => Ok(Architecture::arm64),
+                    "i386" => Ok(Architecture::ia32),
+                    _ => { Err("Unable to determine target platform architecture, please supply via the `--arch=<arch>` argument".into()) }
+                }
+            }
+        }
     }
 }
 
@@ -126,18 +144,18 @@ impl fmt::Display for Architecture {
         match self {
             Architecture::x64 => write!(f, "x64"),
             Architecture::ia32 => write!(f, "ia32"),
-            Architecture::aarch64 => write!(f, "aarch64"),
+            Architecture::arm64 => write!(f, "arm64"),
         }
     }
 }
 
 impl FromStr for Architecture {
     type Err = Error;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s {
             "x64" => Ok(Architecture::x64),
             "ia32" => Ok(Architecture::ia32),
-            "aarch64" => Ok(Architecture::aarch64),
+            "arm64" => Ok(Architecture::arm64),
             _ => Err(Error::InvalidArchitecture(s.to_string())),
         }
     }
@@ -179,7 +197,7 @@ impl Default for PlatformFamily {
 
 impl FromStr for PlatformFamily {
     type Err = Error;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s {
             "windows" => Ok(PlatformFamily::Windows),
             "unix" => Ok(PlatformFamily::Unix),

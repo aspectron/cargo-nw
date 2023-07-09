@@ -10,7 +10,7 @@ keywords = ["cargo", "subcommand", "installation", "package","nwjs","nw"]
 categories = ["command-line-utilities", "development-tools::cargo-plugins", "development-tools::build-utils"]
 exclude = ["/.*", "/test"]
 description = """
-Cargo subcommand for building Node Webkit application deployment packages
+Cargo subcommand for building NW application deployment packages
 (redistributables) for Windows, MacOS and Linux.
 """
 
@@ -19,8 +19,8 @@ test = []
 unix = []
 standalone = []
 multiplatform = []
-default = []
-# default = ["test"]
+# default = []
+default = ["test"]
 # default = ["test","unix"]
 # default = ["test","unix","multiplatform"]
 

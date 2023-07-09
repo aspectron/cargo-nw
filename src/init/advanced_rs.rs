@@ -29,7 +29,7 @@ pub async fn generate(project: &Project, manifest: bool) -> Result<()> {
             ("package.json", tpl.transform(&package_json)),
             ("index.js", tpl.transform(INDEX_JS)),
             ("app/index.html", tpl.transform(INDEX_HTML)),
-            // ("root/page2.html", tpl.transform(PAGE2_HTML)),
+            ("app/secondary.html", tpl.transform(SECONDARY_HTML)),
             ("src/lib.rs", tpl.transform(LIB_RS)),
             ("nw.toml", tpl.transform(NW_TOML)),
             ("Cargo.toml", tpl.transform(CARGO_TOML)),

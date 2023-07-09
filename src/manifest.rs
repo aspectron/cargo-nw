@@ -17,7 +17,7 @@ pub struct Manifest {
     /// Script for building application dependencies
     #[serde(rename = "dependency")]
     pub dependencies: Option<Vec<Dependency>>,
-    /// Node Webkit directives
+    /// NW directives
     // #[serde(rename = "node-webkit")]
     pub node_webkit: NodeWebkit,
     /// Windows-specific settings
@@ -402,22 +402,22 @@ pub struct Dependency {
     pub copy: Vec<Copy>,
 }
 
-/// Node Webkit Directives
+/// NW Directives
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename = "node-webkit", deny_unknown_fields)]
 pub struct NodeWebkit {
     ///
-    /// Node Webkit version. This version must be downloadable
+    /// NW version. This version must be downloadable
     /// from https://nwjs.io/downloads
     ///
     /// WARNING: If using FFMPEG builds, the available FFMPEG version
-    /// must match the Node Webkit version. FFMPEG downloads are available
+    /// must match the NW version. FFMPEG downloads are available
     /// at: https://github.com/nwjs-ffmpeg-prebuilt/nwjs-ffmpeg-prebuilt/releases/
     ///
     pub version: String,
     /// Enable automatic  inregration of FFMPEG libraries.
     pub ffmpeg: Option<bool>,
-    /// Use Node Webkit SDK edition. Please note that an SDK-including build cane also be
+    /// Use NW SDK edition. Please note that an SDK-including build cane also be
     /// produced via a command line argument as follows:
     /// ```
     /// cargo nw build all --sdk

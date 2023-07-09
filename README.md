@@ -11,7 +11,7 @@ Application deployment package builder for [Node-Webkit](https://nwjs.io)
 ## Overview
 
 `cargo-nw` allows creation custom application deployment packages for NW applications by bundling application files with NW binaries.
-This tool was created to build Node Webkit Rust WASM applications, but it can be used with any new or existing project.
+This tool was created to build NW Rust WASM applications, but it can be used with any new or existing project.
 
 The deployment is controlled by `nw.toml` manifest file that allows full customization of information packages in distributables, creation of additional actions (such as program executions during different stages of the build process), copying groups of files using globs or regex filters.
 
@@ -26,7 +26,7 @@ NOTE: To create a redistributable for each platform, you need to run `cargo-nw` 
 
 ## Features
 * No external dependencies for basic functionality
-* Automatic download of Node Webkit distribution binaries (optionally SDK)
+* Automatic download of NW distribution binaries (optionally SDK)
 * Automatic handling of application icons
 * Automatic creation of `.desktop` file on Linux
 * Automatic handling of DMG resources
@@ -39,7 +39,7 @@ NOTE: To create a redistributable for each platform, you need to run `cargo-nw` 
 ## Dependencies
 * [Rust](https://www.rust-lang.org/tools/install)
 * [InnoSetup for Windows](https://jrsoftware.org/isdl.php) for creation of interactive Windows installers
-* [Wasmpack](https://rustwasm.github.io/wasm-pack/installer/) if building Node Webkit WASM applications in Rust
+* [Wasmpack](https://rustwasm.github.io/wasm-pack/installer/) if building NW WASM applications in Rust
 * [SnapCraft](https://snapcraft.io/install/snapcraft/ubuntu) + [LXD](https://linuxcontainers.org/lxd/getting-started-cli/) 
 
 ## Installation
