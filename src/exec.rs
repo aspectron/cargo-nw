@@ -54,7 +54,7 @@ pub async fn execute_with_context(
     cwd: Option<&Path>,
     tpl: &Tpl,
 ) -> Result<()> {
-    let cwd = cwd.unwrap_or(&ctx.app_root_folder);
+    let cwd = normalize(tpl.transform(&cwd.unwrap_or(&ctx.app_root_folder).to_string_lossy().to_string()))?;
     let cwd = ec
         .cwd
         .as_ref()
@@ -94,6 +94,9 @@ pub async fn execute(
     arch: &Option<Architecture>,
     tpl: &Tpl,
 ) -> Result<()> {
+
+    let cwd = normalize(cwd)?;
+
     if family.is_some() && family.as_ref() != Some(&PlatformFamily::default()) {
         return Ok(());
     }
@@ -106,7 +109,7 @@ pub async fn execute(
         return Ok(());
     }
 
-    let argv = args.get(tpl); //tpl.or(Some(&ctx.tpl.lock().unwrap().clone())));
+    let argv = args.get(tpl);
     if !cwd.is_dir().await {
         return Err(format!(
             "unable to locate folder: `{}` while running `{:?}`",
@@ -123,7 +126,7 @@ pub async fn execute(
         .expect("missing program (frist argument) in the execution config");
     let args = argv[1..].to_vec();
 
-    let mut proc = duct::cmd(program, args).dir(cwd);
+    let mut proc = duct::cmd(program, args).dir(cwd).full_env(std::env::vars());
     if let Some(env) = env {
         let defs = get_env_defs(env)?;
         for (k, v) in defs.iter() {

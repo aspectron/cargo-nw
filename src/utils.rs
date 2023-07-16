@@ -60,3 +60,41 @@ pub fn get_env_defs(strings: &Vec<String>) -> Result<Vec<(String, String)>> {
 
     Ok(parsed_strings)
 }
+
+
+pub fn normalize<P>(path: P) -> Result<PathBuf>
+where
+    P: AsRef<Path>,
+{
+    cfg_if!{
+        if #[cfg(platform = "windows")] {
+            normalize_with_separator(path.as_ref(), "\\")
+        } else {
+            normalize_with_separator(path.as_ref(), "/")
+        }
+    }
+}
+
+pub fn normalize_with_separator(path: &Path, separator: &str) -> Result<PathBuf> {
+    let mut result = PathBuf::new();
+
+    for component in path.components() {
+        if let Some(c) = component.as_os_str().to_str() {
+            if c == "." {
+                continue;
+            } else if c == ".." {
+                result.pop();
+            } else {
+                result.push(c);
+            }
+        } else {
+            return Err(Error::InvalidPath(path.to_string_lossy().to_string()));
+        }
+    }
+
+    if !result.is_absolute() {
+        result = separator.parse::<PathBuf>().unwrap().join(&result);
+    }
+
+    Ok(result)
+}

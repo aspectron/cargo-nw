@@ -90,6 +90,10 @@ impl ActionItem {
         src_folder: &Path,
         dest_folder: &Path,
     ) -> Result<()> {
+
+        let src_folder = normalize(src_folder)?;
+        let dest_folder = normalize(dest_folder)?;
+
         if stage != self.stage.as_ref().unwrap_or(&Stage::Build) {
             return Ok(());
         }
@@ -113,15 +117,15 @@ impl ActionItem {
         }
 
         if let Some(execution_context) = &self.run {
-            execute_with_context(ctx, execution_context, Some(src_folder), tpl).await?;
+            execute_with_context(ctx, execution_context, Some(&src_folder), tpl).await?;
         }
 
         if let Some(copy_settings) = &self.copy {
-            copy(tpl, copy_settings, src_folder, dest_folder).await?;
+            copy(tpl, copy_settings, &src_folder, &dest_folder).await?;
         }
 
         if let Some(write) = &self.write {
-            let file = tpl.transform(&write.file);
+            let file = normalize(tpl.transform(&write.file))?;
             let file = Path::new(&file);
 
             let parent = file.parent();
@@ -133,7 +137,7 @@ impl ActionItem {
         }
 
         if let Some(script) = &self.script {
-            script.execute(tpl, src_folder).await?;
+            script.execute(tpl, &src_folder).await?;
         }
 
         Ok(())

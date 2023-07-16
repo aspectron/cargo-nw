@@ -57,6 +57,7 @@ pub fn get_nwjs_archive_extension(platform: &Platform) -> String {
 }
 
 pub fn get_nwjs_ffmpeg_meta(platform: &Platform, arch: &Architecture, manifest: &Manifest, target: &PathBuf) -> Meta {
+    let arch = arch.to_nwjs_arch();
     let version = &manifest.node_webkit.version;
     let suffix = get_nwjs_suffix(platform);
     let folder = format!("ffmpeg-{version}-{suffix}-{arch}");
@@ -74,6 +75,7 @@ pub fn get_nwjs_sdk_meta(
     target: &PathBuf,
     version_override: Option<String>,
 ) -> Meta {
+    let arch = arch.to_nwjs_arch();
     let version = format!(
         "v{}",
         version_override.unwrap_or(manifest.node_webkit.version.clone())
@@ -93,6 +95,7 @@ pub fn get_nwjs_meta(
     target: &PathBuf,
     version_override: Option<String>,
 ) -> Meta {
+    let arch = arch.to_nwjs_arch();
     let version = format!(
         "v{}",
         version_override.unwrap_or(manifest.node_webkit.version.clone())

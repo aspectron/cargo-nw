@@ -20,6 +20,9 @@ pub enum Error {
     #[error("Unknown architecture: '{0}'")]
     InvalidArchitecture(String),
 
+    #[error("Invalid path: '{0}'")]
+    InvalidPath(String),
+
     #[error("Unknown operating system family: '{0}'")]
     InvalidFamily(String),
 

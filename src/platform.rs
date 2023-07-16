@@ -115,13 +115,8 @@ pub enum Architecture {
     x64,
     ia32,
     arm64,
+    aarch64,
 }
-
-// impl Default for Architecture {
-//     fn default() -> Self {
-//         Architecture::x64
-//     }
-// }
 
 impl Architecture {
     pub fn detect() -> Result<Self> {
@@ -129,13 +124,22 @@ impl Architecture {
             if #[cfg(target_os = "macos")] {
                 let uname = cmd!("uname", "-m").read()?;
                 match uname.trim() {
-                    "x86_64" => Ok(Architecture::x64),
-                    "arm64" => Ok(Architecture::arm64),
                     "i386" => Ok(Architecture::ia32),
+                    "x86_64" => Ok(Architecture::x64),
+                    "arm64" => Ok(Architecture::aarch64),
                     _ => { Err("Unable to determine target platform architecture, please supply via the `--arch=<arch>` argument".into()) }
                 }
             }
         }
+    }
+
+    pub fn to_nwjs_arch(&self) -> String {
+        match self {
+            Architecture::x64 => "x64",
+            Architecture::ia32 => "ia32",
+            Architecture::arm64 => "arm64",
+            Architecture::aarch64 => "arm64",
+        }.to_string()
     }
 }
 
@@ -145,6 +149,7 @@ impl fmt::Display for Architecture {
             Architecture::x64 => write!(f, "x64"),
             Architecture::ia32 => write!(f, "ia32"),
             Architecture::arm64 => write!(f, "arm64"),
+            Architecture::aarch64 => write!(f, "aarch64"),
         }
     }
 }
@@ -156,6 +161,7 @@ impl FromStr for Architecture {
             "x64" => Ok(Architecture::x64),
             "ia32" => Ok(Architecture::ia32),
             "arm64" => Ok(Architecture::arm64),
+            "aarch64" => Ok(Architecture::aarch64),
             _ => Err(Error::InvalidArchitecture(s.to_string())),
         }
     }
