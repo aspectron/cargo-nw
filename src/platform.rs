@@ -129,6 +129,8 @@ impl Architecture {
                     "arm64" => Ok(Architecture::aarch64),
                     _ => { Err("Unable to determine target platform architecture, please supply via the `--arch=<arch>` argument".into()) }
                 }
+            } else {
+                Ok(Architecture::x64)
             }
         }
     }
