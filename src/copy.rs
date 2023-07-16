@@ -316,7 +316,7 @@ where
 }
 
 pub async fn copy(tpl: &Tpl, copy: &Copy, src_folder: &Path, target_folder: &Path) -> Result<()> {
-    println!("{:#?}", copy);
+
     if let Some(file) = &copy.file {
         if copy.glob.is_some() || copy.regex.is_some() || copy.flatten.is_some() {
             return Err("other options can not be present if `copy.file` is declared".into());

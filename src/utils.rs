@@ -96,5 +96,10 @@ pub fn normalize_with_separator(path: &Path, separator: &str) -> Result<PathBuf>
         result = separator.parse::<PathBuf>().unwrap().join(&result);
     }
 
-    Ok(result)
+    Ok(sanitize(&result))
+}
+
+pub fn sanitize<P : AsRef<Path>>(path: P) -> PathBuf {
+    let p = path.as_ref().to_string_lossy().to_string();
+    PathBuf::from(p.replace("\\\\?\\", ""))
 }
