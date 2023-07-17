@@ -127,10 +127,14 @@ impl Context {
             }
         });
 
-        let root_folder = search_upwards(&manifest_folder, "Cargo.toml")
-            .await
-            .map(|location| location.parent().unwrap().to_path_buf())
-            .unwrap_or_else(|| manifest_folder.clone());
+        let root_folder  = if let Some(root) = &manifest.package.root {
+            normalize(manifest_folder.join(root))?
+        } else {
+            search_upwards(&manifest_folder, "Cargo.toml")
+                .await
+                .map(|location| location.parent().unwrap().to_path_buf())
+                .unwrap_or_else(|| manifest_folder.clone())
+        };
 
         let app_snake_name = format!(
             "{}-{}-{}-{}",

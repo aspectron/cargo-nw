@@ -60,6 +60,7 @@ impl Builder {
                     Build::WASM {
                         clean,
                         purge,
+                        name,
                         outdir,
                         args,
                         dev,
@@ -77,9 +78,9 @@ impl Builder {
                             fs::remove_dir_all(&self.ctx.cargo_target_folder).await?;
                         }
 
-                        let outdir = outdir.clone().unwrap_or_else(|| "root/wasm".to_string());
-                        let name = &self.ctx.manifest.application.name;
-                        let mut argv = vec!["wasmpack", "build"];
+                        let outdir = outdir.clone().unwrap_or_else(|| "app/wasm".to_string());
+                        let name = name.as_ref().clone().unwrap_or(&self.ctx.manifest.application.name);
+                        let mut argv = vec!["wasm-pack", "build"];
                         if dev.unwrap_or(false) {
                             argv.push("--dev");
                         }

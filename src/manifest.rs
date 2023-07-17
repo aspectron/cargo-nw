@@ -259,7 +259,9 @@ pub enum Build {
         purge: Option<bool>,
         /// Enable `wasmpack` development build.
         dev: Option<bool>,
-        /// Specify a custom output directory (default `root/wasm`)
+        /// WASM package name
+        name : Option<String>,
+        /// Specify a custom output directory (default `app/wasm`)
         /// when running the build command.
         outdir: Option<String>,
         /// Shell arguments for the build command.
@@ -330,6 +332,8 @@ pub struct Package {
     pub exclude: Option<Vec<CopyFilter>>,
     /// Copy hidden files (default: false).
     pub hidden: Option<bool>,
+    /// Root folder (contains /target)
+    pub root : Option<String>,
     /// Customm output folder (default: `target/setup`).
     pub output: Option<String>,
     /// Place application inside of the `app.nw` folder in
