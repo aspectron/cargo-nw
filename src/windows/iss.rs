@@ -187,7 +187,7 @@ impl ISS {
             ("DefaultGroupName", "{#AppGroup}"),
             (
                 "UninstallDisplayIcon",
-                &format!("{{app}}\\{}", self.app_exe_file),
+                "{app}\\{#AppExeName}",
             ),
             ("CloseApplications", "force"),
             // ; "ArchitecturesAllowed=x64" specifies that Setup cannot run on
@@ -306,7 +306,7 @@ impl ISS {
         if self.run_after_setup.unwrap_or(false) {
             let run = iss.run();
             run.exec(
-                "{#AppExeName}",
+                "{app}\\{#AppExeName}",
                 None,
                 Some("{cm:LaunchProgram,{#StringChange(AppName, '&', '&&')}}"),
                 Some("nowait postinstall"),
