@@ -9,11 +9,11 @@ pub async fn search_upwards(folder: &PathBuf, filename: &str) -> Option<PathBuf>
     loop {
         let file_path = folder.join(filename);
         if file_path.is_file().await {
-            return Some(file_path);
+            return Some(sanitize(&file_path));
         }
 
         if let Some(parent) = folder.parent() {
-            folder = parent.to_path_buf();
+            folder = sanitize(parent);
         } else {
             return None;
         }
@@ -30,7 +30,7 @@ pub async fn find_file(folder: &Path, files: &[String]) -> Result<PathBuf> {
         let path = folder.join(file);
         if let Ok(path) = path.canonicalize().await {
             if path.is_file().await {
-                return Ok(path);
+                return Ok(sanitize(path));
             }
         }
     }

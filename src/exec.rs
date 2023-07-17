@@ -126,7 +126,7 @@ pub async fn execute(
         .expect("missing program (frist argument) in the execution config");
     let args = argv[1..].to_vec();
 
-    let mut proc = duct::cmd(program, args).dir(cwd).full_env(std::env::vars());
+    let mut proc = duct::cmd(program, args).dir(cwd);//.full_env(std::env::vars());
     if let Some(env) = env {
         let defs = get_env_defs(env)?;
         for (k, v) in defs.iter() {

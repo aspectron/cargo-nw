@@ -160,7 +160,7 @@ impl Context {
         } else {
             Path::new(&cargo_nw_target_folder).join("setup")
         };
-        let output_folder = PathBuf::from(&tpl.transform(output_folder.to_str().unwrap()));
+        let output_folder = normalize(&tpl.transform(output_folder.to_str().unwrap()))?;
         tpl.set(&[
             ("OUTPUT", output_folder.to_str().unwrap()),
             // ("$SETUP",output_folder.to_str().unwrap()),
@@ -184,7 +184,7 @@ impl Context {
 
         let app_root_folder: PathBuf =
             match std::path::PathBuf::from(&app_root_folder).canonicalize() {
-                Ok(path) => path.into(),
+                Ok(path) => sanitize(path),
                 Err(err) => {
                     return Err(format!(
                         "unable to locate application root folder `{}`: {}",

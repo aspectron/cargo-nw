@@ -85,7 +85,7 @@ impl Manifest {
         for location in locations.iter() {
             if let Ok(location) = location.canonicalize().await {
                 if location.is_file().await {
-                    return Ok(location);
+                    return Ok(sanitize(location));
                 }
             }
         }
@@ -721,7 +721,7 @@ fn is_value_path(v: &str) -> bool {
 
 async fn load_value_path(folder: &Path, location: &str) -> Result<String> {
     let parts = location.split("::").collect::<Vec<_>>();
-    let filename = folder.join(parts[0]).canonicalize().await?;
+    let filename = sanitize(folder.join(parts[0]).canonicalize().await?);
     let value_path = parts[1].split('.').collect::<Vec<_>>();
 
     let extension = filename

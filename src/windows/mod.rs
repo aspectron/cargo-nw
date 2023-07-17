@@ -495,7 +495,8 @@ impl Windows {
             app_icon_image_data.as_raw().clone(),
         );
         let app_icon_encoded = ico::IconDirEntry::encode(&app_icon_image_ico).unwrap();
-        let app_res_file = self.ctx.build_folder.join(&self.app_exe_file);
+        // let app_res_file = self.ctx.build_folder.join(&self.app_exe_file);
+        let app_res_file = self.target_folder.join(&self.app_exe_file);
         let mut resources = Resources::new(&app_res_file.clone().into());
         resources.load().unwrap_or_else(|err| {
             panic!(

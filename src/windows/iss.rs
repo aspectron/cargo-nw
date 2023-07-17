@@ -136,19 +136,17 @@ impl ISS {
             .wizard_image_files
             .0
             .iter()
-            .map(|s| format!("\"{}\"", s.to_str().unwrap()))
+            .map(|p|p.to_string_lossy().to_string())
             .collect::<Vec<String>>()
-            .join(";")
-            + ";";
+            .join(",");
 
         let wizard_image_large_files = self
             .wizard_image_files
             .1
             .iter()
-            .map(|s| format!("\"{}\"", s.to_str().unwrap()))
+            .map(|p|p.to_string_lossy().to_string())
             .collect::<Vec<String>>()
-            .join(";")
-            + ";";
+            .join(",");
 
         iss.setup().directives(&[
             ("AppId", &self.app_uuid),
