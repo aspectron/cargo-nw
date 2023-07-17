@@ -61,12 +61,11 @@ pub fn get_env_defs(strings: &Vec<String>) -> Result<Vec<(String, String)>> {
     Ok(parsed_strings)
 }
 
-
 pub fn normalize<P>(path: P) -> Result<PathBuf>
 where
     P: AsRef<Path>,
 {
-    cfg_if!{
+    cfg_if! {
         if #[cfg(platform = "windows")] {
             normalize_with_separator(path.as_ref(), "\\")
         } else {
@@ -99,7 +98,7 @@ pub fn normalize_with_separator(path: &Path, separator: &str) -> Result<PathBuf>
     Ok(sanitize(&result))
 }
 
-pub fn sanitize<P : AsRef<Path>>(path: P) -> PathBuf {
+pub fn sanitize<P: AsRef<Path>>(path: P) -> PathBuf {
     let p = path.as_ref().to_string_lossy().to_string();
     PathBuf::from(p.replace("\\\\?\\", ""))
 }

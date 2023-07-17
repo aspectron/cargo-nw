@@ -84,18 +84,13 @@ impl Target {
 
 pub type TargetSet = HashSet<Target>;
 
-#[derive(Debug, Clone, Subcommand, Serialize, Deserialize, Hash, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Subcommand, Serialize, Deserialize, Hash, PartialEq, Eq)]
 pub enum Channel {
     #[serde(rename = "stable")]
+    #[default]
     Stable,
     #[serde(rename = "devel")]
     Devel,
-}
-
-impl Default for Channel {
-    fn default() -> Self {
-        Channel::Stable
-    }
 }
 
 impl ToString for Channel {
@@ -119,21 +114,15 @@ impl FromStr for Channel {
     }
 }
 
-#[derive(Debug, Clone, Subcommand, Serialize, Deserialize, Hash, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Subcommand, Serialize, Deserialize, Hash, PartialEq, Eq)]
 pub enum Confinement {
     #[serde(rename = "strict")]
     Strict,
     #[serde(rename = "classic")]
+    #[default]
     Classic,
     #[serde(rename = "devmode")]
     Devmode,
-}
-
-impl Default for Confinement {
-    fn default() -> Self {
-        // Confinement::Strict
-        Confinement::Classic
-    }
 }
 
 impl ToString for Confinement {

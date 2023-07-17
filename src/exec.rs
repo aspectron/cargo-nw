@@ -54,7 +54,7 @@ pub async fn execute_with_context(
     cwd: Option<&Path>,
     tpl: &Tpl,
 ) -> Result<()> {
-    let cwd = normalize(tpl.transform(&cwd.unwrap_or(&ctx.app_root_folder).to_string_lossy().to_string()))?;
+    let cwd = normalize(tpl.transform(&cwd.unwrap_or(&ctx.app_root_folder).to_string_lossy()))?;
     let cwd = ec
         .cwd
         .as_ref()
@@ -94,7 +94,6 @@ pub async fn execute(
     arch: &Option<Architecture>,
     tpl: &Tpl,
 ) -> Result<()> {
-
     let cwd = normalize(cwd)?;
 
     if family.is_some() && family.as_ref() != Some(&PlatformFamily::default()) {

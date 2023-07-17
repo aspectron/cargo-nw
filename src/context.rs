@@ -127,7 +127,7 @@ impl Context {
             }
         });
 
-        let root_folder  = if let Some(root) = &manifest.package.root {
+        let root_folder = if let Some(root) = &manifest.package.root {
             normalize(manifest_folder.join(root))?
         } else {
             search_upwards(&manifest_folder, "Cargo.toml")
@@ -164,7 +164,7 @@ impl Context {
         } else {
             Path::new(&cargo_nw_target_folder).join("setup")
         };
-        let output_folder = normalize(&tpl.transform(output_folder.to_str().unwrap()))?;
+        let output_folder = normalize(tpl.transform(output_folder.to_str().unwrap()))?;
         tpl.set(&[
             ("OUTPUT", output_folder.to_str().unwrap()),
             // ("$SETUP",output_folder.to_str().unwrap()),
@@ -213,7 +213,13 @@ impl Context {
         let snap = manifest.snap.clone().unwrap_or_default();
         let channel = options.channel.or(snap.channel).unwrap_or_default();
         let confinement = options.confinement.or(snap.confinement).unwrap_or_default();
-        let deps = Deps::new(&platform, &arch, &manifest, sdk, options.nwjs_version_override);
+        let deps = Deps::new(
+            &platform,
+            &arch,
+            &manifest,
+            sdk,
+            options.nwjs_version_override,
+        );
 
         let include = manifest.package.include.clone(); //.unwrap_or(vec![]);
         let exclude = manifest.package.exclude.clone(); //.unwrap_or(vec![]);
@@ -296,9 +302,9 @@ impl Context {
         self.tpl.clone()
     }
 
-    pub async fn update_package_json(&self, target_folder : &Path) -> Result<()> {
+    pub async fn update_package_json(&self, target_folder: &Path) -> Result<()> {
         if self.manifest.package.update_package_json.unwrap_or(false) {
-            log_info!("Manifest","Updating package.json manifest");
+            log_info!("Manifest", "Updating package.json manifest");
             let path = target_folder.join("package.json");
             let mut package_json = PackageJson::try_load(&path)?;
             package_json.version = Some(self.manifest.application.version.clone());

@@ -38,7 +38,7 @@ pub struct ISS {
 impl ISS {
     pub fn new(
         ctx: Arc<Context>,
-        target_folder : PathBuf,
+        target_folder: PathBuf,
         setup_icon_file: PathBuf,
         wizard_image_files: (Vec<PathBuf>, Vec<PathBuf>),
     ) -> ISS {
@@ -137,7 +137,7 @@ impl ISS {
             .wizard_image_files
             .0
             .iter()
-            .map(|p|p.to_string_lossy().to_string())
+            .map(|p| p.to_string_lossy().to_string())
             .collect::<Vec<String>>()
             .join(",");
 
@@ -145,7 +145,7 @@ impl ISS {
             .wizard_image_files
             .1
             .iter()
-            .map(|p|p.to_string_lossy().to_string())
+            .map(|p| p.to_string_lossy().to_string())
             .collect::<Vec<String>>()
             .join(",");
 

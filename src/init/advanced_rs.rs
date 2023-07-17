@@ -4,7 +4,8 @@ pub const NW_TOML: &str = include_str!("../../resources/init/advanced-rs/nw.toml
 pub const GITIGNORE: &str = include_str!("../../resources/init/advanced-rs/.gitignore");
 pub const INDEX_JS: &str = include_str!("../../resources/init/advanced-rs/index.js");
 pub const INDEX_HTML: &str = include_str!("../../resources/init/advanced-rs/app/index.html");
-pub const SECONDARY_HTML: &str = include_str!("../../resources/init/advanced-rs/app/secondary.html");
+pub const SECONDARY_HTML: &str =
+    include_str!("../../resources/init/advanced-rs/app/secondary.html");
 pub const CARGO_TOML: &str = include_str!("../../resources/init/advanced-rs/Cargo.toml");
 pub const LIB_RS: &str = include_str!("../../resources/init/advanced-rs/src/lib.rs");
 pub const BUILD_SH: &str = include_str!("../../resources/init/advanced-rs/build.sh");

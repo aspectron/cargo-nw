@@ -1,6 +1,6 @@
+mod advanced_rs;
 mod basic_js;
 mod basic_rs;
-mod advanced_rs;
 
 use crate::prelude::*;
 use async_std::fs;

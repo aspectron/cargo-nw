@@ -79,7 +79,7 @@ impl Builder {
                         }
 
                         let outdir = outdir.clone().unwrap_or_else(|| "app/wasm".to_string());
-                        let name = name.as_ref().clone().unwrap_or(&self.ctx.manifest.application.name);
+                        let name = name.as_ref().unwrap_or(&self.ctx.manifest.application.name);
                         let mut argv = vec!["wasm-pack", "build"];
                         if dev.unwrap_or(false) {
                             argv.push("--dev");
@@ -219,7 +219,7 @@ impl Builder {
         for (_file, path) in files.iter() {
             let package_size = (std::fs::metadata(path)?.len() as f64) / 1024.0 / 1024.0;
             let path = if let Ok(path) = path.strip_prefix(&self.ctx.root_folder) {
-                path.clone()
+                path
             } else {
                 path
             };

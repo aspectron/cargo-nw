@@ -316,7 +316,6 @@ where
 }
 
 pub async fn copy(tpl: &Tpl, copy: &Copy, src_folder: &Path, target_folder: &Path) -> Result<()> {
-
     if let Some(file) = &copy.file {
         if copy.glob.is_some() || copy.regex.is_some() || copy.flatten.is_some() {
             return Err("other options can not be present if `copy.file` is declared".into());
@@ -325,12 +324,17 @@ pub async fn copy(tpl: &Tpl, copy: &Copy, src_folder: &Path, target_folder: &Pat
         let from = normalize(src_folder.join(tpl.transform(file)))?;
         let to = normalize(tpl.transform(&copy.to))?;
 
-        let to = if copy.to.ends_with("/") || copy.to.ends_with("\\") {
+        let to = if copy.to.ends_with('/') || copy.to.ends_with('\\') {
             to.join(from.file_name().unwrap())
-        } else { to };
+        } else {
+            to
+        };
 
         // println!("copy: from: `{:?}` to: `{:?}`", from.display(), to.display());
-        std::fs::create_dir_all(to.parent().expect("copy can not determine the parent path of the `to` directive."))?;
+        std::fs::create_dir_all(
+            to.parent()
+                .expect("copy can not determine the parent path of the `to` directive."),
+        )?;
         std::fs::copy(from, to)?;
     } else {
         let to_folder = normalize(target_folder.join(tpl.transform(&copy.to)))?;

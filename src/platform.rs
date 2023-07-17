@@ -14,10 +14,10 @@ pub enum Platform {
     MacOS,
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for Platform {
     fn default() -> Platform {
         cfg_if! {
-            // if #[cfg(any(target_os = "linux", feature = "unix"))] {
             if #[cfg(target_os = "linux")] {
                 Platform::Linux
             } else if #[cfg(target_os = "macos")] {
@@ -141,7 +141,8 @@ impl Architecture {
             Architecture::ia32 => "ia32",
             Architecture::arm64 => "arm64",
             Architecture::aarch64 => "arm64",
-        }.to_string()
+        }
+        .to_string()
     }
 }
 
@@ -191,6 +192,7 @@ pub enum PlatformFamily {
     Unix,
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for PlatformFamily {
     fn default() -> Self {
         cfg_if::cfg_if! {

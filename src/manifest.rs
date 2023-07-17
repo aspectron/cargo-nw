@@ -260,7 +260,7 @@ pub enum Build {
         /// Enable `wasmpack` development build.
         dev: Option<bool>,
         /// WASM package name
-        name : Option<String>,
+        name: Option<String>,
         /// Specify a custom output directory (default `app/wasm`)
         /// when running the build command.
         outdir: Option<String>,
@@ -333,7 +333,7 @@ pub struct Package {
     /// Copy hidden files (default: false).
     pub hidden: Option<bool>,
     /// Root folder (contains /target)
-    pub root : Option<String>,
+    pub root: Option<String>,
     /// Customm output folder (default: `target/setup`).
     pub output: Option<String>,
     /// Place application inside of the `app.nw` folder in
@@ -424,11 +424,11 @@ pub struct NWJS {
     version: String,
     /// Platform-specific version overrides.
     #[allow(unused)]
-    windows : Option<String>,
+    windows: Option<String>,
     #[allow(unused)]
-    macos : Option<String>,
+    macos: Option<String>,
     #[allow(unused)]
-    linux : Option<String>,
+    linux: Option<String>,
     /// Enable automatic  inregration of FFMPEG libraries.
     pub ffmpeg: Option<bool>,
     /// Use NW SDK edition. Please note that an SDK-including build cane also be
@@ -442,7 +442,7 @@ pub struct NWJS {
 
 impl NWJS {
     pub fn version(&self) -> String {
-        cfg_if!{
+        cfg_if! {
             if #[cfg(target_os = "windows")] {
                 self.windows.as_ref().unwrap_or(&self.version).clone()
             } else if #[cfg(target_os = "macos")] {
@@ -589,20 +589,20 @@ impl PackageJson {
     pub fn try_load<P>(filepath: P) -> Result<PackageJson>
     where
         P: AsRef<std::path::Path>,
-        {
-            let text = std::fs::read_to_string(filepath)?;
-            let package_json: PackageJson = serde_json::from_str(&text)?;
-            Ok(package_json)
-        }
-        
-        pub async fn try_store<P>(&self, filepath: P) -> Result<()> 
-        where
-            P: AsRef<std::path::Path>,
-        {
-            let text = serde_json::to_string(self)?;
-            std::fs::write(filepath.as_ref(), text)?;
-            Ok(())
-        }
+    {
+        let text = std::fs::read_to_string(filepath)?;
+        let package_json: PackageJson = serde_json::from_str(&text)?;
+        Ok(package_json)
+    }
+
+    pub async fn try_store<P>(&self, filepath: P) -> Result<()>
+    where
+        P: AsRef<std::path::Path>,
+    {
+        let text = serde_json::to_string(self)?;
+        std::fs::write(filepath.as_ref(), text)?;
+        Ok(())
+    }
 }
 
 // #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -632,18 +632,13 @@ impl PackageJson {
 //     }
 // }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub enum Algorithm {
     STORE,
     BZIP2,
+    #[default]
     DEFLATE,
     ZSTD,
-}
-
-impl Default for Algorithm {
-    fn default() -> Algorithm {
-        Algorithm::DEFLATE
-    }
 }
 
 impl From<Algorithm> for zip::CompressionMethod {

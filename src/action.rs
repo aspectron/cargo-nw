@@ -90,7 +90,6 @@ impl ActionItem {
         src_folder: &Path,
         dest_folder: &Path,
     ) -> Result<()> {
-
         let src_folder = normalize(src_folder)?;
         let dest_folder = normalize(dest_folder)?;
 

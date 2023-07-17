@@ -56,7 +56,12 @@ pub fn get_nwjs_archive_extension(platform: &Platform) -> String {
     .into()
 }
 
-pub fn get_nwjs_ffmpeg_meta(platform: &Platform, arch: &Architecture, manifest: &Manifest, target: &PathBuf) -> Meta {
+pub fn get_nwjs_ffmpeg_meta(
+    platform: &Platform,
+    arch: &Architecture,
+    manifest: &Manifest,
+    target: &PathBuf,
+) -> Meta {
     let arch = arch.to_nwjs_arch();
     let version = &manifest.nwjs.version();
     let suffix = get_nwjs_suffix(platform);
@@ -76,10 +81,7 @@ pub fn get_nwjs_sdk_meta(
     version_override: Option<String>,
 ) -> Meta {
     let arch = arch.to_nwjs_arch();
-    let version = format!(
-        "v{}",
-        version_override.unwrap_or(manifest.nwjs.version())
-    );
+    let version = format!("v{}", version_override.unwrap_or(manifest.nwjs.version()));
     let suffix = get_nwjs_suffix(platform);
     let folder = format!("nwjs-sdk-{version}-{suffix}-{arch}");
     let archive_extension = get_nwjs_archive_extension(platform);
@@ -96,10 +98,7 @@ pub fn get_nwjs_meta(
     version_override: Option<String>,
 ) -> Meta {
     let arch = arch.to_nwjs_arch();
-    let version = format!(
-        "v{}",
-        version_override.unwrap_or(manifest.nwjs.version())
-    );
+    let version = format!("v{}", version_override.unwrap_or(manifest.nwjs.version()));
     let suffix = get_nwjs_suffix(platform);
     let folder = format!("nwjs-{version}-{suffix}-{arch}");
     let archive_extension = get_nwjs_archive_extension(platform);
