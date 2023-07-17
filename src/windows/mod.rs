@@ -168,7 +168,7 @@ impl Windows {
         )
         .await?;
 
-        if self.ctx.manifest.node_webkit.ffmpeg.unwrap_or(false) {
+        if self.ctx.manifest.nwjs.ffmpeg.unwrap_or(false) {
             log_info!("Integrating", "FFMPEG binaries");
             fs::copy(
                 Path::new(&self.ctx.deps.ffmpeg.as_ref().unwrap().target()).join("ffmpeg.dll"),

@@ -123,7 +123,7 @@ impl Linux {
             &options,
         )?;
 
-        if self.ctx.manifest.node_webkit.ffmpeg.unwrap_or(false) {
+        if self.ctx.manifest.nwjs.ffmpeg.unwrap_or(false) {
             log_info!("Integrating", "FFMPEG binaries");
             fs::create_dir_all(self.target_folder.join("lib")).await?;
             fs::copy(
