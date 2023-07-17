@@ -127,6 +127,7 @@ impl Installer for Windows {
 
             let setup_script = iss::ISS::new(
                 self.ctx.clone(),
+                self.target_folder.clone(),
                 self.setup_icon_file.clone(),
                 wizard_image_files,
             );
