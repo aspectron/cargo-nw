@@ -191,6 +191,9 @@ impl Windows {
             CopyOptions::new(self.ctx.manifest.package.hidden.unwrap_or(false)),
         )
         .await?;
+
+        self.ctx.update_package_json(&self.target_folder).await?;
+
         Ok(())
     }
 

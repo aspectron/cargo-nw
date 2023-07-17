@@ -157,6 +157,8 @@ impl Linux {
         )
         .await?;
 
+        ctx.update_package_json(&self.target_folder).await?;
+
         Ok(())
     }
 

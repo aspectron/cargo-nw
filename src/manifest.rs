@@ -340,6 +340,9 @@ pub struct Package {
     /// the redistributable on Windows and Linux (false by default).
     /// This setting is always true for MacOS.
     pub use_app_nw: Option<bool>,
+    /// Re-creates the NWJS manifest `package.json` with package
+    /// name and version from the `nw.toml` manifest.
+    pub update_package_json: Option<bool>,
 }
 
 /// Copy filter used in `package.include` and `package.exclude` sections
@@ -586,11 +589,20 @@ impl PackageJson {
     pub fn try_load<P>(filepath: P) -> Result<PackageJson>
     where
         P: AsRef<std::path::Path>,
-    {
-        let text = std::fs::read_to_string(filepath)?;
-        let package_json: PackageJson = serde_json::from_str(&text)?;
-        Ok(package_json)
-    }
+        {
+            let text = std::fs::read_to_string(filepath)?;
+            let package_json: PackageJson = serde_json::from_str(&text)?;
+            Ok(package_json)
+        }
+        
+        pub async fn try_store<P>(&self, filepath: P) -> Result<()> 
+        where
+            P: AsRef<std::path::Path>,
+        {
+            let text = serde_json::to_string(self)?;
+            std::fs::write(filepath.as_ref(), text)?;
+            Ok(())
+        }
 }
 
 // #[derive(Debug, Clone, Serialize, Deserialize)]

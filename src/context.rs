@@ -296,16 +296,16 @@ impl Context {
         self.tpl.clone()
     }
 
-    // pub fn tpl_clone(&self) -> Tpl {
-    //     self.tpl.lock().unwrap().clone()
-    // }
-
-    // pub async fn execute_with_context(
-    //     &self,
-    //     ec: &ExecutionContext,
-    //     cwd : Option<&Path>,
-    //     tpl: Option<&Tpl>,
-    // ) -> Result<()> {
-    //     execute_with_context(self,ec,cwd,tpl).await
-    // }
+    pub async fn update_package_json(&self, target_folder : &Path) -> Result<()> {
+        if self.manifest.package.update_package_json.unwrap_or(false) {
+            log_info!("Manifest","Updating package.json manifest");
+            let path = target_folder.join("package.json");
+            let mut package_json = PackageJson::try_load(&path)?;
+            package_json.version = Some(self.manifest.application.version.clone());
+            package_json.name = self.manifest.application.name.clone();
+            package_json.description = Some(self.manifest.description.short.clone());
+            package_json.try_store(&path).await?;
+        }
+        Ok(())
+    }
 }

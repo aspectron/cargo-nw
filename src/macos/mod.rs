@@ -184,6 +184,8 @@ impl MacOS {
         )
         .await?;
 
+        self.ctx.update_package_json(&self.target_folder).await?;
+
         Ok(())
     }
 
