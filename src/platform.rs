@@ -2,7 +2,6 @@ use crate::error::Error;
 use crate::result::Result;
 use cfg_if::cfg_if;
 use clap::Subcommand;
-use duct::cmd;
 use serde::{Deserialize, Serialize};
 use std::{fmt, str::FromStr};
 
@@ -122,7 +121,7 @@ impl Architecture {
     pub fn detect() -> Result<Self> {
         cfg_if! {
             if #[cfg(target_os = "macos")] {
-                let uname = cmd!("uname", "-m").read()?;
+                let uname = duct::cmd!("uname", "-m").read()?;
                 match uname.trim() {
                     "i386" => Ok(Architecture::ia32),
                     "x86_64" => Ok(Architecture::x64),
