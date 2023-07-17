@@ -204,7 +204,7 @@ impl Context {
                 .as_ref()
                 .unwrap_or(&"resources/setup".to_string()),
         );
-        let sdk = manifest.node_webkit.sdk.unwrap_or(options.sdk);
+        let sdk = manifest.nwjs.sdk.unwrap_or(options.sdk);
         let dry_run = options.dry_run;
         let snap = manifest.snap.clone().unwrap_or_default();
         let channel = options.channel.or(snap.channel).unwrap_or_default();

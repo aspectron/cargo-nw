@@ -58,7 +58,7 @@ pub fn get_nwjs_archive_extension(platform: &Platform) -> String {
 
 pub fn get_nwjs_ffmpeg_meta(platform: &Platform, arch: &Architecture, manifest: &Manifest, target: &PathBuf) -> Meta {
     let arch = arch.to_nwjs_arch();
-    let version = &manifest.node_webkit.version;
+    let version = &manifest.nwjs.version();
     let suffix = get_nwjs_suffix(platform);
     let folder = format!("ffmpeg-{version}-{suffix}-{arch}");
     let file = format!("{version}-{suffix}-{arch}.zip");
@@ -78,7 +78,7 @@ pub fn get_nwjs_sdk_meta(
     let arch = arch.to_nwjs_arch();
     let version = format!(
         "v{}",
-        version_override.unwrap_or(manifest.node_webkit.version.clone())
+        version_override.unwrap_or(manifest.nwjs.version())
     );
     let suffix = get_nwjs_suffix(platform);
     let folder = format!("nwjs-sdk-{version}-{suffix}-{arch}");
@@ -98,7 +98,7 @@ pub fn get_nwjs_meta(
     let arch = arch.to_nwjs_arch();
     let version = format!(
         "v{}",
-        version_override.unwrap_or(manifest.node_webkit.version.clone())
+        version_override.unwrap_or(manifest.nwjs.version())
     );
     let suffix = get_nwjs_suffix(platform);
     let folder = format!("nwjs-{version}-{suffix}-{arch}");
@@ -132,7 +132,7 @@ impl Deps {
             get_nwjs_meta(platform, arch, manifest, &dir, nwjs_version_override)
         };
 
-        let ffmpeg = if manifest.node_webkit.ffmpeg.unwrap_or(false) {
+        let ffmpeg = if manifest.nwjs.ffmpeg.unwrap_or(false) {
             Some(get_nwjs_ffmpeg_meta(platform, arch, manifest, &dir))
         } else {
             None

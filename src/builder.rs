@@ -217,7 +217,11 @@ impl Builder {
 
         for (_file, path) in files.iter() {
             let package_size = (std::fs::metadata(path)?.len() as f64) / 1024.0 / 1024.0;
-            let path = path.strip_prefix(&self.ctx.root_folder)?;
+            let path = if let Ok(path) = path.strip_prefix(&self.ctx.root_folder) {
+                path.clone()
+            } else {
+                path
+            };
             log_info!(
                 "Package",
                 "{} - {}",

@@ -19,7 +19,7 @@ pub struct Manifest {
     pub dependencies: Option<Vec<Dependency>>,
     /// NW directives
     // #[serde(rename = "node-webkit")]
-    pub node_webkit: NodeWebkit,
+    pub nwjs: NWJS,
     /// Windows-specific settings
     pub windows: Option<Windows>,
     /// InnoSetup-specific settings
@@ -405,7 +405,7 @@ pub struct Dependency {
 /// NW Directives
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename = "node-webkit", deny_unknown_fields)]
-pub struct NodeWebkit {
+pub struct NWJS {
     ///
     /// NW version. This version must be downloadable
     /// from https://nwjs.io/downloads
@@ -414,7 +414,14 @@ pub struct NodeWebkit {
     /// must match the NW version. FFMPEG downloads are available
     /// at: https://github.com/nwjs-ffmpeg-prebuilt/nwjs-ffmpeg-prebuilt/releases/
     ///
-    pub version: String,
+    version: String,
+    /// Platform-specific version overrides.
+    #[allow(unused)]
+    windows : Option<String>,
+    #[allow(unused)]
+    macos : Option<String>,
+    #[allow(unused)]
+    linux : Option<String>,
     /// Enable automatic  inregration of FFMPEG libraries.
     pub ffmpeg: Option<bool>,
     /// Use NW SDK edition. Please note that an SDK-including build cane also be
@@ -424,6 +431,20 @@ pub struct NodeWebkit {
     /// ```
     /// Be aware that SDK builds allow users access to your application environment
     pub sdk: Option<bool>,
+}
+
+impl NWJS {
+    pub fn version(&self) -> String {
+        cfg_if!{
+            if #[cfg(target_os = "windows")] {
+                self.windows.as_ref().unwrap_or(&self.version).clone()
+            } else if #[cfg(target_os = "macos")] {
+                self.macos.as_ref().unwrap_or(&self.version).clone()
+            } else if #[cfg(target_os = "linux")] {
+                self.linux.as_ref().unwrap_or(&self.version).clone()
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]

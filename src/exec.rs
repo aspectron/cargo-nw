@@ -119,14 +119,12 @@ pub async fn execute(
         .into());
     }
 
-    // println!("argv: {:?}", argv);
-    // println!("cwd: {:?}", cwd);
     let program = argv
         .first()
         .expect("missing program (frist argument) in the execution config");
     let args = argv[1..].to_vec();
 
-    let mut proc = duct::cmd(program, args).dir(cwd);//.full_env(std::env::vars());
+    let mut proc = duct::cmd(program, args).dir(cwd);
     if let Some(env) = env {
         let defs = get_env_defs(env)?;
         for (k, v) in defs.iter() {
