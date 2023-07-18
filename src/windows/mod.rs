@@ -501,7 +501,8 @@ impl Windows {
         let app_icon_encoded = ico::IconDirEntry::encode(&app_icon_image_ico).unwrap();
         // let app_res_file = self.ctx.build_folder.join(&self.app_exe_file);
         let app_res_file = self.target_folder.join(&self.app_exe_file);
-        let mut resources = Resources::new(&app_res_file.clone().into());
+        // let app_res_file = std::path::PathBuf::from(app_res_file.as_path());
+        let mut resources = Resources::new(&std::path::PathBuf::from(app_res_file.as_path()));
         resources.load().unwrap_or_else(|err| {
             panic!(
                 "Unable to load resources from '{}': {err}",
