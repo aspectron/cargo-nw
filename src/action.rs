@@ -20,6 +20,7 @@ pub enum Stage {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Action {
+    pub name: Option<String>,
     pub platform: Option<Vec<Platform>>,
     pub arch: Option<Vec<Architecture>>,
     pub family: Option<PlatformFamily>,
@@ -56,6 +57,10 @@ impl Action {
             if family != &PlatformFamily::default() {
                 return Ok(());
             }
+        }
+
+        if let Some(name) = &self.name {
+            log_info!("Action", "{name} ...");
         }
 
         for item in self.items.iter() {
