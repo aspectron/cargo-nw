@@ -185,10 +185,7 @@ impl ISS {
             // ;
             ("UserInfoPage", "False"),
             ("DefaultGroupName", "{#AppGroup}"),
-            (
-                "UninstallDisplayIcon",
-                "{app}\\{#AppExeName}",
-            ),
+            ("UninstallDisplayIcon", "{app}\\{#AppExeName}"),
             ("CloseApplications", "force"),
             // ; "ArchitecturesAllowed=x64" specifies that Setup cannot run on
             // ; anything but x64.
