@@ -7,5 +7,3 @@
 /test-init
 /publish
 /bin
-resources/init/generic-rs/target
-resources/init/generic-rs/Cargo.lock

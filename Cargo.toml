@@ -1,6 +1,6 @@
 [package]
 name = "cargo-nw"
-version = "1.0.0"
+version = "0.0.1"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/aspectron/cargo-nw"
@@ -8,7 +8,30 @@ documentation = "https://cargo-nw.aspectron.org"
 authors = ["Anton Yemelyanov <anton.yemelyanov@gmail.com>", "Surinder Singh Matoo Mattaur <surinder83singh@gmail.com>"]
 keywords = ["cargo", "subcommand", "installation", "package","nwjs","nw"]
 categories = ["command-line-utilities", "development-tools::cargo-plugins", "development-tools::build-utils"]
-exclude = ["/.*", "/test"]
+# exclude = [
+    # "/.*",
+    # "test",
+    # "target",
+    # "wasm",
+    # "resources/**/target",
+    # "resources/**/app/wasm"
+# ]
+include = [
+    "/src/**/*.rs",
+    # "/resources/init/**",
+    # "resources/init/basic-js/**",
+    # "resources/init/basic-rs/**",
+    "/resources/init/advanced-rs/Cargo.toml",
+    # "/resources/init/advanced-rs/app/wasm/*",
+    # "resources/init/**/*.toml",
+    # "resources/init/**/*.sh",
+    # "resources/init/**/*.ps1",
+    # "resources/init/**/*.json",
+    # "resources/init/**/*.html",
+    "/resources/images/**/*.png",
+    "/Cargo.toml",
+    # "Cargo.lock"
+]
 description = """
 Cargo subcommand for building NW application deployment packages
 (redistributables) for Windows, MacOS and Linux.
