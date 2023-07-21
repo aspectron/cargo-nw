@@ -6,7 +6,7 @@ pub const INDEX_JS: &str = include_str!("../../resources/init/advanced-rs/index.
 pub const INDEX_HTML: &str = include_str!("../../resources/init/advanced-rs/app/index.html");
 pub const SECONDARY_HTML: &str =
     include_str!("../../resources/init/advanced-rs/app/secondary.html");
-pub const CARGO_TOML: &str = include_str!("../../resources/init/advanced-rs/Cargo.toml");
+pub const CARGO_TOML: &str = include_str!("../../resources/init/advanced-rs/Cargo.toml.template");
 pub const LIB_RS: &str = include_str!("../../resources/init/advanced-rs/src/lib.rs");
 pub const BUILD_SH: &str = include_str!("../../resources/init/advanced-rs/build.sh");
 pub const BUILD_PS1: &str = include_str!("../../resources/init/advanced-rs/build.ps1");

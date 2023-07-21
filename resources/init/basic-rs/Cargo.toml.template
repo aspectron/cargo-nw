@@ -4,6 +4,10 @@ version = "0.1.0"
 # version = "$VERSION"
 edition = "2021"
 
+include = [
+    "/src/**/*.rs",
+]
+
 [lib]
 crate-type = ["cdylib", "rlib"]
 
@@ -18,16 +22,12 @@ crate-type = ["cdylib", "rlib"]
 
 js-sys = "0.3.61"
 wasm-bindgen = "0.2.84"
-# workflow-dom = "0.3.10"
-# workflow-log = "0.3.10"
-# workflow-wasm = "0.3.10"
-# workflow-nw = "0.3.10"
+workflow-dom = "0.3.10"
+workflow-log = "0.3.10"
+workflow-wasm = "0.3.10"
+workflow-nw = "0.3.10"
 nw-sys = "0.1.2"
-workflow-dom = { path = "../../../../workflow-rs/dom" }
-workflow-log = { path = "../../../../workflow-rs/log" }
-workflow-wasm = { path = "../../../../workflow-rs/wasm" }
-# workflow-core = { path = "../../../../workflow-rs/core" }
-workflow-nw = { path = "../../../../workflow-rs/nw" }
+# workflow-nw = { path = "../../../../workflow-rs/nw" }
 # nw-sys = { path = "../../../../nw-sys" }
 
 [dependencies.web-sys]
@@ -38,5 +38,5 @@ features = [
     'Window',
     'HtmlElement',
     'CustomEvent',
-    'MouseEvent',
+    'MouseEvent'
 ]
