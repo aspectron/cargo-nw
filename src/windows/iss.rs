@@ -51,7 +51,7 @@ impl ISS {
         let app_name = ctx.manifest.application.name.clone();
         let app_title = ctx.manifest.application.title.clone();
         let app_version = ctx.manifest.application.version.clone();
-        let build_folder = target_folder.clone(); //ctx.build_folder.clone();
+        let build_folder = target_folder; //ctx.build_folder.clone();
         let cache_folder = ctx.cache_folder.clone();
         // let app_folder = build_folder.join(&app_title);
         let app_authors = if let Some(authors) = ctx.manifest.application.authors.as_ref() {

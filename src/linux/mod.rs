@@ -75,11 +75,11 @@ impl Installer for Linux {
                 .unwrap_or_default();
             let archive_filename =
                 Path::new(&format!("{}.zip", self.ctx.app_snake_name)).to_path_buf();
-            let archive_path = self.ctx.output_folder.join(&archive_filename);
+            let archive_path = self.ctx.output_folder.join(archive_filename);
             compress_folder(&self.target_folder, &archive_path, level)?;
 
             if !self.ctx.dry_run && targets.contains(&Target::Archive) {
-                files.push(archive_path.clone());
+                files.push(archive_path);
             }
 
             #[cfg(any(target_os = "linux", feature = "unix"))]
@@ -157,7 +157,7 @@ impl Linux {
         )
         .await?;
 
-        ctx.update_package_json(&self.target_folder).await?;
+        self.ctx.update_package_json(&self.target_folder).await?;
 
         Ok(())
     }

@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 pub enum SnapArchitecture {
     amd64,
     i386,
-    aarch64,
+    arm64,
 }
 
 impl From<Architecture> for SnapArchitecture {
@@ -20,7 +20,8 @@ impl From<Architecture> for SnapArchitecture {
         match arch {
             Architecture::ia32 => SnapArchitecture::i386,
             Architecture::x64 => SnapArchitecture::amd64,
-            Architecture::aarch64 => SnapArchitecture::aarch64,
+            Architecture::arm64 => SnapArchitecture::arm64,
+            Architecture::aarch64 => SnapArchitecture::arm64,
         }
     }
 }
@@ -30,7 +31,7 @@ impl ToString for SnapArchitecture {
         match self {
             SnapArchitecture::amd64 => "amd64",
             SnapArchitecture::i386 => "i386",
-            SnapArchitecture::aarch64 => "aarch64",
+            SnapArchitecture::arm64 => "arm64",
         }
         .to_string()
     }
@@ -49,18 +50,15 @@ impl Parts {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub enum Plugin {
     #[serde(rename = "dump")]
     Dump,
     #[serde(rename = "nil")]
+    #[default]
     Nil,
 }
-impl Default for Plugin {
-    fn default() -> Plugin {
-        Plugin::Nil
-    }
-}
+
 impl ToString for Plugin {
     fn to_string(&self) -> String {
         match self {
@@ -235,7 +233,7 @@ impl SnapData {
             App::new(&ctx.app_snake_name, &name, user_snap.interfaces.clone()),
         )]);
 
-        let snap = SnapData {
+        SnapData {
             name: name.clone(),
             title: ctx.manifest.application.title.clone(),
             version: ctx.manifest.application.version.clone(),
@@ -250,9 +248,7 @@ impl SnapData {
             architectures: vec![ctx.arch.clone().into()],
             apps,
             parts,
-        };
-
-        snap
+        }
     }
 
     pub async fn store(&self, file: &Path) -> Result<()> {
