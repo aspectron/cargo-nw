@@ -1,2 +1,2 @@
 cargo fmt --all
-cargo clippy
+cargo clippy --features multiplatform
