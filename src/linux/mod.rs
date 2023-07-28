@@ -79,7 +79,7 @@ impl Installer for Linux {
             compress_folder(&self.target_folder, &archive_path, level)?;
 
             if !self.ctx.dry_run && targets.contains(&Target::Archive) {
-                files.push(archive_path);
+                files.push(archive_path.clone());
             }
 
             #[cfg(any(target_os = "linux", feature = "unix"))]
